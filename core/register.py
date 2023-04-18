@@ -1,15 +1,19 @@
 import asyncio
+import os
 
 import aiohttp
-import config
+from dotenv import load_dotenv
+
+load_dotenv()
+
+CLIENT_ID = os.getenv('CLIENT_ID')
+DISOCRD_TOKEN = os.getenv('DISCORD_TOKEN')
 
 
 async def main() -> None:
     # docs: https://discord.com/developers/docs/resources/application-role-connection-metadata
 
-    url = 'https://discord.com/api/v10/applications/{client_id}/role-connections/metadata'.format(
-        client_id=config.client_id
-    )
+    url = f'https://discord.com/api/v10/applications/{CLIENT_ID}/role-connections/metadata'
 
     # fmt: off
     playload = [
@@ -48,7 +52,9 @@ async def main() -> None:
 
     async with aiohttp.ClientSession() as session:
         async with session.put(
-            url=url, json=playload, headers={'Content-Type': 'application/json', 'Authorization': f'Bot {config.token}'}
+            url=url,
+            json=playload,
+            headers={'Content-Type': 'application/json', 'Authorization': f'Bot {DISOCRD_TOKEN}'},
         ) as response:
             print(f'Discord returned : {response.status} {response.reason}')
             print(await response.text())

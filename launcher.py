@@ -1,9 +1,9 @@
 import asyncio
 import contextlib
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
-import config
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from core.bot import LatteMaid
@@ -37,9 +37,13 @@ def setup_logging():
         logging.getLogger('discord').setLevel(logging.INFO)
         logging.getLogger('discord.http').setLevel(logging.WARNING)
         logging.getLogger('discord.state').addFilter(RemoveNoise())
-        # valorantx
-        logging.getLogger('valorantx').setLevel(logging.INFO)
-        logging.getLogger('valorantx.http').setLevel(logging.WARNING)
+        # valorantx2
+        logging.getLogger('valorantx2').setLevel(logging.INFO)
+        logging.getLogger('valorantx2.http').setLevel(logging.WARNING)
+        logging.getLogger('valorantx2.valorant_api').setLevel(logging.INFO)
+        logging.getLogger('valorantx2.valorant_api.http').setLevel(logging.WARNING)
+        # cogs valorant
+        logging.getLogger('lattemaid.valorant').setLevel(logging.WARNING)
 
         log.setLevel(logging.INFO)
         handler = RotatingFileHandler(
@@ -65,30 +69,27 @@ def main():
 
 
 def create_engine() -> AsyncEngine:
-    # uri = config.postgresql
-    uri = config.sqlite_test
+    # uri = os.getenv('POSTGRESQL_DATABASE_URI')
+    uri = os.getenv('SQLITE_DATABASE_URI')
     return create_async_engine(uri, echo=True)
 
 
 async def run_bot():
-    log = logging.getLogger()
-    engine = create_engine()
-    try:
-        engine = create_engine()
-    except Exception as e:
-        log.exception('Failed to create database pool', exc_info=e)
-        return
+    # log = logging.getLogger()
+    # engine = create_engine()
+    # try:
+    #     engine = create_engine()
+    # except Exception as e:
+    #     log.exception('Failed to create database pool', exc_info=e)
+    #     return
 
-    async with LatteMaid() as bot:
-        bot.db_engine = engine
-        bot.db_session = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
-        bot._debug = config.debug
+    async with LatteMaid(debug_mode=True) as bot:
+        # bot.db_engine = engine
+        # bot.db_session = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
         await bot.start()
 
     # TODO: webhook notify on bot start/stop
 
 
 if __name__ == '__main__':
-    if config.debug:
-        logging.basicConfig(level=logging.DEBUG, format=f'%(asctime)s:%(levelname)s:%(name)s: %(message)s')
     main()

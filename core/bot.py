@@ -20,13 +20,15 @@ from discord.utils import MISSING
 from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
-from utils.config import Config
-from utils.encryption import Encryption
-from utils.enums import CDN, Emoji, Theme
 
 from .i18n import Translator, _
-from .tree import LatteTreeMaid
+from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
+
+# from core.utils.config import Config
+# from utils.encryption import Encryption
+# from utils.enums import CDN, Emoji, Theme
+
 
 # from utils.ui import interaction_error_handler
 
@@ -47,12 +49,12 @@ os.environ['JISHAKU_HIDE'] = 'True'
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
-    'cogs.jsk',
-    'cogs.admin',
-    'cogs.events',
-    'cogs.help',
-    'cogs.about',
-    # 'cogs.valorant',
+    # 'cogs.jsk',
+    # 'cogs.admin',
+    # 'cogs.events',
+    # 'cogs.help',
+    # 'cogs.about',
+    'cogs.valorant',
     # 'cogs.role_connection',
     # 'cogs.ipc',
     # 'cogs.test',
@@ -61,14 +63,13 @@ INITIAL_EXTENSIONS: Tuple[str, ...] = (
 
 class LatteMaid(commands.AutoShardedBot):
     if TYPE_CHECKING:
-        tree: LatteTreeMaid
+        tree: LatteMaidTree
 
     db_session: async_sessionmaker[AsyncSession]
     db_engine: AsyncEngine
     bot_app_info: discord.AppInfo
-    valorant_client: valorantx.Client
 
-    def __init__(self) -> None:
+    def __init__(self, debug_mode: bool = False) -> None:
         # intents
         intents = discord.Intents.default()
         intents.typing = False  # guild_typing and dm_typing
@@ -83,30 +84,30 @@ class LatteMaid(commands.AutoShardedBot):
             case_insensitive=True,
             intents=intents,
             description=description,
-            application_id=config.client_id,
-            tree_cls=LatteTreeMaid,
+            # application_id=config.client_id,
+            tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
 
         # bot stuff
         # self.launch_time: str = f'<t:{round(datetime.datetime.now().timestamp())}:R>'
-        self._debug: bool = False
+        self._debug_mode: bool = debug_mode
         self._version: str = '1.0.0a'
 
         # assets
-        self.theme: Type[Theme] = Theme
-        self.emoji: Type[Emoji] = Emoji
-        self.cdn: Type[CDN] = CDN
+        # self.theme: Type[Theme] = Theme
+        # self.emoji: Type[Emoji] = Emoji
+        # self.cdn: Type[CDN] = CDN
 
         # bot invite link
         self._permission_invite: int = 280576
-        self.invite_url = discord.utils.oauth_url(
-            self.application_id or self.config.application_id,
-            permissions=discord.Permissions(self._permission_invite),
-        )
+        # self.invite_url = discord.utils.oauth_url(
+        #     self.application_id or self.config.application_id,
+        #     permissions=discord.Permissions(self._permission_invite),
+        # )
 
         # support guild
-        self.support_guild_id: int = config.guild_id
+        self.support_guild_id: int = os.getenv('SUPPORT_GUILD_ID')
         self.support_invite_url: str = 'https://discord.gg/xeVJYRDY'
 
         # oauth2
@@ -118,7 +119,7 @@ class LatteMaid(commands.AutoShardedBot):
         self.maintenance_time: Optional[datetime.datetime] = None
 
         # encryption
-        self.encryption: Encryption = Encryption(config.cryptography)
+        # self.encryption: Encryption = Encryption(config.cryptography)
 
         # i18n
         self.translator: Translator = MISSING
@@ -130,11 +131,11 @@ class LatteMaid(commands.AutoShardedBot):
         self._app_commands: Dict[str, Union[app_commands.AppCommand, app_commands.AppCommandGroup]] = {}
 
         # valorantx
-        self.riot_username: str = config.riot_username
-        self.riot_password: str = config.riot_password
+        # self.riot_username: str = config.riot_username
+        # self.riot_password: str = config.riot_password
 
         # config
-        self.blacklist: Config[bool] = Config('blacklist.json')
+        # self.blacklist: Config[bool] = Config('blacklist.json')
 
         # colour
         self.colors: Dict[str, List[discord.Colour]] = {}
@@ -240,7 +241,7 @@ class LatteMaid(commands.AutoShardedBot):
             + f'servers: {len(self.guilds)} '
             + f'users: {sum(guild.member_count for guild in self.guilds if guild.member_count is not None)}'
         )
-        if self.is_debug():
+        if self.is_debug_mode():
             await self.change_presence(
                 activity=discord.Activity(type=discord.ActivityType.listening, name='latte maid is in debug mode'),
                 status=discord.Status.idle,
@@ -255,9 +256,9 @@ class LatteMaid(commands.AutoShardedBot):
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         _log.exception('Ignoring exception in %s', event_method)
 
-    @discord.utils.cached_property
-    def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
-        return self.get_channel(config.traceback_channel_id)
+    # @discord.utils.cached_property
+    # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
+    #     return self.get_channel(config.traceback_channel_id)
 
     async def add_to_blacklist(self, object_id: int):
         await self.blacklist.put(object_id, True)
@@ -381,8 +382,8 @@ class LatteMaid(commands.AutoShardedBot):
     def is_maintenance(self) -> bool:
         return self._is_maintenance
 
-    def is_debug(self) -> bool:
-        return self._debug
+    def is_debug_mode(self) -> bool:
+        return self._debug_mode
 
     # @property
     # def version(self) -> str:
@@ -392,9 +393,9 @@ class LatteMaid(commands.AutoShardedBot):
     # def version(self, value: str) -> None:
     #     self._version = value
 
-    @property
-    def config(self):
-        return __import__('config')
+    # @property
+    # def config(self):
+    #     return __import__('config')
 
     async def close(self) -> None:
         await self.cogs_unload()
@@ -404,4 +405,4 @@ class LatteMaid(commands.AutoShardedBot):
         await super().close()
 
     async def start(self) -> None:
-        await super().start(token=config.token, reconnect=True)
+        await super().start(token=os.getenv('DISCORD_TOKEN'), reconnect=True)

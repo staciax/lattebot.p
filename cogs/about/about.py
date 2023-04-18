@@ -31,8 +31,8 @@ class About(commands.Cog, name='about'):
 
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        self.emoji = bot.emoji
-        self.cdn = bot.cdn
+        # self.emoji = bot.emoji
+        # self.cdn = bot.cdn
         self.process = psutil.Process()
 
     @property
