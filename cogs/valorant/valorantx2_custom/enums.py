@@ -1,25 +1,25 @@
-from __future__ import annotations
+# from __future__ import annotations
 
-from enum import Enum, IntEnum
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+# from enum import Enum, IntEnum
+# from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-import valorantx2 as valorantx
+# import valorantx2 as valorantx
 
-if TYPE_CHECKING:
-    from typing_extensions import Self
+# if TYPE_CHECKING:
+#     from typing_extensions import Self
 
 
-__all__: Tuple[str, ...] = (
-    'AgentEmoji',
-    'AbilitiesEmoji',
-    'GameModeEmoji',
-    'ContentTierEmoji',
-    'RoundResultEmoji',
-    'TierEmoji',
-    'PointEmoji',
-    'ResultColor',
-    'DiscordValorantLocale',
-)
+# __all__: Tuple[str, ...] = (
+#     'AgentEmoji',
+#     'AbilitiesEmoji',
+#     'GameModeEmoji',
+#     'ContentTierEmoji',
+#     'RoundResultEmoji',
+#     'TierEmoji',
+#     'PointEmoji',
+#     'ResultColor',
+#     'DiscordValorantLocale',
+# )
 
 
 # class AgentEmoji(str, Enum):

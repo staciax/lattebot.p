@@ -1,10 +1,21 @@
-from typing import Any, Optional, Tuple
+import asyncio
+from typing import Tuple  # Any, Optional,
 
 import valorantx2 as valorantx
-from valorantx2.client import _authorize_required
+from valorantx2 import Locale
+from valorantx2.client import _loop
+from valorantx2.enums import try_enum
+from valorantx2.http import HTTPClient
+from valorantx2.models.user import ClientUser
+from valorantx2.utils import MISSING
+from valorantx2.valorant_api.models.version import Version as ValorantAPIVersion
+
+from .valorant_api_client import Client as ValorantAPIClient
+
+# from valorantx2.client import _authorize_required
 
 # from valorantx2.ext.scrapers import PatchNote
-from valorantx2.http import Route
+# from valorantx2.http import Route
 
 # from .custom import Agent, CompetitiveTier, ContentTier, Currency, GameMode, MatchDetails, PartialAccount, Player
 
@@ -14,14 +25,20 @@ __all__: Tuple[str, ...] = (
 )
 # fmt: on
 
+
 # valorantx Client customized for lattemaid
-
-
 class Client(valorantx.Client):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(locale=valorantx.Locale.thai, **kwargs)
-        # self._is_authorized = True
-        # self.user = valorantx.utils.MISSING
+    def __init__(self, locale=valorantx.Locale.english) -> None:
+        self.locale: Locale = try_enum(Locale, locale) if isinstance(locale, str) else locale
+        self.loop: asyncio.AbstractEventLoop = _loop
+        self.http: HTTPClient = HTTPClient(self.loop)
+        self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
+        self.me: ClientUser = MISSING
+        self._closed: bool = False
+        self._is_authorized: bool = False
+        self._ready: asyncio.Event = MISSING
+        self._version: ValorantAPIVersion = MISSING
+        self._is_authorized = True
         # self.lock = asyncio.Lock()
 
     # patch note
