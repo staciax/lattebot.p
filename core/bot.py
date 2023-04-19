@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-import io
+
+# import io
 import logging
 import os
 import traceback
@@ -33,10 +34,11 @@ from .utils.colorthief import ColorThief
 # from utils.ui import interaction_error_handler
 
 if TYPE_CHECKING:
-    from cogs.about import About
-    from cogs.admin import Developer
-    from cogs.jsk import Jishaku
-    from cogs.valorant import Valorant
+    ...
+    # from cogs.about import About
+    # from cogs.admin import Developer
+    # from cogs.jsk import Jishaku
+    # from cogs.valorant import Valorant
 
 load_dotenv()
 
@@ -49,7 +51,7 @@ os.environ['JISHAKU_HIDE'] = 'True'
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
-    # 'cogs.jsk',
+    'cogs.jsk',
     # 'cogs.admin',
     # 'cogs.events',
     # 'cogs.help',
@@ -107,7 +109,7 @@ class LatteMaid(commands.AutoShardedBot):
         # )
 
         # support guild
-        self.support_guild_id: int = os.getenv('SUPPORT_GUILD_ID')
+        self.support_guild_id: int = 1097859504906965042
         self.support_invite_url: str = 'https://discord.gg/xeVJYRDY'
 
         # oauth2
@@ -156,11 +158,11 @@ class LatteMaid(commands.AutoShardedBot):
             raise ValueError('Support guild ID is not set.')
         return self.get_guild(self.support_guild_id)
 
-    @discord.utils.cached_property
-    def webhook(self) -> discord.Webhook:
-        wh_id, wh_token = self.config.stat_webhook
-        hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
-        return hook
+    # @discord.utils.cached_property
+    # def webhook(self) -> discord.Webhook:
+    #     wh_id, wh_token = self.config.stat_webhook
+    #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
+    #     return hook
 
     async def cogs_load(self) -> None:
         """Load cogs."""
@@ -260,30 +262,30 @@ class LatteMaid(commands.AutoShardedBot):
     # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
     #     return self.get_channel(config.traceback_channel_id)
 
-    async def add_to_blacklist(self, object_id: int):
-        await self.blacklist.put(object_id, True)
+    # async def add_to_blacklist(self, object_id: int):
+    #     await self.blacklist.put(object_id, True)
 
-    async def remove_from_blacklist(self, object_id: int):
-        try:
-            await self.blacklist.remove(object_id)
-        except KeyError:
-            pass
+    # async def remove_from_blacklist(self, object_id: int):
+    #     try:
+    #         await self.blacklist.remove(object_id)
+    #     except KeyError:
+    #         pass
 
-    @property
-    def about(self) -> Optional[About]:
-        return self.get_cog('about')
+    # @property
+    # def about(self) -> Optional[About]:
+    #     return self.get_cog('about')
 
-    @property
-    def developer(self) -> Optional[Developer]:
-        return self.get_cog('developer')
+    # @property
+    # def developer(self) -> Optional[Developer]:
+    #     return self.get_cog('developer')
 
-    @property
-    def valorant(self) -> Optional[Valorant]:
-        return self.get_cog('valorant')
+    # @property
+    # def valorant(self) -> Optional[Valorant]:
+    #     return self.get_cog('valorant')
 
-    @property
-    def jsk(self) -> Optional[Jishaku]:
-        return self.get_cog('jishaku')
+    # @property
+    # def jsk(self) -> Optional[Jishaku]:
+    #     return self.get_cog('jishaku')
 
     async def get_db_session(self) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
         try:
@@ -292,37 +294,37 @@ class LatteMaid(commands.AutoShardedBot):
             _log.exception(e)
 
     # https://github.com/Rapptz/RoboDanny/blob/5a9c02560048d5605701be4835e8d4ef2407c646/bot.py#L226
-    async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
-        """Looks up a member in cache or fetches if not found.
-        Parameters
-        -----------
-        guild: Guild
-            The guild to look in.
-        member_id: int
-            The member ID to search for.
-        Returns
-        ---------
-        Optional[Member]
-            The member or None if not found.
-        """
+    # async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
+    #     """Looks up a member in cache or fetches if not found.
+    #     Parameters
+    #     -----------
+    #     guild: Guild
+    #         The guild to look in.
+    #     member_id: int
+    #         The member ID to search for.
+    #     Returns
+    #     ---------
+    #     Optional[Member]
+    #         The member or None if not found.
+    #     """
 
-        member = guild.get_member(member_id)
-        if member is not None:
-            return member
+    #     member = guild.get_member(member_id)
+    #     if member is not None:
+    #         return member
 
-        shard: discord.ShardInfo = self.get_shard(guild.shard_id)  # type: ignore  # will never be None
-        if shard.is_ws_ratelimited():
-            try:
-                member = await guild.fetch_member(member_id)
-            except discord.HTTPException:
-                return None
-            else:
-                return member
+    #     shard: discord.ShardInfo = self.get_shard(guild.shard_id)  # type: ignore  # will never be None
+    #     if shard.is_ws_ratelimited():
+    #         try:
+    #             member = await guild.fetch_member(member_id)
+    #         except discord.HTTPException:
+    #             return None
+    #         else:
+    #             return member
 
-        members = await guild.query_members(limit=1, user_ids=[member_id], cache=True)
-        if not members:
-            return None
-        return members[0]
+    #     members = await guild.query_members(limit=1, user_ids=[member_id], cache=True)
+    #     if not members:
+    #         return None
+    #     return members[0]
 
     async def fetch_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         """Fetch all application commands."""
@@ -344,40 +346,41 @@ class LatteMaid(commands.AutoShardedBot):
     def get_app_command(self, name: str) -> Optional[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return self._app_commands.get(name)
 
-    def get_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
+    @property
+    def app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
 
-    def get_colors(self, id: str) -> List[discord.Colour]:
-        """Returns the colors of the image."""
-        if id in self.colors:
-            return self.colors[id]
-        return []
+    # def get_colors(self, id: str) -> List[discord.Colour]:
+    #     """Returns the colors of the image."""
+    #     if id in self.colors:
+    #         return self.colors[id]
+    #     return []
 
-    def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
-        """Sets the colors of the image."""
-        self.colors[id] = color
-        return color
+    # def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
+    #     """Sets the colors of the image."""
+    #     self.colors[id] = color
+    #     return color
 
-    async def get_or_fetch_colors(
-        self,
-        id: str,
-        image: Union[discord.Asset, str],
-        palette: int = 0,
-    ) -> List[discord.Colour]:
-        """Returns the colors of the image."""
-        colors = self.get_colors(id)
-        if colors is not None:
-            return colors
-        if not isinstance(image, discord.Asset):
-            state = self._get_state()
-            image = discord.Asset(state, url=str(image), key=id)
-        file = await image.to_file(filename=id)
-        to_bytes = file.fp
-        if palette > 0:
-            colors = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
-        else:
-            colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
-        return self.store_colors(id, colors)
+    # async def get_or_fetch_colors(
+    #     self,
+    #     id: str,
+    #     image: Union[discord.Asset, str],
+    #     palette: int = 0,
+    # ) -> List[discord.Colour]:
+    #     """Returns the colors of the image."""
+    #     colors = self.get_colors(id)
+    #     if colors is not None:
+    #         return colors
+    #     if not isinstance(image, discord.Asset):
+    #         state = self._get_state()
+    #         image = discord.Asset(state, url=str(image), key=id)
+    #     file = await image.to_file(filename=id)
+    #     to_bytes = file.fp
+    #     if palette > 0:
+    #         colors = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
+    #     else:
+    #         colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
+    #     return self.store_colors(id, colors)
 
     def is_maintenance(self) -> bool:
         return self._is_maintenance
@@ -401,8 +404,10 @@ class LatteMaid(commands.AutoShardedBot):
         await self.cogs_unload()
         await self.db_engine.dispose()
         await self.session.close()
-        await self.valorant_client.close()
         await super().close()
 
     async def start(self) -> None:
-        await super().start(token=os.getenv('DISCORD_TOKEN'), reconnect=True)
+        token = os.getenv('DISCORD_TOKEN') if self.is_debug_mode() else os.getenv('DISCORD_TOKEN_PROD')
+        if token is None:
+            raise RuntimeError('No token provided.')
+        await super().start(token=token, reconnect=True)
