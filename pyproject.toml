@@ -12,3 +12,9 @@ line_length = 120
 asyncio_mode = "strict"
 # testpaths = tests
 # pythonpath = "."
+
+[tool.pyright]
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUnusedImport = "error"
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
