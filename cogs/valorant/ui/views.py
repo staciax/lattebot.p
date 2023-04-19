@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from core.bot import LatteMaid
 
     from ..valorantx2_custom import Client as ValorantClient
+    from .embeds import Embed
 
 
 class ButtonAccountSwitchX(ui.Button['SwitchView']):
@@ -120,7 +121,7 @@ class StoreSwitchView(SwitchView):
 
     async def build_embeds(
         self, riot_auth: RiotAuth, locale: valorantx.Locale = valorantx.Locale.english
-    ) -> List[discord.Embed]:
+    ) -> List[Embed]:
         sf = await self.v_client.fetch_store_front()
         embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=locale)
         return embeds

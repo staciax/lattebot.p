@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from valorantx2.valorant_api_cache import CacheState as ValorantAPICacheState
 
-from .custom import ContentTier
+from .models import ContentTier
 
 if TYPE_CHECKING:
     from valorantx2.valorant_api.types import content_tiers
