@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List
 import aiohttp
 import discord
 import valorantx2 as valorantx
+from async_lru import alru_cache
 from discord import app_commands
 from discord.app_commands import Choice, locale_str as _T
 
@@ -17,7 +18,7 @@ import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
 
 from .abc import ValorantCog
-from .ui.views import NightMarketSwitchView, StoreSwitchView
+from .ui.views import FeaturedBundleView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
 from .valorantx2_custom import Client as ValorantClient
 
 if TYPE_CHECKING:
@@ -51,6 +52,19 @@ class Valorant(ValorantCog):
 
     async def cog_unload(self) -> None:
         await self.v_client.close()
+
+    @alru_cache(maxsize=1, ttl=60 * 60 * 12)
+    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle | None]:
+        # TODO: cache re-use
+        # try:
+        #     v_user = await self.fetch_user(id=self.bot.owner_id)  # super user
+        # except NoAccountsLinked:
+        #     riot_acc = RiotAuth(self.bot.owner_id, self.bot.support_guild_id, bot=self.bot)
+        #     await riot_acc.authorize(username=self.bot.riot_username, password=self.bot.riot_password)
+        # else:
+        #     riot_acc = v_user.get_account()
+        data = await self.v_client.fetch_store_front()
+        return data.bundles
 
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
     @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
@@ -171,14 +185,19 @@ class Valorant(ValorantCog):
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def bundles(self, interaction: discord.Interaction) -> None:
-        ...
+    async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await interaction.response.defer()
+        bundles = await self.fetch_featured_bundle()
+        select_view = FeaturedBundleView(interaction, bundles)
+        await select_view.start()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def point(self, interaction: discord.Interaction) -> None:
-        ...
+    async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
+        await interaction.response.defer(ephemeral=private)
+        wallet = WalletSwitchView(interaction, self.v_client)
+        await wallet.start()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()

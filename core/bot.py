@@ -24,8 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from .i18n import Translator, _
 from .tree import LatteMaidTree
-
-# from .utils.colorthief import ColorThief
+from .utils.colorthief import ColorThief
 
 # from core.utils.config import Config
 # from utils.encryption import Encryption
@@ -352,37 +351,37 @@ class LatteMaid(commands.AutoShardedBot):
     def app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
 
-    # def get_colors(self, id: str) -> List[discord.Colour]:
-    #     """Returns the colors of the image."""
-    #     if id in self.colors:
-    #         return self.colors[id]
-    #     return []
+    def get_colors(self, id: str) -> List[discord.Colour]:
+        """Returns the colors of the image."""
+        if id in self.colors:
+            return self.colors[id]
+        return []
 
-    # def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
-    #     """Sets the colors of the image."""
-    #     self.colors[id] = color
-    #     return color
+    def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
+        """Sets the colors of the image."""
+        self.colors[id] = color
+        return color
 
-    # async def get_or_fetch_colors(
-    #     self,
-    #     id: str,
-    #     image: Union[discord.Asset, str],
-    #     palette: int = 0,
-    # ) -> List[discord.Colour]:
-    #     """Returns the colors of the image."""
-    #     colors = self.get_colors(id)
-    #     if colors is not None:
-    #         return colors
-    #     if not isinstance(image, discord.Asset):
-    #         state = self._get_state()
-    #         image = discord.Asset(state, url=str(image), key=id)
-    #     file = await image.to_file(filename=id)
-    #     to_bytes = file.fp
-    #     if palette > 0:
-    #         colors = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
-    #     else:
-    #         colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
-    #     return self.store_colors(id, colors)
+    async def get_or_fetch_colors(
+        self,
+        id: str,
+        image: Union[discord.Asset, str],
+        palette: int = 0,
+    ) -> List[discord.Colour]:
+        """Returns the colors of the image."""
+        colors = self.get_colors(id)
+        if colors is not None:
+            return colors
+        if not isinstance(image, discord.Asset):
+            state = self._get_state()
+            image = discord.Asset(state, url=str(image), key=id)
+        file = await image.to_file(filename=id)
+        to_bytes = file.fp
+        if palette > 0:
+            colors = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
+        else:
+            colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
+        return self.store_colors(id, colors)
 
     def is_maintenance(self) -> bool:
         return self._is_maintenance
