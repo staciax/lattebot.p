@@ -20,13 +20,13 @@ class Errors(commands.Cog, name='errors'):
         self.bot = bot
 
     @commands.Cog.listener('on_app_command_error')
-    async def on_app_command_error(self, interaction: discord.Interaction, error: AppCommandError) -> None:
+    async def on_app_command_error(self, interaction: discord.Interaction[LatteMaid], error: AppCommandError) -> None:
         print(error)
 
     @commands.Cog.listener('on_view_error')
-    async def on_view_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
+    async def on_view_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, item: discord.ui.Item) -> None:
         print(error)
 
     @commands.Cog.listener('on_modal_error')
-    async def on_modal_error(self, interaction: discord.Interaction, error: Exception, modal: discord.ui.Modal) -> None:
+    async def on_modal_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, modal: discord.ui.Modal) -> None:
         print(error)
