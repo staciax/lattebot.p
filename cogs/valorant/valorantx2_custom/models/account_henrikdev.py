@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Tuple
 
+from valorantx2 import ClientUser
+
 if TYPE_CHECKING:
     from valorantx2.valorant_api.models import PlayerCard
 
@@ -11,38 +13,42 @@ if TYPE_CHECKING:
 
 # fmt: off
 __all__: Tuple[str, ...] = (
-    'PartialAccount',
+    'PartialUser',
 )
 # fmt: on
 
 
-class PartialAccount:
-    puuid: str
-    region: str
+class PartialUser(ClientUser):
     account_level: int
-    name: str
-    tag: str
     player_card: Optional[PlayerCard]
     _last_update: str
     _last_update_raw: int
 
-    __slots__ = (
-        'puuid',
-        'region',
-        'account_level',
-        'name',
-        'tag',
-        'player_card',
-        '_last_update',
-        '_last_update_raw',
-    )
-
-    def __init__(self, state: Cache, data: AccountPayload) -> None:
-        self.player_card: Optional[PlayerCard] = None
+    def __init__(self, *, state: Cache, data: AccountPayload) -> None:
         self._update(state, data)
 
     def __repr__(self) -> str:
-        return f'<PartialAccount puuid={self.puuid!r} name={self.name!r} tag={self.tag!r}>'
+        return f'<PartialUser puuid={self.puuid!r} name={self.name!r} tag={self.tag!r}>'
+
+    def _update(self, state: Cache, data: AccountPayload) -> None:
+        self.puuid: str = data['puuid']
+        self._username = data.get('name')
+        self._tagline = data['tag']
+        self._region = data.get('region')
+        self.account_level: int = data.get('account_level', 0)
+        self.player_card: Optional[PlayerCard] = state.get_player_card(data.get('card', {}).get('id'))
+        self._last_update: str = data.get('last_update')
+        self._last_update_raw: int = data.get('last_update_raw')
+
+    @property
+    def name(self) -> Optional[str]:
+        """:class:`str`: The account's name."""
+        return self._username
+
+    @property
+    def tag(self) -> Optional[str]:
+        """:class:`str`: The account's tag."""
+        return self._tagline
 
     @property
     def riot_id(self) -> str:
@@ -53,16 +59,6 @@ class PartialAccount:
     def last_update(self) -> datetime:
         """:class:`datetime.datetime`: The last time the account was updated."""
         return datetime.fromtimestamp(self._last_update_raw / 1000)
-
-    def _update(self, state: Cache, data: AccountPayload) -> None:
-        self.puuid: str = data['puuid']
-        self.region: str = data['region']
-        self.account_level: int = data['account_level']
-        self.name: str = data['name']
-        self.tag: str = data['tag']
-        self.player_card: Optional[PlayerCard] = state.get_player_card(data['card']['id'])
-        self._last_update: str = data['last_update']
-        self._last_update_raw: int = data['last_update_raw']
 
 
 # class Player(valorantx.Player):

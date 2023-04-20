@@ -1,43 +1,71 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Optional, Tuple, TypeVar
 
 import discord
 from discord import Interaction, app_commands
+from discord.app_commands.checks import (
+    Cooldown as Cooldown,
+    _create_cooldown_decorator as _create_cooldown_decorator,
+    bot_has_permissions as bot_has_permissions,
+    cooldown as cooldown,
+    dynamic_cooldown as dynamic_cooldown,
+    has_any_role as has_any_role,
+    has_permissions as has_permissions,
+    has_role as has_role,
+)
 
 if TYPE_CHECKING:
     from .bot import LatteMaid
 
 __all__: Tuple[str, ...] = (
     'owner_only',
-    'cooldown_5s',
-    'cooldown_10s',
+    'Cooldown',
+    'bot_has_permissions',
+    'cooldown',
+    'dynamic_cooldown',
+    'has_any_role',
+    'has_permissions',
+    'has_role',
+    'cooldown_short',
+    'cooldown_medium',
+    'cooldown_long',
     'custom_cooldown',
 )
 
+T = TypeVar('T')
 
-def owner_only() -> app_commands.check:
+
+def owner_only() -> Callable[[T], T]:
     async def actual_check(interaction: Interaction[LatteMaid]):
         return await interaction.client.is_owner(interaction.user)
 
     return app_commands.check(actual_check)
 
 
-def cooldown_5s(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
     if interaction.user == interaction.client.owner:
         return None
     return app_commands.Cooldown(1, 5)
 
 
-def cooldown_10s(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
     if interaction.user == interaction.client.owner:
         return None
     return app_commands.Cooldown(1, 10)
 
 
+def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+    if interaction.user == interaction.client.owner:
+        return None
+    return app_commands.Cooldown(1, 20)
+
+
 def custom_cooldown(
     interaction: discord.Interaction[LatteMaid], rate: float, per: float
 ) -> Optional[app_commands.Cooldown]:
-    if interaction.user == interaction.client.owner:
-        return None
     return app_commands.Cooldown(rate, per)
+
+
+# def x():
+#     return dynamic_cooldown(cooldown_short)

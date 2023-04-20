@@ -1,82 +1,19 @@
 # from __future__ import annotations
 
-# from typing import TYPE_CHECKING, List
+# from typing import Any, Dict, List, Mapping, Optional, Tuple,  Union
 
-# fmt: off
-# from valorantx2.valorant_api.models import (
-#     CompetitiveTier as ValorantAPICompetitiveTier,
-#     ContentTier as ValorantAPIContentTier,
-#     Tier as ValorantAPITier,
-# )
+# from .enums import GameModeEmoji, PointEmoji, RoundResultEmoji
 
-# from .emojis import get_content_tier_emoji, get_tier_emoji
-
-# fmt: on
-
-# if TYPE_CHECKING:
-#     from valorantx2.valorant_api.types.competitive_tiers import CompetitiveTier as CompetitiveTierPayload
-
-#     from .valorant_api_cache import Cache
-
-# import datetime
-# from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, TypedDict, Union
-# from uuid import UUID
-
-# from .enums import AbilitiesEmoji, AgentEmoji, ContentTierEmoji, GameModeEmoji, PointEmoji, RoundResultEmoji, TierEmoji
-
-# # from valorantx2 import CurrencyType, GameModeType, Localization
-# # from valorantx2.models import match
+# from valorantx2 import CurrencyType, GameModeType, Localization
+# from valorantx2.models import match
 
 # __all__: Tuple[str, ...] = (
-#     'Ability',
-#     'Agent',
 #     'Currency',
-#     'Tier',
-#     'CompetitiveTier',
-#     'ContentTier',
 #     'MatchRoundResult',
 #     'GameMode',
 #     'MatchDetails',
 #     'MatchDetails',
-#     'PartialAccount',
-#     'Player',
 # )
-
-
-# class Ability(valorantx.AgentAbility):
-#     def __init__(self, client: Client, data: Dict[str, Any], agent: Optional[valorantx.Agent] = None) -> None:
-#         super().__init__(client, data)
-#         self.emoji_key: str = '' if agent is None else self.__build_emoji_key(agent.display_name.default)
-
-#     def __build_emoji_key(self, value: str) -> str:
-#         return (
-#             (value.lower() + '_' + self.display_name.default.lower())
-#             .replace('/', '_')
-#             .replace(' ', '_')
-#             .replace('___', '_')
-#             .replace('__', '_')
-#             .replace("'", '')
-#         )
-
-#     @property
-#     def emoji(self) -> str:
-#         return AbilitiesEmoji.get(self.emoji_key)
-
-
-# class Agent(valorantx.Agent):
-#     @property
-#     def abilities(self) -> List[Ability]:
-#         # TODO: remove this property in the next version
-#         return self.get_abilities()
-
-#     def get_abilities(self) -> List[Ability]:
-#         """:class: `List[AgentAbility]` Returns the agent's abilities."""
-#         return [Ability(client=self._client, data=ability, agent=self) for ability in self._abilities]
-
-#     @property
-#     def emoji(self) -> str:
-#         return AgentEmoji.get(self.display_name.default)
-
 
 # class Currency(valorantx.Currency):
 #     @property

@@ -14,9 +14,10 @@ from discord.app_commands import Choice, locale_str as _T
 from valorantx2.errors import RiotMultifactorError
 
 import core.utils.chat_formatting as chat
+from core.checks import cooldown_short, dynamic_cooldown
 
 from .abc import ValorantCog
-from .ui.views import StoreSwitchView
+from .ui.views import NightMarketSwitchView, StoreSwitchView
 from .valorantx2_custom import Client as ValorantClient
 
 if TYPE_CHECKING:
@@ -52,10 +53,10 @@ class Valorant(ValorantCog):
         await self.v_client.close()
 
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
-    # @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
-    # @app_commands.rename(username=_T('username'), password=_T('password'))
-    # @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_5s)
+    @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
+    @app_commands.rename(username=_T('username'), password=_T('password'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
     async def login(
         self,
         interaction: discord.Interaction,
@@ -67,7 +68,6 @@ class Valorant(ValorantCog):
         # TODO: TOS, privacy policy
 
         # try_auth = RiotAuth()
-
         try:
             await self.v_client.authorize(username.strip(), password.strip())  # remember=True
         except RiotMultifactorError:
@@ -128,7 +128,7 @@ class Valorant(ValorantCog):
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
     @app_commands.rename(number=_T('account'))
     @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def logout(self, interaction: discord.Interaction[LatteMaid], number: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
@@ -154,60 +154,62 @@ class Valorant(ValorantCog):
 
     @app_commands.command(name=_T('store'), description=_T('Shows your daily store in your accounts'))
     @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
         view = StoreSwitchView(interaction, self.v_client)
         await view.start()
 
-    # @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def nightmarket(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def nightmarket(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await interaction.response.defer()
+        view = NightMarketSwitchView(interaction, self.v_client)
+        await view.start()
 
-    # @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def battlepass(self, interaction: discord.Interaction, season: str | None = None) -> None:
-    #     ...
+    @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def bundles(self, interaction: discord.Interaction) -> None:
+        ...
 
-    # @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def eventpass(self, interaction: discord.Interaction, event: str | None = None) -> None:
-    #     ...
+    @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def point(self, interaction: discord.Interaction) -> None:
+        ...
 
-    # @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def point(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
+    @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_short)
+    async def battlepass(self, interaction: discord.Interaction, season: str | None = None) -> None:
+        ...
 
-    # @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def bundles(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
+    @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_short)
+    async def eventpass(self, interaction: discord.Interaction, event: str | None = None) -> None:
+        ...
 
-    # @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def mission(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
+    @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_short)
+    async def mission(self, interaction: discord.Interaction) -> None:
+        ...
 
-    # @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def collection(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def collection(self, interaction: discord.Interaction) -> None:
+        ...
 
-    # @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
-    # async def agents(self, interaction: discord.Interaction) -> None:
-    #     await interaction.response.defer()
-    #     ...
+    @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def agents(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer()
+        ...
 
     # @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
     # @app_commands.choices(
@@ -226,7 +228,7 @@ class Valorant(ValorantCog):
     # @app_commands.describe(mode=_T('The queue to show your carrier for'))
     # @app_commands.rename(mode=_T('mode'))
     # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def carrier(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
     #     ...
 
@@ -247,13 +249,13 @@ class Valorant(ValorantCog):
     # @app_commands.describe(mode=_T('The queue to show your latest match for'))
     # @app_commands.rename(mode=_T('mode'))
     # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
     #     ...
 
     # @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def patchnote(self, interaction: discord.Interaction) -> None:
     #     ...
 
@@ -262,14 +264,14 @@ class Valorant(ValorantCog):
     # @app_commands.command(name=_T('agent'), description=_T('View agent info'))
     # @app_commands.guild_only()
     # @app_commands.rename(agent='agent')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def agent(self, interaction: discord.Interaction, agent: str | None = None) -> None:
     #     ...
 
     # @app_commands.command(name=_T('buddy'), description=_T('View buddy info'))
     # @app_commands.guild_only()
     # @app_commands.rename(buddy='buddy')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def buddy(self, interaction: discord.Interaction, buddy: str | None = None) -> None:
     #     ...
 
@@ -277,14 +279,14 @@ class Valorant(ValorantCog):
     # @app_commands.describe(bundle="The name of the bundle you want to inspect!")
     # @app_commands.rename(bundle=_T('bundle'))
     # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def bundle(self, interaction: discord.Interaction, bundle: str | None = None) -> None:
     #     ...
 
     # @app_commands.command(name=_T('spray'), description=_T('View spray info'))
     # @app_commands.guild_only()
     # @app_commands.rename(spray='spray')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def spray(self, interaction: discord.Interaction, spray: str | None = None) -> None:
     #     ...
 
@@ -292,27 +294,27 @@ class Valorant(ValorantCog):
 
     # @player.command(name=_T('card'), description=_T('View player card'))
     # @app_commands.rename(card='card')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def player_card(self, interaction: discord.Interaction, card: str | None = None) -> None:
     #     ...
 
     # @player.command(name=_T('title'), description=_T('View player title'))
     # @app_commands.rename(title='title')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def player_title(self, interaction: discord.Interaction) -> None:
     #     ...
 
     # @app_commands.command(name=_T('weapon'), description=_T('View weapon info'))
     # @app_commands.guild_only()
     # @app_commands.rename(weapon='weapon')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def weapon(self, interaction: discord.Interaction, weapon: str | None = None) -> None:
     #     ...
 
     # @app_commands.command(name=_T('skin'), description=_T('View skin info'))
     # @app_commands.guild_only()
     # @app_commands.rename(skin='skin')
-    # # @dynamic_cooldown(cooldown_5s)
+    # # @dynamic_cooldown(cooldown_short)
     # async def skin(self, interaction: discord.Interaction, skin: str | None = None) -> None:
     #     ...
 
@@ -450,13 +452,13 @@ class Valorant(ValorantCog):
     # )
     # @app_commands.describe(queue=_T('Choose the queue'))
     # @app_commands.rename(queue=_T('queue'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # @app_commands.guild_only()
     # async def stats(self, interaction: Interaction, queue: Choice[str] = "null") -> None:
     #     await interaction.response.defer()
 
     # @app_commands.describe(queue=_T('Party commands'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # @app_commands.guild_only()
     # async def party(self, interaction: Interaction) -> None:
     #     await interaction.response.defer()
@@ -464,22 +466,22 @@ class Valorant(ValorantCog):
     # party = app_commands.Group(name=_T('party'), description=_T('Party commands'), guild_only=True)
     #
     # @party.command(name=_T('invite'), description=_T('Invite a player to your party'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # async def party_invite(self, interaction: Interaction, player: discord.User) -> None:
     #     ...
     #
     # @party.command(name=_T('invite_by_name'), description=_T('Invite a player to your party by name'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # async def party_invite_by_name(self, interaction: Interaction, player: str) -> None:
     #     ...
     #
     # @party.command(name=_T('kick'), description=_T('Kick a player from your party'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # async def party_kick(self, interaction: Interaction, player: discord.User) -> None:
     #     ...
     #
     # @party.command(name=_T('leave'), description=_T('Leave your party'))
-    # @dynamic_cooldown(cooldown_5s)
+    # @dynamic_cooldown(cooldown_short)
     # async def party_leave(self, interaction: Interaction) -> None:
     #     ...
 

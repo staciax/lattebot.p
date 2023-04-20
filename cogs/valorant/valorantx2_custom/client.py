@@ -10,7 +10,7 @@ from valorantx2.utils import MISSING
 from valorantx2.valorant_api.models.version import Version as ValorantAPIVersion
 
 from .http import HTTPClient
-from .models import PartialAccount
+from .models import PartialUser
 from .valorant_api_client import Client as ValorantAPIClient
 
 # from valorantx2.ext.scrapers import PatchNote
@@ -79,8 +79,8 @@ class Client(valorantx.Client):
 
     # # --- end custom for emoji
 
-    async def fetch_partial_account(self, name: str, tagline: str) -> Optional[PartialAccount]:
-        """Fetches a partial account from the API.
+    async def fetch_partial_account(self, name: str, tagline: str) -> Optional[PartialUser]:
+        """Fetches a partial user from the API.
 
         Parameters
         ----------
@@ -101,8 +101,6 @@ class Client(valorantx.Client):
             The account was not found.
         """
         data = await self.http.get_partial_account(name, tagline)
-        if data is None:
+        if data is None or 'data' not in data:
             return None
-        if 'data' not in data:
-            return None
-        return PartialAccount(state=self.valorant_api._cache, data=data['data'])
+        return PartialUser(state=self.valorant_api._cache, data=data['data'])

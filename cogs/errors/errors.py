@@ -21,12 +21,12 @@ class Errors(commands.Cog, name='errors'):
 
     @commands.Cog.listener('on_app_command_error')
     async def on_app_command_error(self, interaction: discord.Interaction, error: AppCommandError) -> None:
-        ...
+        print(error)
 
     @commands.Cog.listener('on_view_error')
     async def on_view_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
-        ...
+        print(error)
 
     @commands.Cog.listener('on_modal_error')
     async def on_modal_error(self, interaction: discord.Interaction, error: Exception, modal: discord.ui.Modal) -> None:
-        ...
+        print(error)

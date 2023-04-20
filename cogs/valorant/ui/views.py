@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import discord
-
-# from async_lru import alru_cache
 import valorantx2 as valorantx
+from async_lru import alru_cache
 from discord import ui
 
 from core.ui.views import ViewAuthor
@@ -16,10 +15,10 @@ from . import embeds as e
 if TYPE_CHECKING:
     from valorantx2 import RiotAuth
 
+    import core.utils.chat_formatting as chat
     from core.bot import LatteMaid
 
     from ..valorantx2_custom import Client as ValorantClient
-    from .embeds import Embed
 
 
 class ButtonAccountSwitchX(ui.Button['SwitchView']):
@@ -104,8 +103,9 @@ class SwitchView(ViewAuthor):
         else:
             await self.safe_edit_message(self.message, view=self)
 
-    async def start(self, **kwargs: Any) -> None:
-        pass
+    async def stop(self) -> None:
+        self.bot.loop.create_task(self.fetch.cache_close())
+        return super().stop()
 
     async def send(self, **kwargs: Any) -> None:
         if self.message is None:
@@ -114,17 +114,22 @@ class SwitchView(ViewAuthor):
         else:
             await self.safe_edit_message(self.message, **kwargs, view=self)
 
+    # @alru_cache(maxsize=5)
+    async def fetch(self, riot_auth: RiotAuth) -> Any:
+        raise NotImplementedError
+
+    async def start(self, **kwargs: Any) -> None:
+        pass
+
 
 class StoreSwitchView(SwitchView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient) -> None:
         super().__init__(interaction, client, user=None, row=0)
 
-    async def build_embeds(
-        self, riot_auth: RiotAuth, locale: valorantx.Locale = valorantx.Locale.english
-    ) -> List[Embed]:
+    # @alru_cache(maxsize=5)
+    async def fetch(self, riot_auth: RiotAuth) -> valorantx.StoreFront:
         sf = await self.v_client.fetch_store_front()
-        embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=locale)
-        return embeds
+        return sf
 
     # @alru_cache(maxsize=32, ttl=60 * 60)
     # async def get_embeds(self, riot_auth: RiotAuth, locale: Optional[valorantx.Locale]) -> List[discord.Embed]:
@@ -132,10 +137,30 @@ class StoreSwitchView(SwitchView):
     #     return store_e(sf.get_store(), riot_auth, locale=locale)
 
     async def start(self) -> None:
-        embeds = await self.build_embeds(self.v_client.http._riot_auth)
+        sf = await self.fetch(self.v_client.http._riot_auth)
+        embeds = e.store_e(
+            sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=valorantx.Locale.english
+        )
         await self.interaction.followup.send(embeds=embeds, view=self)
         # await self.send(embeds=embeds)
 
     # async def on_timeout(self) -> None:
     #     self.get_embeds.cache_clear()
     #     return await super().on_timeout()
+
+
+class NightMarketSwitchView(SwitchView):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient) -> None:
+        super().__init__(interaction, client, user=None, row=0)
+
+    # @alru_cache(maxsize=5)
+    async def fetch(self, riot_auth: RiotAuth) -> valorantx.StoreFront:
+        sf = await self.v_client.fetch_store_front()
+        return sf
+
+    async def start(self) -> None:
+        sf = await self.fetch(self.v_client.http._riot_auth)
+        if sf.bonus_store is None:
+            raise Exception(f"{chat.bold('Nightmarket')} is not available.")
+        embeds = e.nightmarket_e(sf.bonus_store, self.v_client.http._riot_auth, locale=valorantx.Locale.english)
+        await self.send(embeds=embeds)

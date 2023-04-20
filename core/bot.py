@@ -24,7 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from .i18n import Translator, _
 from .tree import LatteMaidTree
-from .utils.colorthief import ColorThief
+
+# from .utils.colorthief import ColorThief
 
 # from core.utils.config import Config
 # from utils.encryption import Encryption
@@ -52,6 +53,7 @@ description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059
 
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.jsk',
+    'cogs.errors',
     # 'cogs.admin',
     # 'cogs.events',
     # 'cogs.help',
