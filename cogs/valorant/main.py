@@ -67,6 +67,10 @@ class Valorant(ValorantCog):
         data = await self.v_client.fetch_store_front()
         return data.bundles
 
+    @alru_cache(ttl=86400, maxsize=32)
+    async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
+        return await self.v_client.fetch_patch_notes()
+
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
     @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
     @app_commands.rename(username=_T('username'), password=_T('password'))
@@ -273,11 +277,39 @@ class Valorant(ValorantCog):
     # async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
     #     ...
 
-    # @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_short)
-    # async def patchnote(self, interaction: discord.Interaction) -> None:
-    #     ...
+    @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def patchnote(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await interaction.response.defer()
+
+        patch_notes = await self.fetch_patch_notes(interaction.locale)
+        # view = PatchNotesView(interaction, patch_notes)
+        # await view.start()
+
+        # latest = patch_notes.get_latest_patch_note()
+        # if latest is not None:
+        #     pns = await self.v_client.fetch_patch_note_from_site(latest.url)
+
+        #     embed = e.patch_note(latest, pns.banner.url)
+
+        #     image_url = embed.image.url
+        #     if image_url is not None:
+        #         color_thief = await self.bot.get_or_fetch_colors(latest.uid, image_url, 5)
+        #         embed.colour = random.choice(color_thief)
+
+        #     view = BaseView().add_item(
+        #         ui.Button(
+        #             label=patch_notes.see_article_title,
+        #             url=latest.url,
+        #             emoji=str(self.bot.emoji.link_standard),
+        #         )
+        #     )
+
+        #     await interaction.followup.send(embed=embed, view=view)
+
+        # else:
+        #     raise CommandError('Patch note not found')
 
     # # infomation commands
 
