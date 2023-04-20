@@ -40,6 +40,7 @@ class Valorant(ValorantCog):
         try:
             await asyncio.wait_for(self.v_client.init(), timeout=30)
         except asyncio.TimeoutError:
+            # TODO: send webhook to bot owner
             _log.error('Valorant API Client failed to initialize within 30 seconds.')
         else:
             _log.info('Valorant API Client is ready.')
@@ -201,19 +202,19 @@ class Valorant(ValorantCog):
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_short)
+    @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction, season: str | None = None) -> None:
         ...
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
     @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_short)
+    @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction, event: str | None = None) -> None:
         ...
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_short)
+    @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction) -> None:
         ...
 
