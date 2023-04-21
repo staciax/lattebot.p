@@ -1,8 +1,11 @@
 VALORANT_POINT_EMOJI = '<:currency_valorant:1042817047953952849>'
 RADIANITE_POINT_EMOJI = '<:currency_radianite:1042817896398737417>'
 
+# content tiers emojis
+
 
 def get_content_tier_emoji(key: str, *, old: bool = False) -> str:
+    # NOTE: uuid better than name?
     key = f'old_{key}' if old else key
     emojis = {
         'deluxe': '<:new_content_tier_deluxe:1083077781295992902>',
@@ -17,6 +20,9 @@ def get_content_tier_emoji(key: str, *, old: bool = False) -> str:
         'old_ultra': '<:content_tier_ultra:1042810265906991104>',
     }
     return emojis.get(key.lower(), '')
+
+
+# competitive tiers emojis
 
 
 def get_tier_emoji(key: str) -> str:
@@ -53,7 +59,11 @@ def get_tier_emoji(key: str) -> str:
     return emojis.get(key.replace(' ', '_').lower(), '')
 
 
+# agent emojis
+
+
 def get_agent_emoji(key: str) -> str:
+    # NOTE: uuid better than name?
     emojis = {
         'astra': '<:agent_astra:1042813586835243050>',
         'breach': '<:agent_breach:1042813549484970054>',
@@ -77,8 +87,7 @@ def get_agent_emoji(key: str) -> str:
         'viper': '<:agent_viper:1042813580409585704>',
         'yoru': '<:agent_yoru:1042813595710410833>',
     }
-    # uuid better than name?
-    return emojis.get(key.lower(), '')
+    return emojis.get(key.replace("/", "_").replace(" ", "_").lower(), '')
 
 
 def get_ability_emoji(key: str) -> str:
@@ -171,3 +180,33 @@ def get_ability_emoji(key: str) -> str:
         'yoru_gatecrash': '<:yoru_gatecrash:1042933414841565205>',
     }
     return emojis.get(key.lower(), '')
+
+
+# currency emojis
+
+
+def get_currency_emoji(key: str) -> str:
+    emojis = {
+        '85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741': VALORANT_POINT_EMOJI,
+        'f08d4ae3-939c-4576-ab26-09ce1f23bb37': '<:currency_free_agents:1042817043965165580>',
+        'e59aa87c-4cbf-517a-5983-6e81511be9b7': RADIANITE_POINT_EMOJI,
+    }
+    return emojis.get(key.lower(), '')
+
+
+# game mode emojis
+
+
+def get_game_mode_emoji(key: str) -> str:
+    # NOTE: uuid better than name?
+    emojis = {
+        'standard': '<:gamemode_standard:1042834174664527902>',
+        'spike_rush': '<:gamemode_spike_rush:1042834185179635763>',
+        'deathmatch': '<:gamemode_deathmatch:1042834182822441030>',
+        'escalation': '<:gamemode_escalation:1042834180691738655>',
+        'replication': '<:gamemode_replication:1042834178535862282>',
+        'snowball_fight': '<:gamemode_snowball_fight:1042834176606486558>',
+    }
+    if key in ['unrated', 'competitive', 'swiftplay']:
+        return emojis['standard']
+    return emojis.get(key.replace(' ', '_').lower(), '')

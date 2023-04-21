@@ -10,6 +10,12 @@ from .valorant_api_cache import Cache
 if TYPE_CHECKING:
     from aiohttp import ClientSession
 
+# fmt: off
+__all__ = (
+    'Client',
+)
+# fmt: on
+
 
 class Client(ValorantAPIClient):
     def __init__(self, session: ClientSession, locale: Locale = Locale.english) -> None:

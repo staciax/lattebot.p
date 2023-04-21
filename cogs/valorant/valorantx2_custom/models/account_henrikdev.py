@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from valorantx2 import ClientUser
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..valorant_api_cache import Cache
 
 # fmt: off
-__all__: Tuple[str, ...] = (
+__all__ = (
     'PartialUser',
 )
 # fmt: on

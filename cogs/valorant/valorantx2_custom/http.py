@@ -10,6 +10,12 @@ if TYPE_CHECKING:
     T = TypeVar('T')
     Response = Coroutine[Any, Any, T]
 
+# fmt: off
+__all__ = (
+    'HTTPClient',
+)
+# fmt: on
+
 
 class HTTPClient(ValorantXHTTPClient):
     def get_partial_account(self, name: str, tagline: str) -> Response[account_henrikdev.Response]:

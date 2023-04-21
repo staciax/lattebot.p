@@ -7,7 +7,6 @@ from .main import Valorant
 
 _log = logging.getLogger(__name__)
 
-skip = False
 try:
     import bs4  # type: ignore
     import lxml  # type: ignore
@@ -16,6 +15,9 @@ except ImportError:
     _log.warning(
         "bs4 and lxml are not installed. Please install them with `pip3 install -r cogs/valorant/requirements.txt`."
     )
+else:
+    skip = False
+    del bs4, lxml
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
