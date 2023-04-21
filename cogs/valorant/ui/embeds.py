@@ -45,6 +45,7 @@ __all__ = (
 class Embed(discord.Embed):
     def __init__(
         self,
+        title: Optional[Any] = None,
         description: Optional[Any] = None,
         color: Union[discord.Color, int] = 0xFFFFFF,
         fields: Iterable[Tuple[str, str]] = (),
@@ -55,7 +56,7 @@ class Embed(discord.Embed):
         **kwargs,
     ):
         self.custom_id = custom_id
-        super().__init__(color=color, description=description, url=url, timestamp=timestamp, **kwargs)
+        super().__init__(title=title, description=description, color=color, url=url, timestamp=timestamp, **kwargs)
         for n, v in fields:
             self.add_field(name=n, value=v, inline=field_inline)
 
@@ -73,7 +74,7 @@ class Embed(discord.Embed):
 
 
 def skin_e(
-    skin: valorantx.Skin | valorantx.SkinLevel | valorantx.SkinChroma | SkinLevelOffer,  # valorantx.SkinNightMarket
+    skin: valorantx.Skin | valorantx.SkinLevel | valorantx.SkinChroma | SkinLevelOffer | SkinLevelBonus,
     *,
     locale: valorantx.Locale,
 ) -> Embed:
@@ -115,17 +116,28 @@ def store_e(
     return embeds
 
 
-def nightmarket_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: valorantx.Locale) -> List[Embed]:
-    embeds = [
-        Embed(
-            description=f'NightMarket for {chat.bold(riot_auth.display_name)}\n'
-            f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
-        ).purple()
-    ]
-    for skin in bonus.skins:
-        embeds.append(skin_e(skin, locale=locale))
+def skin_e_hide(
+    skin: SkinLevelBonus,
+    *,
+    locale: valorantx.Locale,
+) -> Embed:
+    embed = Embed(title=' ').dark()
 
-    return embeds
+    if skin.rarity is not None:
+        embed.colour = int(skin.rarity.highlight_color[0:6], 16)
+        if skin.rarity.display_icon is not None:
+            embed.title = skin.rarity.emoji  # type: ignore
+
+    return embed
+
+
+def nightmarket_front_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: valorantx.Locale) -> Embed:
+    embed = Embed(
+        description=f'NightMarket for {chat.bold(riot_auth.display_name)}\n'
+        f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
+    ).purple()
+
+    return embed
 
 
 def select_featured_bundle_e(bundle: valorantx.FeaturedBundle, *, locale: valorantx.Locale) -> Embed:

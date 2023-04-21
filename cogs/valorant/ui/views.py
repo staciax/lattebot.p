@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import contextlib
-import random
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+# import random
+from typing import TYPE_CHECKING, Any, List, Optional
 
 import discord
 import valorantx2 as valorantx
-from async_lru import alru_cache
+
+# from async_lru import alru_cache
 from discord import ui
 
 from core.ui.views import ViewAuthor
@@ -32,14 +34,21 @@ __all__ = (
 )
 
 
-class ViewAuthorLocale(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], *args: Any, **kwargs: Any) -> None:
+class ViewAuthorValorantClient(ViewAuthor):
+    def __init__(
+        self, interaction: discord.Interaction[LatteMaid], client: ValorantClient, *args: Any, **kwargs: Any
+    ) -> None:
         super().__init__(interaction, *args, **kwargs)
+        self.v_client: ValorantClient = client
         self.v_locale: valorantx.Locale = valorantx2_custom.utils.locale_converter(self.interaction.locale)
+        # self.interaction.extras['v_client'] = self.v_locale
+        # self.interaction.extras['v_locale'] = self.v_locale
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
         if await super().interaction_check(interaction):
             self.v_locale = valorantx2_custom.utils.locale_converter(self.interaction.locale)
+            # interaction.extras['v_locale'] = self.v_locale
+            # self.interaction.extras['v_locale'] = self.v_locale
             return True
         return False
 
@@ -56,12 +65,9 @@ class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
         # await interaction.response.edit_message(embeds=self.other_view.all_embeds[self.custom_id], view=None)
 
 
-class FeaturedBundleView(ViewAuthorLocale):
-    def __init__(
-        self, interaction: discord.Interaction[LatteMaid], bundles: List[valorantx.FeaturedBundle | None]
-    ) -> None:
-        super().__init__(interaction, timeout=600)
-        self.bundles = bundles
+class FeaturedBundleView(ViewAuthorValorantClient):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient) -> None:
+        super().__init__(interaction, client, timeout=600)
         # self.all_embeds: Dict[str, List[discord.Embed]] = {}
         self.selected: bool = False
         self.banner_embed: Optional[Embed] = None
@@ -88,17 +94,19 @@ class FeaturedBundleView(ViewAuthorLocale):
                 await original_response.edit(view=self)
 
     async def start(self) -> None:
-        if len(self.bundles) > 1:
+        bundles = await self.v_client.fetch_featured_bundle()
+
+        if len(bundles) > 1:
             # self.build_buttons(bundles)
-            embeds = e.select_featured_bundles_e(self.bundles, locale=self.v_locale)
+            embeds = e.select_featured_bundles_e(bundles, locale=self.v_locale)
             # for embed in embeds:
             #     if embed.custom_id is not None and embed.thumbnail.url is not None:
             #         color_thief = await self.bot.get_or_fetch_colors(embed.custom_id, embed.thumbnail.url)
             #         embed.colour = random.choice(color_thief)
             await self.interaction.followup.send(embeds=embeds, view=self)
             return
-        elif len(self.bundles) == 1:
-            bundle = self.bundles[0]
+        elif len(bundles) == 1:
+            bundle = bundles[0]
             if bundle is not None:
                 b = e.BundleEmbed(bundle, locale=self.v_locale)
                 self.banner_embed = embed_banner = b.banner_embed()
@@ -108,7 +116,7 @@ class FeaturedBundleView(ViewAuthorLocale):
                 await self.interaction.followup.send(embeds=embeds[:10])
                 return
 
-        if None in self.bundles:
+        if None in bundles:
             self.bot.dispatch('bundle_not_found')
 
         await self.interaction.followup.send("No featured bundles found")
@@ -138,7 +146,7 @@ class ButtonAccountSwitchX(ui.Button['SwitchView']):
         #         break
 
 
-class SwitchView(ViewAuthorLocale):
+class SwitchView(ViewAuthorValorantClient):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -147,8 +155,7 @@ class SwitchView(ViewAuthorLocale):
         row: int = 0,
         **kwargs: Any,
     ) -> None:
-        super().__init__(interaction, timeout=kwargs.get('timeout', 60.0 * 15), **kwargs)
-        self.v_client: ValorantClient = client
+        super().__init__(interaction, client, timeout=kwargs.get('timeout', 60.0 * 15), **kwargs)
         self.user: Any = user
         self._build_buttons(row)
 
@@ -234,8 +241,68 @@ class StoreSwitchView(SwitchView):
 
 
 class NightMarketSwitchView(SwitchView):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient, hide: bool) -> None:
         super().__init__(interaction, client, user=None, row=0)
+        self.hide = hide
+        self.front_embed: Optional[Embed] = None
+        self.prompt_embeds: Optional[List[Embed]] = None
+        self.embeds: Optional[List[Embed]] = None
+        self.current_opened: int = 1
+
+    @ui.button(label="Open Once", style=discord.ButtonStyle.primary)
+    async def open_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        await interaction.response.defer()
+        assert self.message is not None
+        if self.embeds is None:
+            return
+        if self.current_opened > len(self.embeds):
+            return
+        if self.prompt_embeds is None:
+            return
+
+        embeds = []
+        embeds.extend(self.embeds[: self.current_opened])
+        embeds.extend(self.prompt_embeds[self.current_opened :])
+        embeds.insert(0, self.front_embed)
+
+        if self.current_opened == len(self.embeds):
+            self.clear_items()
+
+        try:
+            await self.message.edit(embeds=embeds, view=self)
+        except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
+            pass
+        else:
+            self.current_opened += 1
+
+    @ui.button(label="Open All", style=discord.ButtonStyle.primary)
+    async def open_all_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        await interaction.response.defer()
+        assert self.message is not None
+        if self.embeds is None:
+            return
+        if self.current_opened > len(self.embeds):
+            return
+        if self.prompt_embeds is None:
+            return
+
+        embeds = [self.front_embed, *self.embeds]
+        self.clear_items()
+
+        try:
+            await self.message.edit(embeds=embeds, view=self)
+        except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
+            pass
+
+    async def on_timeout(self) -> None:
+        if self.message is None:
+            return
+        if self.embeds is None:
+            return
+        self.remove_item(self.open_button)
+        self.remove_item(self.open_all_button)
+        embeds = [self.front_embed, *self.embeds]
+        await self.safe_edit_message(self.message, embeds=embeds, view=self)
 
     # @alru_cache(maxsize=5)
     async def fetch(self, riot_auth: RiotAuth) -> valorantx.StoreFront:
@@ -246,7 +313,19 @@ class NightMarketSwitchView(SwitchView):
         sf = await self.fetch(self.v_client.http._riot_auth)
         if sf.bonus_store is None:
             raise Exception(f"{chat.bold('Nightmarket')} is not available.")
-        embeds = e.nightmarket_e(sf.bonus_store, self.v_client.http._riot_auth, locale=self.v_locale)
+
+        self.front_embed = front_embed = e.nightmarket_front_e(
+            sf.bonus_store, self.v_client.http._riot_auth, locale=self.v_locale
+        )
+        self.embeds = embeds = [e.skin_e(skin, locale=self.v_locale) for skin in sf.bonus_store.skins]
+
+        if self.hide:
+            self.prompt_embeds = prompt_embeds = [
+                e.skin_e_hide(skin, locale=self.v_locale) for skin in sf.bonus_store.skins
+            ]
+            await self.send(embeds=[front_embed, *prompt_embeds])
+            return
+
         await self.send(embeds=embeds)
 
 

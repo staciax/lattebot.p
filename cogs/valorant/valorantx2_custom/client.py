@@ -1,7 +1,8 @@
 import asyncio
-from typing import Any, Coroutine, Optional, Tuple, TypeVar
+from typing import Any, Coroutine, List, Optional, Tuple, TypeVar
 
 import valorantx2 as valorantx
+from async_lru import alru_cache
 from valorantx2 import Locale
 from valorantx2.client import _loop  # _authorize_required
 from valorantx2.enums import try_enum
@@ -71,3 +72,16 @@ class Client(valorantx.Client):
         if data is None or 'data' not in data:
             return None
         return PartialUser(state=self.valorant_api._cache, data=data['data'])
+
+    @alru_cache(maxsize=1, ttl=60 * 60 * 12)
+    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle | None]:
+        # TODO: cache re-use
+        # try:
+        #     v_user = await self.fetch_user(id=self.bot.owner_id)  # super user
+        # except NoAccountsLinked:
+        #     riot_acc = RiotAuth(self.bot.owner_id, self.bot.support_guild_id, bot=self.bot)
+        #     await riot_acc.authorize(username=self.bot.riot_username, password=self.bot.riot_password)
+        # else:
+        #     riot_acc = v_user.get_account()
+        data = await self.fetch_store_front()
+        return data.bundles

@@ -209,7 +209,9 @@ class LatteMaid(commands.AutoShardedBot):
         #     await command.get_translated_payload(self.translator)
 
         # tree sync application commands
+        # if self.is_debug_mode():
         await self.tree.sync()
+        _log.info('synced application commands.')
         sync_guilds = [
             # self.support_guild_id,
             # 1042503061454729289,  # EMOJI ABILITY 2
@@ -403,12 +405,12 @@ class LatteMaid(commands.AutoShardedBot):
 
     async def close(self) -> None:
         await self.cogs_unload()
-        await self.db_engine.dispose()
-        await self.session.close()
+        # await self.db_engine.dispose()
+        # await self.session.close()
         await super().close()
 
     async def start(self) -> None:
-        token = os.getenv('DISCORD_TOKEN') if self.is_debug_mode() else os.getenv('DISCORD_TOKEN_PROD')
+        token = os.getenv('DISCORD_TOKEN')  # if self.is_debug_mode() else os.getenv('DISCORD_TOKEN_PROD')
         if token is None:
             raise RuntimeError('No token provided.')
         await super().start(token=token, reconnect=True)

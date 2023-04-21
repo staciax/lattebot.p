@@ -19,7 +19,7 @@ from core.checks import cooldown_short, dynamic_cooldown
 
 from .abc import ValorantCog
 from .ui.views import FeaturedBundleView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
-from .valorantx2_custom import Client as ValorantClient
+from .valorantx2_custom import Client as ValorantClient, utils as v_utils
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -36,6 +36,13 @@ class Valorant(ValorantCog):
     def display_emoji(self) -> discord.Emoji | None:
         return self.bot.get_emoji(998169266044022875)
 
+    async def cog_load(self) -> None:
+        _log.info('Loading Valorant API Client...')
+        self.bot.loop.create_task(self.run())
+
+    async def cog_unload(self) -> None:
+        await self.v_client.close()
+
     async def run(self) -> None:
         try:
             await asyncio.wait_for(self.v_client.init(), timeout=30)
@@ -47,29 +54,11 @@ class Valorant(ValorantCog):
             await self.v_client.authorize('ragluxs', '4869_lucky')
             # self.bot.dispatch('v_client_ready')
 
-    async def cog_load(self) -> None:
-        _log.info('Loading Valorant API Client...')
-        self.bot.loop.create_task(self.run())
-
-    async def cog_unload(self) -> None:
-        await self.v_client.close()
-
-    @alru_cache(maxsize=1, ttl=60 * 60 * 12)
-    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle | None]:
-        # TODO: cache re-use
-        # try:
-        #     v_user = await self.fetch_user(id=self.bot.owner_id)  # super user
-        # except NoAccountsLinked:
-        #     riot_acc = RiotAuth(self.bot.owner_id, self.bot.support_guild_id, bot=self.bot)
-        #     await riot_acc.authorize(username=self.bot.riot_username, password=self.bot.riot_password)
-        # else:
-        #     riot_acc = v_user.get_account()
-        data = await self.v_client.fetch_store_front()
-        return data.bundles
-
-    @alru_cache(ttl=86400, maxsize=32)
+    @alru_cache(maxsize=32, ttl=60 * 60 * 12)
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
-        return await self.v_client.fetch_patch_notes()
+        return await self.v_client.fetch_patch_notes(v_utils.locale_converter(locale))
+
+    # app commands
 
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
     @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
@@ -182,9 +171,9 @@ class Valorant(ValorantCog):
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def nightmarket(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
         await interaction.response.defer()
-        view = NightMarketSwitchView(interaction, self.v_client)
+        view = NightMarketSwitchView(interaction, self.v_client, hide)
         await view.start()
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
@@ -192,9 +181,8 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        bundles = await self.fetch_featured_bundle()
-        select_view = FeaturedBundleView(interaction, bundles)
-        await select_view.start()
+        view = FeaturedBundleView(interaction, self.v_client)
+        await view.start()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
     @app_commands.guild_only()
