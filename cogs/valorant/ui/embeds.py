@@ -172,7 +172,6 @@ def bundle_item_e(
     ).dark()
 
     is_melee = item.is_melee() if hasattr(item, 'is_melee') and isinstance(item, valorantx.SkinLevel) else False
-
     assert embed.description is not None
     if not is_featured or is_melee:
         embed.description += '{free} {price}'.format(
@@ -258,7 +257,7 @@ class BundleEmbed:
             return 5
 
         for item in sorted(self.bundle.items, key=item_priorities):
-            embeds.append(bundle_item_e(item, locale=self.locale))
+            embeds.append(bundle_item_e(item, isinstance(self.bundle, valorantx.FeaturedBundle), locale=self.locale))
         return embeds
 
 

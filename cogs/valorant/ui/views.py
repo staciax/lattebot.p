@@ -11,6 +11,7 @@ from discord import ui
 
 from core.ui.views import ViewAuthor
 
+from .. import valorantx2_custom
 from . import embeds as e
 
 if TYPE_CHECKING:
@@ -31,6 +32,18 @@ __all__ = (
 )
 
 
+class ViewAuthorLocale(ViewAuthor):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], *args: Any, **kwargs: Any) -> None:
+        super().__init__(interaction, *args, **kwargs)
+        self.v_locale: valorantx.Locale = valorantx2_custom.utils.locale_converter(self.interaction.locale)
+
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
+        if await super().interaction_check(interaction):
+            self.v_locale = valorantx2_custom.utils.locale_converter(self.interaction.locale)
+            return True
+        return False
+
+
 class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
     def __init__(self, other_view: FeaturedBundleView, **kwargs: Any) -> None:
         self.other_view = other_view
@@ -43,15 +56,13 @@ class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
         # await interaction.response.edit_message(embeds=self.other_view.all_embeds[self.custom_id], view=None)
 
 
-class FeaturedBundleView(ViewAuthor):
+class FeaturedBundleView(ViewAuthorLocale):
     def __init__(
         self, interaction: discord.Interaction[LatteMaid], bundles: List[valorantx.FeaturedBundle | None]
     ) -> None:
-        self.interaction = interaction
-        self.bundles = bundles
-        # self.v_locale = ValorantLocale.from_discord(str(interaction.locale))
-        # self.all_embeds: Dict[str, List[discord.Embed]] = {}
         super().__init__(interaction, timeout=600)
+        self.bundles = bundles
+        # self.all_embeds: Dict[str, List[discord.Embed]] = {}
         self.selected: bool = False
         self.banner_embed: Optional[Embed] = None
         self.item_embeds: Optional[List[Embed]] = None
@@ -79,7 +90,7 @@ class FeaturedBundleView(ViewAuthor):
     async def start(self) -> None:
         if len(self.bundles) > 1:
             # self.build_buttons(bundles)
-            embeds = e.select_featured_bundles_e(self.bundles, locale=valorantx.Locale.english)
+            embeds = e.select_featured_bundles_e(self.bundles, locale=self.v_locale)
             # for embed in embeds:
             #     if embed.custom_id is not None and embed.thumbnail.url is not None:
             #         color_thief = await self.bot.get_or_fetch_colors(embed.custom_id, embed.thumbnail.url)
@@ -89,7 +100,7 @@ class FeaturedBundleView(ViewAuthor):
         elif len(self.bundles) == 1:
             bundle = self.bundles[0]
             if bundle is not None:
-                b = e.BundleEmbed(bundle, locale=valorantx.Locale.english)
+                b = e.BundleEmbed(bundle, locale=self.v_locale)
                 self.banner_embed = embed_banner = b.banner_embed()
                 self.item_embeds = embed_items = b.item_embeds()
                 embeds = [embed_banner, *embed_items]
@@ -127,7 +138,7 @@ class ButtonAccountSwitchX(ui.Button['SwitchView']):
         #         break
 
 
-class SwitchView(ViewAuthor):
+class SwitchView(ViewAuthorLocale):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -140,7 +151,6 @@ class SwitchView(ViewAuthor):
         self.v_client: ValorantClient = client
         self.user: Any = user
         self._build_buttons(row)
-        # self.v_locale = self.bot.valorant.v_locale(interaction.locale)
 
     def _build_buttons(self, row: int = 0) -> None:
         for index, acc in enumerate([], start=1):
@@ -159,12 +169,6 @@ class SwitchView(ViewAuthor):
         for child in self.children:
             if isinstance(child, ButtonAccountSwitchX):
                 self.remove_item(child)
-
-    async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
-        if await super().interaction_check(interaction):
-            # self.v_locale = self.bot.valorant.v_locale(interaction.locale)
-            return True
-        return False
 
     @staticmethod
     async def safe_edit_message(
@@ -220,9 +224,7 @@ class StoreSwitchView(SwitchView):
 
     async def start(self) -> None:
         sf = await self.fetch(self.v_client.http._riot_auth)
-        embeds = e.store_e(
-            sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=valorantx.Locale.english
-        )
+        embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=self.v_locale)
         await self.interaction.followup.send(embeds=embeds, view=self)
         # await self.send(embeds=embeds)
 
@@ -244,7 +246,7 @@ class NightMarketSwitchView(SwitchView):
         sf = await self.fetch(self.v_client.http._riot_auth)
         if sf.bonus_store is None:
             raise Exception(f"{chat.bold('Nightmarket')} is not available.")
-        embeds = e.nightmarket_e(sf.bonus_store, self.v_client.http._riot_auth, locale=valorantx.Locale.english)
+        embeds = e.nightmarket_e(sf.bonus_store, self.v_client.http._riot_auth, locale=self.v_locale)
         await self.send(embeds=embeds)
 
 
@@ -259,5 +261,5 @@ class WalletSwitchView(SwitchView):
 
     async def start(self) -> None:
         wallet = await self.fetch(self.v_client.http._riot_auth)
-        embed = e.wallet_e(wallet, self.v_client.http._riot_auth, locale=valorantx.Locale.english)
+        embed = e.wallet_e(wallet, self.v_client.http._riot_auth, locale=self.v_locale)
         await self.send(embed=embed)
