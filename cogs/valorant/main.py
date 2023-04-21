@@ -67,7 +67,7 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def login(
         self,
-        interaction: discord.Interaction,
+        interaction: discord.Interaction[LatteMaid],
         username: app_commands.Range[str, 1, 24],
         password: app_commands.Range[str, 1, 128],
     ) -> None:
@@ -195,31 +195,31 @@ class Valorant(ValorantCog):
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def battlepass(self, interaction: discord.Interaction, season: str | None = None) -> None:
+    async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
         ...
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def eventpass(self, interaction: discord.Interaction, event: str | None = None) -> None:
+    async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
         ...
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def mission(self, interaction: discord.Interaction) -> None:
+    async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
         ...
 
     @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def collection(self, interaction: discord.Interaction) -> None:
+    async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
         ...
 
     @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def agents(self, interaction: discord.Interaction) -> None:
+    async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
         ...
 
