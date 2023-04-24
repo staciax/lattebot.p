@@ -6,20 +6,20 @@ from typing import TYPE_CHECKING, List
 
 import aiohttp
 import discord
-import valorantx2 as valorantx
+
+# import valorantx2 as valorantx
 from async_lru import alru_cache
 from discord import app_commands
 from discord.app_commands import Choice, locale_str as _T
 
-# from valorantx2.auth import RiotAuth
-from valorantx2.errors import RiotMultifactorError
-
 import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
 
+from . import valorantx3 as valorantx
 from .abc import ValorantCog
-from .ui.views import FeaturedBundleView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
-from .valorantx2_custom import Client as ValorantClient, utils as v_utils
+from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
+from .valorantx3 import Client as ValorantClient, utils as v_utils
+from .valorantx3.errors import RiotMultifactorError
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -130,7 +130,7 @@ class Valorant(ValorantCog):
         # except:
         #     pass
 
-        e = discord.Embed(description=f"Successfully logged in {chat.bold(self.v_client.me.display_name)}")
+        e = discord.Embed(description=f"Successfully logged in {chat.bold(self.v_client.me.riot_id)}")
         await interaction.followup.send(embed=e, ephemeral=True)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
@@ -166,7 +166,7 @@ class Valorant(ValorantCog):
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
         view = StoreSwitchView(interaction, self.v_client)
-        await view.start()
+        await view.start_view()
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.guild_only()
@@ -174,7 +174,7 @@ class Valorant(ValorantCog):
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
         await interaction.response.defer()
         view = NightMarketSwitchView(interaction, self.v_client, hide)
-        await view.start()
+        await view.start_view()
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
     @app_commands.guild_only()
@@ -182,7 +182,7 @@ class Valorant(ValorantCog):
     async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
         view = FeaturedBundleView(interaction, self.v_client)
-        await view.start()
+        await view.start_view()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
     @app_commands.guild_only()
@@ -190,19 +190,23 @@ class Valorant(ValorantCog):
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
         await interaction.response.defer(ephemeral=private)
         wallet = WalletSwitchView(interaction, self.v_client)
-        await wallet.start()
+        await wallet.start_view()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
-        ...
+        await interaction.response.defer()
+        view = GamePassView(interaction, self.v_client, valorantx.RelationType.season)
+        await view.start_view()
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
-        ...
+        await interaction.response.defer()
+        view = GamePassView(interaction, self.v_client, valorantx.RelationType.event)
+        await view.start_view()
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()

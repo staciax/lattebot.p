@@ -7,34 +7,55 @@ import datetime
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
 
 import discord
-import valorantx2 as valorantx
 from discord.utils import format_dt
-from valorantx2.auth import RiotAuth
-from valorantx2.models.abc import BundleItemOffer
-from valorantx2.models.store import BonusStore, SkinsPanelLayout
-from valorantx2.models.weapons import SkinLevelBonus, SkinLevelOffer
 
 import core.utils.chat_formatting as chat
 
-from ..valorantx2_custom.emojis import VALORANT_POINT_EMOJI
+from .. import valorantx3 as valorantx
+from ..valorantx3 import RiotAuth
+from ..valorantx3.emojis import VALORANT_POINT_EMOJI
+from ..valorantx3.enums import Locale as ValorantLocale, RelationType
+from ..valorantx3.models import (
+    BonusStore,
+    Buddy,
+    BuddyLevel,
+    BuddyLevelBundle,
+    Bundle,
+    BundleItemOffer,
+    Contract,
+    FeaturedBundle,
+    PlayerCard,
+    PlayerCardBundle,
+    PlayerTitle,
+    Skin,
+    SkinChroma,
+    SkinLevel,
+    SkinLevelBonus,
+    SkinLevelBundle,
+    SkinLevelOffer,
+    SkinsPanelLayout,
+    Spray,
+    SprayBundle,
+    SprayLevel,
+    Wallet,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-# fmt: off
-BundleItem = Union[valorantx.Skin, valorantx.Buddy, valorantx.Spray, valorantx.PlayerCard]
-FeaturedBundleItem = Union[valorantx.SkinLevelBundle, valorantx.BuddyLevelBundle, valorantx.SprayBundle,  valorantx.PlayerCardBundle]
-SkinItem = Union[valorantx.Skin, valorantx.SkinLevel, valorantx.SkinChroma]
-SprayItem = Union[valorantx.Spray, valorantx.SprayLevel]
-BuddyItem = Union[valorantx.Buddy, valorantx.BuddyLevel]
-# fmt: on
+    from ..valorantx3.models import RewardValorantAPI
+
+BundleItem = Union[Skin, Buddy, Spray, PlayerCard]
+FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle]
+SkinItem = Union[Skin, SkinLevel, SkinChroma]
+SprayItem = Union[Spray, SprayLevel]
+BuddyItem = Union[Buddy, BuddyLevel]
 
 __all__ = (
     'Embed',
     'BundleEmbed',
     'skin_e',
     'store_e',
-    'nightmarket_e',
     'select_featured_bundle_e',
     'select_featured_bundles_e',
     'bundle_item_e',
@@ -76,7 +97,7 @@ class Embed(discord.Embed):
 def skin_e(
     skin: valorantx.Skin | valorantx.SkinLevel | valorantx.SkinChroma | SkinLevelOffer | SkinLevelBonus,
     *,
-    locale: valorantx.Locale,
+    locale: ValorantLocale,
 ) -> Embed:
     embed = Embed(
         title=f"{skin.rarity.emoji} {chat.bold(skin.display_name_localized(locale))}",  # type: ignore
@@ -101,7 +122,7 @@ def skin_e(
 
 
 def store_e(
-    panel: SkinsPanelLayout, riot_auth: RiotAuth, *, locale: valorantx.Locale = valorantx.Locale.english
+    panel: SkinsPanelLayout, riot_auth: RiotAuth, *, locale: ValorantLocale = ValorantLocale.english
 ) -> List[Embed]:
     embeds = [
         Embed(
@@ -119,7 +140,7 @@ def store_e(
 def skin_e_hide(
     skin: SkinLevelBonus,
     *,
-    locale: valorantx.Locale,
+    locale: ValorantLocale,
 ) -> Embed:
     embed = Embed(title=' ').dark()
 
@@ -131,7 +152,7 @@ def skin_e_hide(
     return embed
 
 
-def nightmarket_front_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: valorantx.Locale) -> Embed:
+def nightmarket_front_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: ValorantLocale) -> Embed:
     embed = Embed(
         description=f'NightMarket for {chat.bold(riot_auth.display_name)}\n'
         f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
@@ -140,7 +161,7 @@ def nightmarket_front_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: valor
     return embed
 
 
-def select_featured_bundle_e(bundle: valorantx.FeaturedBundle, *, locale: valorantx.Locale) -> Embed:
+def select_featured_bundle_e(bundle: valorantx.FeaturedBundle, *, locale: ValorantLocale) -> Embed:
     embed = Embed(
         title=bundle.display_name_localized(locale),
         description=(
@@ -159,9 +180,7 @@ def select_featured_bundle_e(bundle: valorantx.FeaturedBundle, *, locale: valora
     return embed
 
 
-def select_featured_bundles_e(
-    bundles: List[valorantx.FeaturedBundle | None], *, locale: valorantx.Locale
-) -> List[Embed]:
+def select_featured_bundles_e(bundles: List[valorantx.FeaturedBundle], *, locale: ValorantLocale) -> List[Embed]:
     embeds = []
     for bundle in bundles:
         if bundle is None:
@@ -174,16 +193,16 @@ def bundle_item_e(
     item: Union[BundleItem, FeaturedBundleItem],
     is_featured: bool = False,
     *,
-    locale: valorantx.Locale = valorantx.Locale.american_english,
+    locale: ValorantLocale = ValorantLocale.american_english,
 ) -> Embed:
-    emoji = item.rarity.emoji if isinstance(item, valorantx.Skin) else ''  # type: ignore
+    emoji = item.rarity.emoji if isinstance(item, Skin) else ''  # type: ignore
 
     embed = Embed(
         title='{rarity} {name}'.format(rarity=emoji, name=chat.bold(item.display_name_localized(locale))),
         description=f'{VALORANT_POINT_EMOJI} ',
     ).dark()
 
-    is_melee = item.is_melee() if hasattr(item, 'is_melee') and isinstance(item, valorantx.SkinLevel) else False
+    is_melee = item.is_melee() if hasattr(item, 'is_melee') and isinstance(item, SkinLevel) else False
     assert embed.description is not None
     if not is_featured or is_melee:
         embed.description += '{free} {price}'.format(
@@ -197,9 +216,9 @@ def bundle_item_e(
         else:
             embed.description += str(item.cost)
 
-    if isinstance(item, valorantx.PlayerCard):
+    if isinstance(item, PlayerCard):
         item_icon = item.large_art
-    elif isinstance(item, valorantx.Spray):
+    elif isinstance(item, Spray):
         item_icon = item.animation_gif or item.full_transparent_icon or item.full_icon or item.display_icon
     else:
         item_icon = item.display_icon
@@ -214,12 +233,12 @@ def bundle_item_e(
 class BundleEmbed:
     def __init__(
         self,
-        bundle: Union[valorantx.Bundle, valorantx.FeaturedBundle],
+        bundle: Union[Bundle, FeaturedBundle],
         *,
-        locale: valorantx.Locale = valorantx.Locale.american_english,
+        locale: ValorantLocale = ValorantLocale.american_english,
     ) -> None:
-        self.bundle: Union[valorantx.Bundle, valorantx.FeaturedBundle] = bundle
-        self.locale: valorantx.Locale = locale
+        self.bundle: Union[Bundle, FeaturedBundle] = bundle
+        self.locale: ValorantLocale = locale
 
     def banner_embed(self) -> Embed:
         embed = Embed().purple()
@@ -255,25 +274,25 @@ class BundleEmbed:
         embeds = []
 
         def item_priorities(i: Union[BundleItem, FeaturedBundleItem]) -> int:
-            is_melee = i.is_melee() if hasattr(i, 'is_melee') and isinstance(i, valorantx.SkinLevel) else False
+            is_melee = i.is_melee() if hasattr(i, 'is_melee') and isinstance(i, SkinLevel) else False
             if is_melee:
                 return 0
             elif isinstance(i, SkinItem):
                 return 1
             elif isinstance(i, BuddyItem):
                 return 2
-            elif isinstance(i, valorantx.PlayerCard):
+            elif isinstance(i, PlayerCard):
                 return 3
             elif isinstance(i, SprayItem):
                 return 4
             return 5
 
         for item in sorted(self.bundle.items, key=item_priorities):
-            embeds.append(bundle_item_e(item, isinstance(self.bundle, valorantx.FeaturedBundle), locale=self.locale))
+            embeds.append(bundle_item_e(item, isinstance(self.bundle, FeaturedBundle), locale=self.locale))
         return embeds
 
 
-def wallet_e(wallet: valorantx.Wallet, riot_auth: RiotAuth, *, locale: valorantx.Locale) -> Embed:
+def wallet_e(wallet: Wallet, riot_auth: RiotAuth, *, locale: ValorantLocale) -> Embed:
     # vp = wallet.valorant_points
     # rad = wallet.radiant_points
 
@@ -292,6 +311,40 @@ def wallet_e(wallet: valorantx.Wallet, riot_auth: RiotAuth, *, locale: valorantx
     return embed
 
 
+class GamePassEmbed:
+    def __init__(self, contract: Contract, riot_auth: RiotAuth, *, locale: ValorantLocale) -> None:
+        self.contract: Contract = contract
+        self.riot_auth: RiotAuth = riot_auth
+        self.locale: ValorantLocale = locale
+        self.title: str = ''  # TODO: localize
+        if self.contract.content.relation_type is RelationType.agent:
+            self.title = 'Agent'
+        elif self.contract.content.relation_type is RelationType.season:
+            self.title = 'Battlepass'
+        elif self.contract.content.relation_type is RelationType.event:
+            self.title = 'Eventpass'
+
+    # @cache ?
+    def build_page_embed(self, page: int, reward: RewardValorantAPI, locale: Optional[ValorantLocale] = None) -> Embed:
+        locale = locale or self.locale
+        embed = Embed(title=f'{self.title} for {self.riot_auth.display_name}')
+        embed.set_footer(text=f'TIER {page + 1} | {self.contract.display_name_localized(locale)}')
+        item = reward.get_item()
+        if item is not None:
+            embed.description = item.display_name_localized(locale)
+            if not isinstance(item, PlayerTitle):
+                if item.display_icon is not None:
+                    if isinstance(item, SkinLevel):
+                        embed.set_image(url=item.display_icon)
+                    elif isinstance(item, PlayerCard):
+                        embed.set_image(url=item.wide_art)
+                    # elif isinstance(item, valorantx.Agent):
+                    #     embed.set_image(url=item.full_portrait_v2 or item.full_portrait)
+                    else:
+                        embed.set_thumbnail(url=item.display_icon)
+        return embed
+
+
 # def game_pass_e(
 #     reward: contract.Reward,
 #     contract: contract.ContractU,
@@ -299,7 +352,7 @@ def wallet_e(wallet: valorantx.Wallet, riot_auth: RiotAuth, *, locale: valorantx
 #     riot_auth: RiotAuth,
 #     page: int,
 #     *,
-#     locale: Optional[valorantx.Locale] = None,
+#     locale: Optional[ValorantLocale] = None,
 # ) -> discord.Embed:
 
 #     item = reward.get_item()
@@ -336,7 +389,7 @@ def wallet_e(wallet: valorantx.Wallet, riot_auth: RiotAuth, *, locale: valorantx
 
 
 # def mission_e(
-#     contracts: valorantx.Contracts, riot_auth: RiotAuth, *, locale: Optional[valorantx.Locale] = None
+#     contracts: valorantx.Contracts, riot_auth: RiotAuth, *, locale: Optional[ValorantLocale] = None
 # ) -> discord.Embed:
 #     daily = []
 #     weekly = []

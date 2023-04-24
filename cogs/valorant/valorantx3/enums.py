@@ -1,3 +1,5 @@
+from valorantx2.enums import ItemType as ItemType, Locale as Locale, RelationType as RelationType
+
 # from __future__ import annotations
 
 # from enum import Enum

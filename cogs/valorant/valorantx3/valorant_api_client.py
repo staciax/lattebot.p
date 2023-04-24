@@ -20,4 +20,4 @@ __all__ = (
 class Client(ValorantAPIClient):
     def __init__(self, session: ClientSession, locale: Locale = Locale.english) -> None:
         super().__init__(session, locale)
-        self._cache: Cache = Cache(locale=locale, http=self._http)
+        self._cache: Cache = Cache(locale=locale, http=self.http)

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Coroutine, List, Optional, Tuple, TypeVar
+from typing import Any, Coroutine, List, Optional, TypeVar
 
 import valorantx2 as valorantx
 from async_lru import alru_cache
@@ -11,11 +11,11 @@ from valorantx2.utils import MISSING
 from valorantx2.valorant_api.models.version import Version as ValorantAPIVersion
 
 from .http import HTTPClient
-from .models import PartialUser, PatchNote
+from .models import PartialUser, PatchNoteScraper
 from .valorant_api_client import Client as ValorantAPIClient
 
 # fmt: off
-__all__: Tuple[str, ...] = (
+__all__ = (
     'Client',
 )
 # fmt: on
@@ -40,10 +40,10 @@ class Client(valorantx.Client):
 
     # patch note
 
-    async def fetch_patch_note_from_site(self, url: str) -> PatchNote:
+    async def fetch_patch_note_from_site(self, url: str) -> PatchNoteScraper:
         # TODO: doc
         text = await self.http.text_from_url(url)
-        return PatchNote.from_text(self, text)
+        return PatchNoteScraper.from_text(self, text)
 
     # henrikdev
 
@@ -74,7 +74,7 @@ class Client(valorantx.Client):
         return PartialUser(state=self.valorant_api._cache, data=data['data'])
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)
-    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle | None]:
+    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
         # TODO: cache re-use
         # try:
         #     v_user = await self.fetch_user(id=self.bot.owner_id)  # super user

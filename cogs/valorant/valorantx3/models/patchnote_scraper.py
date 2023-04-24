@@ -12,12 +12,12 @@ from bs4 import BeautifulSoup, FeatureNotFound
 
 # fmt: off
 __all__ = (
-    'PatchNote',
+    'PatchNoteScraper',
 )
 # fmt: on
 
 
-class PatchNote:
+class PatchNoteScraper:
     def __init__(self, client: Client, title: Optional[str], banner_url: Optional[str]) -> None:
         self._client: Client = client
         self._title: Optional[str] = title

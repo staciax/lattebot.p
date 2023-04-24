@@ -1,108 +1,22 @@
 from __future__ import annotations
 
-# from functools import cached_property
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from valorantx2.valorant_api import Localization
-from valorantx2.valorant_api.models import (
-    Ability as ValorantAPIAbility,
-    Agent as ValorantAPIAgent,
-    CompetitiveTier as ValorantAPICompetitiveTier,
-    ContentTier as ValorantAPIContentTier,
-    Currency as ValorantAPICurrency,
-    GameMode as ValorantAPIGameMode,
-    Tier as ValorantAPITier,
-)
+from valorantx2.valorant_api.models import GameMode as ValorantAPIGameMode
 
-from ..emojis import (
-    get_ability_emoji,
-    get_agent_emoji,
-    get_content_tier_emoji,
-    get_currency_emoji,
-    get_game_mode_emoji,
-    get_tier_emoji,
-)
+from ..emojis import get_game_mode_emoji
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.types.agents import Agent as AgentPayload
-    from valorantx2.valorant_api.types.competitive_tiers import CompetitiveTier as CompetitiveTierPayload
     from valorantx2.valorant_api.types.gamemodes import GameMode as GameModePayload
 
     from ..valorant_api_cache import Cache
 
+# fmt: off
 __all__ = (
-    'Agent',
-    'Tier',
-    'ContentTier',
-    'CompetitiveTier',
-    'Currency',
     'GameMode',
 )
-
-# agents
-
-
-class Ability(ValorantAPIAbility):
-    @property
-    def emoji(self) -> str:
-        key = (
-            (self.agent.display_name.default.lower() + '_' + self.display_name.default.lower())
-            .replace('/', '_')
-            .replace(' ', '_')
-            .replace('___', '_')
-            .replace('__', '_')
-            .replace("'", '')
-        )
-        return get_ability_emoji(key)
-
-
-class Agent(ValorantAPIAgent):
-    def __init__(self, *, state: Cache, data: AgentPayload) -> None:
-        super().__init__(state=state, data=data)
-        self._abilities: List[Ability] = [
-            Ability(state=state, data=ability, agent=self) for ability in data['abilities']
-        ]
-
-    @property
-    def emoji(self) -> str:
-        return get_agent_emoji(self.display_name.default)
-
-
-# competitive tiers
-
-
-class Tier(ValorantAPITier):
-    @property
-    def emoji(self) -> str:
-        # will not be used as a tier number because each season's rank is different
-        return get_tier_emoji(self.display_name.default)
-
-
-class CompetitiveTier(ValorantAPICompetitiveTier):
-    def __init__(self, state: Cache, data: CompetitiveTierPayload) -> None:
-        super().__init__(state, data)
-        self._tiers: List[Tier] = [Tier(state=self._state, data=tier) for tier in data['tiers']]
-
-
-# content tiers
-
-
-class ContentTier(ValorantAPIContentTier):
-    @property
-    def emoji(self) -> str:
-        return get_content_tier_emoji(self.dev_name)
-
-
-# currencies
-
-
-class Currency(ValorantAPICurrency):
-    @property
-    def emoji(self) -> str:
-        return get_currency_emoji(self.uuid)
-
-
-# game modes
+# fmt: on
 
 
 class GameMode(ValorantAPIGameMode):

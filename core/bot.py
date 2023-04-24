@@ -210,7 +210,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # tree sync application commands
         # if self.is_debug_mode():
-        await self.tree.sync()
+        # await self.tree.sync()
         _log.info('synced application commands.')
         sync_guilds = [
             # self.support_guild_id,

@@ -1,13 +1,13 @@
 # from __future__ import annotations
 
-# from typing import Any, List, Optional, Tuple
+# from typing import Any, List, Optional
 
 # from .enums import RoundResultEmoji
 
 # from valorantx2 import GameModeType
 # from valorantx2.models import match
 
-# __all__: Tuple[str, ...] = (
+# __all__ = (
 #     'MatchRoundResult',
 #     'MatchDetails',
 #     'MatchDetails',
