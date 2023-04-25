@@ -122,7 +122,7 @@ class FeaturedBundleView(ViewAuthorValorantClient):
         await self.interaction.followup.send("No featured bundles found")
 
 
-class ButtonAccountSwitchX(ui.Button['SwitchView']):
+class ButtonAccountSwitch(ui.Button['SwitchView']):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(style=discord.ButtonStyle.gray, **kwargs)
 
@@ -165,7 +165,7 @@ class SwitchView(ViewAuthorValorantClient):
             if index >= 4:
                 row += 1
             # self.add_item(
-            #     ButtonAccountSwitchX(
+            #     ButtonAccountSwitch(
             #         label="Account #" + str(index) if acc.hide_display_name else acc.display_name,
             #         custom_id=acc.puuid,
             #         disabled=(index == 1),
@@ -175,7 +175,7 @@ class SwitchView(ViewAuthorValorantClient):
 
     def remove_switch_button(self) -> None:
         for child in self.children:
-            if isinstance(child, ButtonAccountSwitchX):
+            if isinstance(child, ButtonAccountSwitch):
                 self.remove_item(child)
 
     @staticmethod
