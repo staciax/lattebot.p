@@ -19,6 +19,7 @@ class RiotAuth(Base):
     id: Mapped[str] = mapped_column("id", nullable=False, unique=True, primary_key=True)
     name: Mapped[str] = mapped_column("name", nullable=False)
     tag: Mapped[str] = mapped_column("tag", nullable=False)
+    notify: Mapped[bool] = mapped_column("notify", nullable=False, default=False)
     secrets: Mapped[str] = mapped_column("secrets", nullable=False)
     owner_id: Mapped[int] = mapped_column("owner_id", ForeignKey("users.id"), nullable=False)
     owner: Mapped[User] = relationship("User", back_populates="riot_auths", lazy="joined", uselist=False)
@@ -40,7 +41,7 @@ class RiotAuth(Base):
 
     @classmethod
     async def read_by_id(cls, session: AsyncSession, puuid: str) -> Optional[RiotAuth]:
-        stmt = select(cls).where(cls.id == id).options(joinedload(cls.owner))
+        stmt = select(cls).where(cls.id == puuid).options(joinedload(cls.owner))
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
@@ -64,13 +65,11 @@ class RiotAuth(Base):
             raise RuntimeError()
         return new
 
-    # async def update(
-    #     self, session: AsyncSession, notebook_id: int, title: str, content: str
-    # ) -> None:
-    #     self.notebook_id = notebook_id
-    #     self.title = title
-    #     self.content = content
-    #     await session.flush()
+    async def update(self, session: AsyncSession, puuid: str, name: str, tag: str, notify: bool, secrets: str) -> None:
+        self.notebook_id = notebook_id
+        self.title = title
+        self.content = content
+        await session.flush()
 
     @classmethod
     async def delete(cls, session: AsyncSession, riot_auth: RiotAuth) -> None:

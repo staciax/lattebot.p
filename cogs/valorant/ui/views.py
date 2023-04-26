@@ -33,6 +33,11 @@ __all__ = (
     'WalletSwitchView',
 )
 
+class SomeThing:
+
+    def __init__(self, client: ValorantClient) -> None:
+        self.client: ValorantClient = client
+
 
 class ViewAuthorValorantClient(ViewAuthor):
     def __init__(

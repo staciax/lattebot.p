@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column("id",  nullable=False, unique=True, primary_key=True) # autoincrement=True,
+    id: Mapped[int] = mapped_column("id", nullable=False, unique=True, primary_key=True)  # autoincrement=True,
     locale: Mapped[str] = mapped_column("locale", String(length=10), nullable=False)
     riot_auths: Mapped[List[RiotAuth]] = relationship(
         "RiotAuth",
