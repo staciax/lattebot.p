@@ -186,7 +186,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # i18n
         if self.translator is MISSING:
-            self.translator = Translator(self, './lattemid/i18n')
+            self.translator = Translator(self, './i18n')
             await self.tree.set_translator(self.translator)
 
         # bot info
