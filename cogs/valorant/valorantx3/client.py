@@ -71,7 +71,7 @@ class Client(valorantx.Client):
         data = await self.http.get_partial_account(name, tagline)
         if data is None or 'data' not in data:
             return None
-        return PartialUser(state=self.valorant_api._cache, data=data['data'])
+        return PartialUser(state=self.valorant_api.cache, data=data['data'])
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)
     async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
@@ -83,5 +83,5 @@ class Client(valorantx.Client):
         #     await riot_acc.authorize(username=self.bot.riot_username, password=self.bot.riot_password)
         # else:
         #     riot_acc = v_user.get_account()
-        data = await self.fetch_store_front()
+        data = await self.fetch_storefront()
         return data.bundles

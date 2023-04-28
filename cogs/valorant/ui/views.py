@@ -227,7 +227,7 @@ class StoreSwitchView(SwitchView):
 
     # @alru_cache(maxsize=5)
     async def fetch(self, riot_auth: RiotAuth) -> StoreFront:
-        sf = await self.v_client.fetch_store_front()
+        sf = await self.v_client.fetch_storefront()
         return sf
 
     # @alru_cache(maxsize=32, ttl=60 * 60)
@@ -314,7 +314,7 @@ class NightMarketSwitchView(SwitchView):
 
     # @alru_cache(maxsize=5)
     async def fetch(self, riot_auth: RiotAuth) -> StoreFront:
-        sf = await self.v_client.fetch_store_front()
+        sf = await self.v_client.fetch_storefront()
         return sf
 
     async def start_view(self) -> None:
