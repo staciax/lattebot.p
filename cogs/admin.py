@@ -18,9 +18,16 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__file__)
 
+# fmt: off
 EXTENSIONS = Literal[
-    'cogs.developer', 'cogs.events', 'cogs.help', 'cogs.about', 'cogs.valorant', 'cogs.role_connection'
+    'cogs.developer',
+    'cogs.events',
+    'cogs.help',
+    'cogs.about',
+    'cogs.valorant',
+    'cogs.role_connection',
 ]
+# fmt: on
 
 
 class Developer(commands.Cog, name='developer'):

@@ -14,6 +14,7 @@ from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
+from core.embed import Embed
 
 from . import valorantx3 as valorantx
 from .abc import ValorantCog
@@ -130,7 +131,7 @@ class Valorant(ValorantCog):
         # except:
         #     pass
 
-        e = discord.Embed(description=f"Successfully logged in {chat.bold(self.v_client.me.riot_id)}")
+        e = Embed(description=f"Successfully logged in {chat.bold(self.v_client.me.riot_id)}")
         await interaction.followup.send(embed=e, ephemeral=True)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
@@ -140,7 +141,7 @@ class Valorant(ValorantCog):
     async def logout(self, interaction: discord.Interaction[LatteMaid], number: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        e = discord.Embed(description=f"Successfully logged out all accounts")
+        e = Embed(description=f"Successfully logged out all accounts")
         await interaction.followup.send(embed=e, ephemeral=True)
 
         # # invalidate cache
@@ -227,26 +228,26 @@ class Valorant(ValorantCog):
         await interaction.response.defer()
         ...
 
-    # @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
-    # @app_commands.choices(
-    #     mode=[
-    #         Choice(name=_T('Unrated'), value='unrated'),
-    #         Choice(name=_T('Competitive'), value='competitive'),
-    #         Choice(name=_T('SwiftPlay'), value='swiftplay'),
-    #         Choice(name=_T('Deathmatch'), value='deathmatch'),
-    #         Choice(name=_T('Spike Rush'), value='spikerush'),
-    #         Choice(name=_T('Escalation'), value='ggteam'),
-    #         Choice(name=_T('Replication'), value='onefa'),
-    #         Choice(name=_T('Snowball Fight'), value='snowball'),
-    #         Choice(name=_T('Custom'), value='custom'),
-    #     ]
-    # )
-    # @app_commands.describe(mode=_T('The queue to show your carrier for'))
-    # @app_commands.rename(mode=_T('mode'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_short)
-    # async def carrier(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
-    #     ...
+    @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
+    @app_commands.choices(
+        mode=[
+            Choice(name=_T('Unrated'), value='unrated'),
+            Choice(name=_T('Competitive'), value='competitive'),
+            Choice(name=_T('SwiftPlay'), value='swiftplay'),
+            Choice(name=_T('Deathmatch'), value='deathmatch'),
+            Choice(name=_T('Spike Rush'), value='spikerush'),
+            Choice(name=_T('Escalation'), value='ggteam'),
+            Choice(name=_T('Replication'), value='onefa'),
+            Choice(name=_T('Snowball Fight'), value='snowball'),
+            Choice(name=_T('Custom'), value='custom'),
+        ]
+    )
+    @app_commands.describe(mode=_T('The queue to show your carrier for'))
+    @app_commands.rename(mode=_T('mode'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def carrier(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
+        ...
 
     # @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
     # @app_commands.choices(
@@ -547,3 +548,23 @@ class Valorant(ValorantCog):
     #     embed.set_image(url="attachment://profile.png")
     #
     #     await interaction.followup.send(embed=embed, file=file)
+
+    @app_commands.command(name=_T('test_store_image'))
+    async def test_store_image(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await interaction.response.defer()
+
+        from .tests.images import StoreImage
+
+        class StoreImageDiscord(StoreImage):
+            def to_discord_file(self) -> discord.File:
+                return discord.File(fp=self.to_buffer(), filename='store.png')
+
+        sf = await self.v_client.fetch_storefront()
+
+        sid = StoreImageDiscord()
+        await sid.generate(sf.daily_store.skins)
+
+        embed = Embed(colour=0x63C0B5)
+        embed.set_image(url="attachment://store.png")
+
+        await interaction.followup.send(embed=embed, file=sid.to_discord_file())

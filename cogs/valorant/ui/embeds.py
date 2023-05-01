@@ -4,12 +4,12 @@ import datetime
 
 # import datetime
 # import random
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
-import discord
 from discord.utils import format_dt
 
 import core.utils.chat_formatting as chat
+from core.embed import Embed
 
 from .. import valorantx3 as valorantx
 from ..valorantx3 import RiotAuth
@@ -41,8 +41,6 @@ from ..valorantx3.models import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from ..valorantx3.models import RewardValorantAPI
 
 BundleItem = Union[Skin, Buddy, Spray, PlayerCard]
@@ -52,7 +50,6 @@ SprayItem = Union[Spray, SprayLevel]
 BuddyItem = Union[Buddy, BuddyLevel]
 
 __all__ = (
-    'Embed',
     'BundleEmbed',
     'skin_e',
     'store_e',
@@ -63,39 +60,8 @@ __all__ = (
 )
 
 
-class Embed(discord.Embed):
-    def __init__(
-        self,
-        title: Optional[Any] = None,
-        description: Optional[Any] = None,
-        color: Union[discord.Color, int] = 0xFFFFFF,
-        fields: Iterable[Tuple[str, str]] = (),
-        field_inline: bool = False,
-        url: Optional[Any] = None,
-        timestamp: Optional[datetime.datetime] = None,
-        custom_id: Optional[str] = None,
-        **kwargs,
-    ):
-        self.custom_id = custom_id
-        super().__init__(title=title, description=description, color=color, url=url, timestamp=timestamp, **kwargs)
-        for n, v in fields:
-            self.add_field(name=n, value=v, inline=field_inline)
-
-    def purple(self) -> Self:
-        self.colour = 0xC0AEE0
-        return self
-
-    def dark_purple(self) -> Self:
-        self.colour = 0x8B7DB5
-        return self
-
-    def dark(self) -> Self:
-        self.colour = 0x0F1923
-        return self
-
-
 def skin_e(
-    skin: valorantx.Skin | valorantx.SkinLevel | valorantx.SkinChroma | SkinLevelOffer | SkinLevelBonus,
+    skin: Union[valorantx.Skin, valorantx.SkinLevel, valorantx.SkinChroma, SkinLevelOffer, SkinLevelBonus],
     *,
     locale: ValorantLocale,
 ) -> Embed:

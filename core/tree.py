@@ -53,8 +53,8 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             _log.info('synced %s application commands %s' % (len(synced), f'for guild {guild.id}' if guild else ''))
         return synced
 
-    async def on_error(
-        self, interaction: discord.Interaction['LatteMaid'], error: app_commands.AppCommandError, /
-    ) -> None:
-        self.client.dispatch('app_command_error', interaction, error)
-        # return await interaction_error_handler(interaction, error)
+    # async def on_error(
+    #     self, interaction: discord.Interaction['LatteMaid'], error: app_commands.AppCommandError, /
+    # ) -> None:
+    #     self.client.dispatch('app_command_error', interaction, error)
+    # return await interaction_error_handler(interaction, error)
