@@ -72,7 +72,7 @@ class LatteMaid(commands.AutoShardedBot):
     db_engine: AsyncEngine
     bot_app_info: discord.AppInfo
 
-    def __init__(self, debug_mode: bool = False) -> None:
+    def __init__(self) -> None:
         # intents
         intents = discord.Intents.default()
         intents.typing = False  # guild_typing and dm_typing
@@ -94,7 +94,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # bot stuff
         # self.launch_time: str = f'<t:{round(datetime.datetime.now().timestamp())}:R>'
-        self._debug_mode: bool = debug_mode
+        self._debug_mode: bool = bool(os.getenv('DEBUG_MODE', False))
         self._version: str = '1.0.0a'
 
         # assets
@@ -410,7 +410,10 @@ class LatteMaid(commands.AutoShardedBot):
         await super().close()
 
     async def start(self) -> None:
-        token = os.getenv('DISCORD_TOKEN')  # if self.is_debug_mode() else os.getenv('DISCORD_TOKEN_PROD')
+        if self.is_debug_mode():
+            token = os.getenv('DISCORD_TOKEN_DEBUG')
+        else:
+            token = os.getenv('DISCORD_TOKEN')
         if token is None:
             raise RuntimeError('No token provided.')
         await super().start(token=token, reconnect=True)
