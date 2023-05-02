@@ -17,13 +17,13 @@ __all__ = (
 # fmt: on
 
 FILEPATH = os.path.dirname(__file__)
-PRIMARY_FONT = ImageFont.FreeTypeFont(FILEPATH + '\\static\\fonts\\Inter-Bold.ttf', 40)
-VP_IMAGE = Image.open(FILEPATH + '\\static\\images\\vp.png').resize((65, 65)).convert('RGBA')
+PRIMARY_FONT = ImageFont.FreeTypeFont(os.path.join(FILEPATH, 'static', 'fonts', 'Inter-Bold.ttf'), 40)
+VP_IMAGE = Image.open(os.path.join(FILEPATH, 'static', 'images', 'vp.png')).resize((65, 65)).convert('RGBA')
 
 
 class StoreImage:
     def __init__(self) -> None:
-        self._background: Image.Image = Image.open(FILEPATH + '\\static\\images\\bg.png')
+        self._background: Image.Image = Image.open(os.path.join(FILEPATH, 'static', 'images', 'bg.png'))
         self._draw = ImageDraw.Draw(self._background)
 
     def _get_rarity_fill(self, rarity: Rarity) -> str:
