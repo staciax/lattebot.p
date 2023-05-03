@@ -97,9 +97,6 @@ class ComponentOnCooldown(Exception):
     ) -> None:
         self.cooldown: discord.app_commands.Cooldown = cooldown
         self.interaction: Optional[discord.Interaction] = interaction
-        self.type: int = -1
-        if interaction is not None:
-            self.type = interaction.data.get('component_type', -1)
         self.retry_after: float = cooldown.get_retry_after()
         super().__init__(f'You are on cooldown. Try again in {self.retry_after:.2f}s')
 
