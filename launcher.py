@@ -5,9 +5,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from discord import SyncWebhook
-from discord.utils import _ColourFormatter, stream_supports_colour
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from discord import SyncWebhook, utils
 
 from core.bot import LatteMaid
 
@@ -17,6 +15,8 @@ except ImportError:
     pass
 else:
     uvloop.install()
+
+# inspired by robodanny - Danny (Rapptz)
 
 
 class RemoveNoise(logging.Filter):
@@ -32,10 +32,6 @@ class RemoveNoise(logging.Filter):
 @contextlib.contextmanager
 def setup_logging():
     log = logging.getLogger()
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true')
-    args = parser.parse_args()
-    os.environ['DEBUG_MODE'] = 'True' if args.debug else 'False'
 
     try:
         # __enter__
@@ -55,6 +51,9 @@ def setup_logging():
         # cogs valorant
         logging.getLogger('lattemaid.valorant').setLevel(logging.WARNING)
 
+        # sqlalchemy
+        # logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+
         log.setLevel(logging.INFO)
         handler = RotatingFileHandler(
             filename='_lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
@@ -63,10 +62,10 @@ def setup_logging():
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)
         log.addHandler(handler)
-        if args.debug:
+        if os.getenv('DEBUG_MODE') == 'True':
             handler = logging.StreamHandler()
-            if isinstance(handler, logging.StreamHandler) and stream_supports_colour(handler.stream):
-                fmt = _ColourFormatter()
+            if isinstance(handler, logging.StreamHandler) and utils.stream_supports_colour(handler.stream):
+                fmt = utils._ColourFormatter()
             handler.setFormatter(fmt)
             log.addHandler(handler)
         yield
@@ -79,9 +78,11 @@ def setup_logging():
 
 
 @contextlib.contextmanager
-def setup_webhook():
+def setup_webhook(bot: LatteMaid):
     # inspired by ayane-bot - Buco7854(github)
-    url = os.getenv('WEBHOOK_STARTUP_URI')
+    if bot.is_debug_mode():
+        yield
+    url = os.getenv('WEBHOOK_STATUS_URI')
     # token = os.getenv('DISCORD_TOKEN')
     assert url is not None, 'Webhook URI is not set'
     try:
@@ -91,32 +92,23 @@ def setup_webhook():
     finally:
         webhook.send('💤 LatteMaid is going to sleep!')
 
+
 def main():
     with setup_logging():
         asyncio.run(run_bot())
 
 
-def create_engine() -> AsyncEngine:
-    # uri = os.getenv('POSTGRESQL_DATABASE_URI')
-    uri = os.getenv('SQLITE_DATABASE_URI')
-    assert uri is not None, 'Database URI is not set'
-    return create_async_engine(uri, echo=True)
-
-
 async def run_bot():
-    # try:
-    #     engine = create_engine()
-    # except Exception as e:
-    #     raise RuntimeError('Failed to create database pool') from e
-
     async with LatteMaid() as bot:
-        # bot.db_engine = engine
-        # bot.db_session = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
-        with setup_webhook():
+        with setup_webhook(bot):
             await bot.start()
-
-    # TODO: webhook notify on bot start/stop
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('--sync', action='store_true', default=False)
+    args = parser.parse_args()
+    os.environ['DEBUG_MODE'] = str(args.debug)
+    os.environ['SYNCTREE'] = str(args.sync)
     main()
