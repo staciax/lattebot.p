@@ -45,3 +45,6 @@ venv/
 
 # vscode
 .vscode/
+
+# local db for test
+test.db
