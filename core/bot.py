@@ -7,7 +7,7 @@ import datetime
 import logging
 import os
 import traceback
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
@@ -19,9 +19,8 @@ from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
 from dotenv import load_dotenv
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from .db import DatabaseConnection
 from .i18n import Translator, _
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
@@ -34,11 +33,10 @@ from .utils.colorthief import ColorThief
 # from utils.ui import interaction_error_handler
 
 if TYPE_CHECKING:
-    ...
-    # from cogs.about import About
-    # from cogs.admin import Developer
-    # from cogs.jsk import Jishaku
-    # from cogs.valorant import Valorant
+    from cogs.about import About
+    from cogs.admin import Developer
+    from cogs.jsk import Jishaku
+    from cogs.valorant import Valorant
 
 load_dotenv()
 
@@ -68,8 +66,7 @@ class LatteMaid(commands.AutoShardedBot):
     if TYPE_CHECKING:
         tree: LatteMaidTree
 
-    db_session: async_sessionmaker[AsyncSession]
-    db_engine: AsyncEngine
+    db: DatabaseConnection
     bot_app_info: discord.AppInfo
 
     def __init__(self) -> None:
@@ -91,10 +88,11 @@ class LatteMaid(commands.AutoShardedBot):
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
-
+        self.db = DatabaseConnection(self, os.getenv('DATABASE_URI_TEST'))  # type: ignore
         # bot stuff
         # self.launch_time: str = f'<t:{round(datetime.datetime.now().timestamp())}:R>'
-        self._debug_mode: bool = bool(os.getenv('DEBUG_MODE', False))
+
+        self._debug_mode: bool = True if os.getenv('DEBUG_MODE') == 'True' else False
         self._version: str = '1.0.0a'
 
         # assets
@@ -111,7 +109,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # support guild
         self.support_guild_id: int = 1097859504906965042
-        self.support_invite_url: str = 'https://discord.gg/xeVJYRDY'
+        self.support_invite_url: str = 'https://discord.gg/mKysT7tr2v'
 
         # oauth2
         self.linked_role_uri: str = 'http://localhost:8000/v1/linked-role'
@@ -180,6 +178,8 @@ class LatteMaid(commands.AutoShardedBot):
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
     async def setup_hook(self) -> None:
+        await self.db.initialize()
+
         # session
         if self.session is MISSING:
             self.session = aiohttp.ClientSession()
@@ -209,22 +209,21 @@ class LatteMaid(commands.AutoShardedBot):
         #     await command.get_translated_payload(self.translator)
 
         # tree sync application commands
-        # if self.is_debug_mode():
-        # await self.tree.sync()
-        _log.info('synced application commands.')
-        sync_guilds = [
-            # self.support_guild_id,
-            # 1042503061454729289,  # EMOJI ABILITY 2
-            # 1042502960921452734,  # EMOJI ABILITY 1
-            # 1043965050630705182,  # EMOJI TIER
-            # 1042501718958669965,  # EMOJI AGENT
-            # 1042809126624964651,  # EMOJI MATCH
-        ]
-        for guild_id in sync_guilds:
-            try:
-                await self.tree.sync(guild=discord.Object(id=guild_id))
-            except Exception as e:
-                _log.exception(f'Failed to sync guild {guild_id}.')
+        if os.environ.get('SYNCTREE') == 'True':
+            await self.tree.sync()
+            sync_guilds = [
+                # self.support_guild_id,
+                # 1042503061454729289,  # EMOJI ABILITY 2
+                # 1042502960921452734,  # EMOJI ABILITY 1
+                # 1043965050630705182,  # EMOJI TIER
+                # 1042501718958669965,  # EMOJI AGENT
+                # 1042809126624964651,  # EMOJI MATCH
+            ]
+            for guild_id in sync_guilds:
+                try:
+                    await self.tree.sync(guild=discord.Object(id=guild_id))
+                except Exception as e:
+                    _log.exception(f'Failed to sync guild {guild_id}.')
 
         await Translator.get_i18n(
             cogs=self.cogs,
@@ -265,36 +264,21 @@ class LatteMaid(commands.AutoShardedBot):
     # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
     #     return self.get_channel(config.traceback_channel_id)
 
-    # async def add_to_blacklist(self, object_id: int):
-    #     await self.blacklist.put(object_id, True)
+    @property
+    def about(self) -> Optional[About]:
+        return self.get_cog('about')  # type: ignore
 
-    # async def remove_from_blacklist(self, object_id: int):
-    #     try:
-    #         await self.blacklist.remove(object_id)
-    #     except KeyError:
-    #         pass
+    @property
+    def developer(self) -> Optional[Developer]:
+        return self.get_cog('developer')  # type: ignore
 
-    # @property
-    # def about(self) -> Optional[About]:
-    #     return self.get_cog('about')
+    @property
+    def valorant(self) -> Optional[Valorant]:
+        return self.get_cog('valorant')  # type: ignore
 
-    # @property
-    # def developer(self) -> Optional[Developer]:
-    #     return self.get_cog('developer')
-
-    # @property
-    # def valorant(self) -> Optional[Valorant]:
-    #     return self.get_cog('valorant')
-
-    # @property
-    # def jsk(self) -> Optional[Jishaku]:
-    #     return self.get_cog('jishaku')
-
-    async def get_db_session(self) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-        try:
-            yield self.db_session
-        except SQLAlchemyError as e:
-            _log.exception(e)
+    @property
+    def jsk(self) -> Optional[Jishaku]:
+        return self.get_cog('jishaku')  # type: ignore
 
     # https://github.com/Rapptz/RoboDanny/blob/5a9c02560048d5605701be4835e8d4ef2407c646/bot.py#L226
     # async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
@@ -392,21 +376,13 @@ class LatteMaid(commands.AutoShardedBot):
         return self._debug_mode
 
     # @property
-    # def version(self) -> str:
-    #     return self._version
-
-    # @version.setter
-    # def version(self, value: str) -> None:
-    #     self._version = value
-
-    # @property
     # def config(self):
     #     return __import__('config')
 
     async def close(self) -> None:
         await self.cogs_unload()
-        # await self.db_engine.dispose()
-        # await self.session.close()
+        await self.session.close()
+        await self.db.close()
         await super().close()
 
     async def start(self) -> None:
