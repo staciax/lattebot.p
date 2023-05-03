@@ -51,3 +51,11 @@ class Embed(DiscordEmbed):
     def dark(self) -> Self:
         self.colour = 0x0F1923
         return self
+
+    def success(self) -> Self:
+        self.colour = 0x8BE28B
+        return self
+
+    def error(self) -> Self:
+        self.colour = 0xFF6961
+        return self

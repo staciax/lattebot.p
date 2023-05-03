@@ -36,7 +36,7 @@ class DatabaseConnection:
         self._async_session = async_sessionmaker(self._async_engine, expire_on_commit=False, autoflush=False)
         await self._create_tables(drop=drop_table)
         self._ready.set()
-        del self.__uri # delete uri to prevent accidental use
+        del self.__uri  # delete uri to prevent accidental use
         self._log.info('database connection initialized')
 
     async def _create_tables(self, drop: bool = False) -> None:

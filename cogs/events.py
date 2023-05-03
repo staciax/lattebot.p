@@ -7,6 +7,8 @@ import discord
 from discord.app_commands import Command, ContextMenu
 from discord.ext import commands
 
+from core.embed import Embed
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
@@ -29,13 +31,14 @@ class Event(commands.Cog, name='events'):
     async def on_latte_app_command(
         self, interaction: discord.Interaction[LatteMaid], command: Union[Command, ContextMenu]
     ) -> None:
-        await interaction.client.pool.execute(
-            "INSERT INTO commands (guild_id, user_id, command, timestamp) VALUES ($1, $2, $3, $4)",
-            getattr(interaction.guild, "id", None),
-            interaction.user.id,
-            command.qualified_name,
-            interaction.created_at,
-        )
+        ...
+        # await interaction.client.pool.execute(
+        #     "INSERT INTO commands (guild_id, user_id, command, timestamp) VALUES ($1, $2, $3, $4)",
+        #     getattr(interaction.guild, "id", None),
+        #     interaction.user.id,
+        #     command.qualified_name,
+        #     interaction.created_at,
+        # )
 
     #     """Called when a command is completed"""
 
@@ -79,17 +82,17 @@ class Event(commands.Cog, name='events'):
     async def on_latte_join(self, guild: discord.Guild) -> None:
         """Called when LatteMaid joins a guild"""
 
-        if guild.id in self.bot.blacklist:
-            _log.info(f'Left guild {guild.id} because it is blacklisted')
+        if guild.id in self.bot.db.blacklist:
+            _log.info(f'left guild {guild.id} because it is blacklisted')
             return await guild.leave()
 
-        embed = discord.Embed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ', colour=self.bot.theme.success)
+        embed = Embed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ').success()
         await self.send_guild_stats(embed, guild)
 
     @commands.Cog.listener('on_guild_remove')
     async def on_latte_leave(self, guild: discord.Guild) -> None:
         """Called when LatteMaid leaves a guild"""
-        embed = discord.Embed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ', colour=self.bot.theme.error)
+        embed = Embed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ').error()
         await self.send_guild_stats(embed, guild)
 
 

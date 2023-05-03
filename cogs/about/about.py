@@ -18,7 +18,8 @@ from discord.app_commands.checks import bot_has_permissions, dynamic_cooldown
 from discord.ext import commands
 from discord.utils import format_dt
 
-from core.checks import cooldown_5s
+from core.checks import cooldown_short
+from core.embed import Embed
 from core.utils.useful import count_python
 
 if TYPE_CHECKING:
@@ -66,9 +67,9 @@ class About(commands.Cog, name='about'):
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def invite(self, interaction: Interaction[LatteMaid]) -> None:
-        embed = discord.Embed(color=self.bot.theme.secondary)
+        embed = Embed(color=self.bot.theme.secondary)
         embed.set_author(
             name=f'{self.bot.user.name} ɪɴᴠɪᴛᴇ',  # type: ignore
             url=self.bot.invite_url,
@@ -84,7 +85,7 @@ class About(commands.Cog, name='about'):
 
     @app_commands.command(name=_T('about'), description=_T('Shows bot information'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def about(self, interaction: Interaction[LatteMaid]) -> None:
         # await interaction.response.defer()
 
@@ -99,7 +100,7 @@ class About(commands.Cog, name='about'):
         memory_usage = self.process.memory_full_info().uss / 1024**2
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
 
-        embed = discord.Embed(color=self.bot.theme.primacy, timestamp=interaction.created_at)
+        embed = Embed(timestamp=interaction.created_at).purple()
         embed.set_author(name='About Me', icon_url=self.bot.user.avatar)  # type: ignore
         embed.add_field(name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:', value=self.get_latest_commits(limit=5), inline=False)
         embed.add_field(
@@ -151,7 +152,7 @@ class About(commands.Cog, name='about'):
 
     @app_commands.command(name=_T('support'), description=_T('Sends the support server of the bot.'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def support(self, interaction: Interaction[LatteMaid]) -> None:
         embed = discord.Embed(color=self.bot.theme.primacy)
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
