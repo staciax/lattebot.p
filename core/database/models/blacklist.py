@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, AsyncIterator, Optional
 
-from sqlalchemy import String, select
+from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+    from .user import User
 
 # fmt: off
 __all__ = (
@@ -20,8 +22,13 @@ __all__ = (
 class BlackList(Base):
     __tablename__ = 'blacklist'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True)
+    id: Mapped[int] = mapped_column('id', ForeignKey('users.id'), nullable=False, unique=True, primary_key=True)
     reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
+    maybe_user: Mapped[Optional[User]] = relationship(
+        'User',
+        back_populates='_blacklist',
+        lazy='joined',
+    )
 
     @property
     def object_id(self) -> int:
