@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator, List, Optional
 
 from sqlalchemy import String, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+    from .blacklist import BlackList
+    from .command import Command
 
 # fmt: off
 __all__ = (
@@ -20,8 +24,24 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True)  # autoincrement=True,
+    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True) 
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
+    command_uses: Mapped[List[Command]] = relationship(
+        'Command',
+        back_populates='author',
+        order_by='Command.used',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+    )
+    _blacklist: Mapped[Optional[BlackList]] = relationship(
+        'BlackList',
+        back_populates='maybe_user',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+        lazy='joined',
+    )
+
+    @hybrid_method
+    def is_blacklisted(self) -> bool:
+        return self._blacklist is not None
 
     async def update(self, session: AsyncSession, locale: str) -> None:
         self.locale = locale
