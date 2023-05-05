@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, AsyncIterator, Dict, List, Optional
 
-from core.database import BlackList, DatabaseConnection as BaseDatabaseConnection, User
+from core.utils.database import BlackList, DatabaseConnection as BaseDatabaseConnection, User
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

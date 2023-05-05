@@ -20,7 +20,7 @@ from discord.ext import commands
 from discord.utils import MISSING
 from dotenv import load_dotenv
 
-from .db import DatabaseConnection
+from .database import DatabaseConnection
 from .i18n import Translator, _
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief

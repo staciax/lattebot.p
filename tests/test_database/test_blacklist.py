@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from core.database.errors import BlacklistAlreadyExists, BlacklistDoesNotExist
+from core.utils.database.errors import BlacklistAlreadyExists, BlacklistDoesNotExist
 
 from .conftest import DatabaseSetup
 from .mock_data import BLACKLIST_DATA
 
 if TYPE_CHECKING:
-    from core.database import DatabaseConnection
+    from core.utils.database import DatabaseConnection
 
 
 class TestBlackList(DatabaseSetup):

@@ -8,7 +8,7 @@ from .conftest import DatabaseSetup
 from .mock_data import COMMAND_DATA
 
 if TYPE_CHECKING:
-    from core.database import DatabaseConnection
+    from core.utils.database import DatabaseConnection
 
 
 class TestCommand(DatabaseSetup):

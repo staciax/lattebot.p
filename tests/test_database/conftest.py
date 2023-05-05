@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 from dotenv import load_dotenv
 
-from core.database.connection import DatabaseConnection
+from core.utils.database.connection import DatabaseConnection
 
 load_dotenv()
 

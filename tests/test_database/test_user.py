@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from core.database.errors import UserAlreadyExists, UserDoesNotExist
+from core.utils.database.errors import UserAlreadyExists, UserDoesNotExist
 
 from .conftest import DatabaseSetup
 from .mock_data import USER_DATA
 
 if TYPE_CHECKING:
-    from core.database import DatabaseConnection
+    from core.utils.database import DatabaseConnection
 
 
 class TestUser(DatabaseSetup):
