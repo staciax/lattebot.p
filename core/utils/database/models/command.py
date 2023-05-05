@@ -68,7 +68,7 @@ class Command(Base):
     async def create(
         cls,
         session: AsyncSession,
-        guild: int,
+        guild: Optional[int],
         channel: int,
         author: int,
         used: datetime.datetime,

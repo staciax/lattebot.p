@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Union
 import discord
 from discord.app_commands import Command, ContextMenu
 from discord.ext import commands
+from dotenv import load_dotenv
 
-from core.embed import Embed
+from core.utils.useful import MiadEmbed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -19,6 +20,7 @@ class Event(commands.Cog, name='events'):
     """Bot Events"""
 
     def __init__(self, bot: LatteMaid) -> None:
+        load_dotenv()
         self.bot: LatteMaid = bot
 
     @discord.utils.cached_property
@@ -29,9 +31,40 @@ class Event(commands.Cog, name='events'):
 
     @commands.Cog.listener('on_app_command_completion')
     async def on_latte_app_command(
-        self, interaction: discord.Interaction[LatteMaid], command: Union[Command, ContextMenu]
+        self, interaction: discord.Interaction[LatteMaid], app_command: Union[Command, ContextMenu]
     ) -> None:
-        ...
+        #     if interaction.user == self.bot.owner:
+        #         return
+        command = app_command.qualified_name
+        message = interaction.message
+        channel = interaction.channel
+        assert message is not None
+        assert channel is not None
+
+        destination = None
+        if interaction.guild is None:
+            destination = 'Private Message'
+            guild_id = None
+        else:
+            destination = f'#{channel} ({interaction.guild})'
+            guild_id = interaction.guild.id
+        if interaction.command:
+            content = f'/{interaction.command.qualified_name}'
+        else:
+            content = message.content
+        assert message is not None
+        _log.info(f'{message.created_at}: {message.author} in {destination}: {content}')
+        await self.bot.db.create_command(
+            guild=guild_id,
+            command=command,
+            channel=channel.id,
+            author=interaction.user.id,
+            used=interaction.created_at,
+            prefix='/',
+            failed=False,
+            app_command=True,
+        )
+        
         # await interaction.client.pool.execute(
         #     "INSERT INTO commands (guild_id, user_id, command, timestamp) VALUES ($1, $2, $3, $4)",
         #     getattr(interaction.guild, "id", None),
@@ -41,9 +74,6 @@ class Event(commands.Cog, name='events'):
         # )
 
     #     """Called when a command is completed"""
-
-    #     if interaction.user == self.bot.owner:
-    #         return
 
     # data = self.bot.app_stats.get(command.name)
     # if data is not None:
@@ -82,17 +112,17 @@ class Event(commands.Cog, name='events'):
     async def on_latte_join(self, guild: discord.Guild) -> None:
         """Called when LatteMaid joins a guild"""
 
-        if guild.id in self.bot.db.blacklist:
+        if guild.id in self.bot.db._blacklist:  # TODO: fix this
             _log.info(f'left guild {guild.id} because it is blacklisted')
             return await guild.leave()
 
-        embed = Embed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ').success()
+        embed = MiadEmbed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ').success()
         await self.send_guild_stats(embed, guild)
 
     @commands.Cog.listener('on_guild_remove')
     async def on_latte_leave(self, guild: discord.Guild) -> None:
         """Called when LatteMaid leaves a guild"""
-        embed = Embed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ').error()
+        embed = MiadEmbed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ').error()
         await self.send_guild_stats(embed, guild)
 
 

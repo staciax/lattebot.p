@@ -5,7 +5,7 @@ import itertools
 import platform
 
 # from functools import lru_cache
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 
 import discord
 import psutil
@@ -19,11 +19,11 @@ from discord.ext import commands
 from discord.utils import format_dt
 
 from core.checks import cooldown_short
-from core.embed import Embed
-from core.utils.useful import count_python
+from core.utils.useful import MiadEmbed, count_python
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from core.utils.enums import Emoji
 
 
 class About(commands.Cog, name='about'):
@@ -32,8 +32,7 @@ class About(commands.Cog, name='about'):
 
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        # self.emoji = bot.emoji
-        # self.cdn = bot.cdn
+        self.emoji: Type[Emoji] = bot.emoji
         self.process = psutil.Process()
 
     @property
@@ -69,14 +68,14 @@ class About(commands.Cog, name='about'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @dynamic_cooldown(cooldown_short)
     async def invite(self, interaction: Interaction[LatteMaid]) -> None:
-        embed = Embed(color=self.bot.theme.secondary)
+        embed = MiadEmbed().secondary()
         embed.set_author(
             name=f'{self.bot.user.name} ɪɴᴠɪᴛᴇ',  # type: ignore
             url=self.bot.invite_url,
             icon_url=self.bot.user.avatar,  # type: ignore
         )
         embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')  # type: ignore
-        embed.set_image(url=str(self.cdn.invite_banner))
+        # embed.set_image(url=str(self.cdn.invite_banner))
 
         view = ui.View()
         view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.invite_url, emoji=str(self.emoji.latte_icon)))
@@ -100,7 +99,7 @@ class About(commands.Cog, name='about'):
         memory_usage = self.process.memory_full_info().uss / 1024**2
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
 
-        embed = Embed(timestamp=interaction.created_at).purple()
+        embed = MiadEmbed(timestamp=interaction.created_at).purple()
         embed.set_author(name='About Me', icon_url=self.bot.user.avatar)  # type: ignore
         embed.add_field(name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:', value=self.get_latest_commits(limit=5), inline=False)
         embed.add_field(
@@ -114,7 +113,7 @@ class About(commands.Cog, name='about'):
         embed.add_field(
             name='ʙᴏᴛ ɪɴꜰᴏ:',
             value=f'{e.cursor} ʟɪɴᴇ ᴄᴏᴜɴᴛ: `{count_python(".")}`\n'
-            + f'{e.latte_icon} ʟᴀᴛᴛᴇ_ᴍᴀɪᴅ: `{self.bot.version}`\n'
+            + f'{e.latte_icon} ʟᴀᴛᴛᴇ_ᴍᴀɪᴅ: `{self.bot._version}`\n'
             + f'{e.python} ᴘʏᴛʜᴏɴ: `{platform.python_version()}`\n'
             + f'{e.discord_py} ᴅɪꜱᴄᴏʀᴅ.ᴘʏ: `{discord.__version__}`',  # dpy_version[:dpy_version.find('+')]
             inline=True,
@@ -154,7 +153,7 @@ class About(commands.Cog, name='about'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @dynamic_cooldown(cooldown_short)
     async def support(self, interaction: Interaction[LatteMaid]) -> None:
-        embed = discord.Embed(color=self.bot.theme.primacy)
+        embed = MiadEmbed()
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
         embed.set_thumbnail(url=self.bot.user.avatar)  # type: ignore
 

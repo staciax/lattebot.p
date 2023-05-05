@@ -57,7 +57,7 @@ class Translator(app_commands.Translator):
     def __init__(self, bot: LatteMaid, path: Optional[str] = None) -> None:
         super().__init__()
         self.bot: LatteMaid = bot
-        self._path: str = path
+        self._path: Optional[str] = path
         self.__latest_command: Optional[Union[Command, Group, ContextMenu]] = None
         self.__latest_binding: Optional[commands.Cog] = None
         self.__latest_parameter: Optional[Parameter] = None

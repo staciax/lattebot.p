@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from discord.utils import format_dt
 
 import core.utils.chat_formatting as chat
-from core.embed import Embed
+from core.utils.useful import MiadEmbed as Embed
 
 from .. import valorantx3 as valorantx
 from ..valorantx3 import RiotAuth

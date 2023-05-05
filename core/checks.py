@@ -32,7 +32,6 @@ __all__: Tuple[str, ...] = (
     'cooldown_long',
     'custom_cooldown',
 )
-
 T = TypeVar('T')
 
 

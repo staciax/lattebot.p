@@ -141,7 +141,7 @@ class DatabaseConnection:
 
     async def create_command(
         self,
-        guild: int,
+        guild: Optional[int],
         channel: int,
         author: int,
         used: datetime.datetime,

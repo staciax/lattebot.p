@@ -14,7 +14,7 @@ from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
-from core.embed import Embed
+from core.utils.useful import MiadEmbed as Embed
 
 from . import valorantx3 as valorantx
 from .abc import ValorantCog

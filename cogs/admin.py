@@ -10,9 +10,9 @@ from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
 
 from core.checks import owner_only
-from core.embed import Embed
 from core.errors import CommandError
 from core.utils.chat_formatting import bold, inline
+from core.utils.useful import MiadEmbed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -60,7 +60,7 @@ class Developer(commands.Cog, name='developer'):
             _log.error(e)
             raise CommandError('The extension load failed')
         else:
-            embed = Embed(description=f"Load : `{extension}`").success()
+            embed = MiadEmbed(description=f"Load : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('unload'), description=_T('Unload an extension'))
@@ -78,7 +78,7 @@ class Developer(commands.Cog, name='developer'):
             _log.error(e)
             raise CommandError('The extension unload failed')
         else:
-            embed = Embed(description=f"Unload : `{extension}`").success()
+            embed = MiadEmbed(description=f"Unload : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('reload'))
@@ -100,7 +100,7 @@ class Developer(commands.Cog, name='developer'):
             _log.error(e)
             raise CommandError('The extension reload failed')
         else:
-            embed = Embed(description=f"Reload : `{extension}`").success()
+            embed = MiadEmbed(description=f"Reload : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @app_commands.command(name='_sync_tree')
@@ -116,7 +116,7 @@ class Developer(commands.Cog, name='developer'):
             return
         await self.bot.tree.sync()
 
-        embed = Embed(description=f"Sync Tree").success()
+        embed = MiadEmbed(description=f"Sync Tree").success()
         if guild_id is not None:
             embed.description = f"Sync Tree : `{guild_id}`"
 
@@ -153,7 +153,7 @@ class Developer(commands.Cog, name='developer'):
     async def blacklist_add(self, interaction: Interaction[LatteMaid], object_id: str) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        if object_id in self.bot.db.blacklist:
+        if object_id in self.bot.db._blacklist:  # TODO: fix this
             raise CommandError(f'`{object_id}` is already in blacklist')
 
         await self.bot.db.create_blacklist(id=int(object_id))
@@ -167,7 +167,7 @@ class Developer(commands.Cog, name='developer'):
         if isinstance(blacklist, (discord.User, discord.Guild)):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
-        embed = Embed(
+        embed = MiadEmbed(
             description=f"{blacklist} are now blacklisted.",
         ).success()
 
@@ -180,7 +180,7 @@ class Developer(commands.Cog, name='developer'):
     async def blacklist_remove(self, interaction: Interaction[LatteMaid], object_id: str):
         await interaction.response.defer(ephemeral=True)
 
-        if object_id not in self.bot.db.blacklist:
+        if object_id not in self.bot.db._blacklist:
             raise CommandError(f'`{object_id}` is not in blacklist')
 
         await self.bot.db.delete_blacklist(int(object_id))
@@ -195,7 +195,7 @@ class Developer(commands.Cog, name='developer'):
         if isinstance(blacklist, (discord.User, discord.Guild)):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
-        embed = Embed(description=f"{blacklist} are now unblacklisted.").success()
+        embed = MiadEmbed(description=f"{blacklist} are now unblacklisted.").success()
 
         await interaction.followup.send(embed=embed, silent=True)
 
@@ -206,7 +206,7 @@ class Developer(commands.Cog, name='developer'):
     async def blacklist_check(self, interaction: Interaction[LatteMaid], object_id: str):
         await interaction.response.defer(ephemeral=True)
 
-        embed = Embed(description=f'{bold(object_id)} is blacklisted.').error()
+        embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
 
         if object_id not in self.bot.db.blacklist:
             embed.description = f"{bold(object_id)} is not blacklisted."

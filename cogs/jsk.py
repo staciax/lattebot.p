@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any, Callable
 import discord
 from discord import app_commands
 from discord.app_commands import locale_str as _T
-from discord.app_commands.checks import bot_has_permissions
+
+# from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
 from jishaku.codeblocks import codeblock_converter
 from jishaku.cog import OPTIONAL_FEATURES, STANDARD_FEATURES
@@ -152,7 +153,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         codeblock = codeblock_converter(content)
 
         try:
-            await jsk(ctx, argument=codeblock)
+            await jsk(ctx, argument=codeblock)  # type: ignore
         except Exception as e:
             _log.error(e)
             raise LatteMaidError('Invalid Python code.') from e

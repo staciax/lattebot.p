@@ -10,27 +10,18 @@ import traceback
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
-
-# import config
 import discord
-
-# import valorantx
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
 from dotenv import load_dotenv
 
+from core.utils.enums import Emoji
+
 from .database import DatabaseConnection
 from .i18n import Translator, _
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
-
-# from core.utils.config import Config
-# from utils.encryption import Encryption
-# from utils.enums import CDN, Emoji, Theme
-
-
-# from utils.ui import interaction_error_handler
 
 if TYPE_CHECKING:
     from cogs.about import About
@@ -51,11 +42,11 @@ description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.jsk',
     'cogs.errors',
+    'cogs.about',
+    'cogs.valorant',
     # 'cogs.admin',
     # 'cogs.events',
     # 'cogs.help',
-    # 'cogs.about',
-    'cogs.valorant',
     # 'cogs.role_connection',
     # 'cogs.ipc',
     # 'cogs.test',
@@ -84,7 +75,7 @@ class LatteMaid(commands.AutoShardedBot):
             case_insensitive=True,
             intents=intents,
             description=description,
-            # application_id=config.client_id,
+            application_id=os.getenv('CLIENT_ID'),
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
@@ -96,16 +87,14 @@ class LatteMaid(commands.AutoShardedBot):
         self._version: str = '1.0.0a'
 
         # assets
-        # self.theme: Type[Theme] = Theme
-        # self.emoji: Type[Emoji] = Emoji
-        # self.cdn: Type[CDN] = CDN
+        self.emoji: Type[Emoji] = Emoji
 
         # bot invite link
         self._permission_invite: int = 280576
-        # self.invite_url = discord.utils.oauth_url(
-        #     self.application_id or self.config.application_id,
-        #     permissions=discord.Permissions(self._permission_invite),
-        # )
+        self.invite_url = discord.utils.oauth_url(
+            self.application_id,  # type: ignore
+            permissions=discord.Permissions(self._permission_invite),
+        )
 
         # support guild
         self.support_guild_id: int = 1097859504906965042
@@ -157,11 +146,19 @@ class LatteMaid(commands.AutoShardedBot):
             raise ValueError('Support guild ID is not set.')
         return self.get_guild(self.support_guild_id)
 
+    def is_maintenance(self) -> bool:
+        return self._is_maintenance
+
+    def is_debug_mode(self) -> bool:
+        return self._debug_mode
+
     # @discord.utils.cached_property
     # def webhook(self) -> discord.Webhook:
     #     wh_id, wh_token = self.config.stat_webhook
     #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
     #     return hook
+
+    # bot setup
 
     async def cogs_load(self) -> None:
         """Load cogs."""
@@ -264,6 +261,8 @@ class LatteMaid(commands.AutoShardedBot):
     # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
     #     return self.get_channel(config.traceback_channel_id)
 
+    # cogs property
+
     @property
     def about(self) -> Optional[About]:
         return self.get_cog('about')  # type: ignore
@@ -280,38 +279,7 @@ class LatteMaid(commands.AutoShardedBot):
     def jsk(self) -> Optional[Jishaku]:
         return self.get_cog('jishaku')  # type: ignore
 
-    # https://github.com/Rapptz/RoboDanny/blob/5a9c02560048d5605701be4835e8d4ef2407c646/bot.py#L226
-    # async def get_or_fetch_member(self, guild: discord.Guild, member_id: int) -> Optional[discord.Member]:
-    #     """Looks up a member in cache or fetches if not found.
-    #     Parameters
-    #     -----------
-    #     guild: Guild
-    #         The guild to look in.
-    #     member_id: int
-    #         The member ID to search for.
-    #     Returns
-    #     ---------
-    #     Optional[Member]
-    #         The member or None if not found.
-    #     """
-
-    #     member = guild.get_member(member_id)
-    #     if member is not None:
-    #         return member
-
-    #     shard: discord.ShardInfo = self.get_shard(guild.shard_id)  # type: ignore  # will never be None
-    #     if shard.is_ws_ratelimited():
-    #         try:
-    #             member = await guild.fetch_member(member_id)
-    #         except discord.HTTPException:
-    #             return None
-    #         else:
-    #             return member
-
-    #     members = await guild.query_members(limit=1, user_ids=[member_id], cache=True)
-    #     if not members:
-    #         return None
-    #     return members[0]
+    # app commands
 
     async def fetch_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         """Fetch all application commands."""
@@ -336,6 +304,8 @@ class LatteMaid(commands.AutoShardedBot):
     @property
     def app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
+
+    # colors
 
     def get_colors(self, id: str) -> List[discord.Colour]:
         """Returns the colors of the image."""
@@ -369,15 +339,7 @@ class LatteMaid(commands.AutoShardedBot):
             colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
         return self.store_colors(id, colors)
 
-    def is_maintenance(self) -> bool:
-        return self._is_maintenance
-
-    def is_debug_mode(self) -> bool:
-        return self._debug_mode
-
-    # @property
-    # def config(self):
-    #     return __import__('config')
+    # bot methods
 
     async def close(self) -> None:
         await self.cogs_unload()
