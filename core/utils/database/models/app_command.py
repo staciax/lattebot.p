@@ -16,24 +16,22 @@ if TYPE_CHECKING:
 
 # fmt: off
 __all__ = (
-    'Command',
+    'AppCommand',
 )
 # fmt: off
 
 
-class Command(Base):
-    __tablename__ = 'commands'
+class AppCommand(Base):
+    __tablename__ = 'app_commands'
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=True)
     guild: Mapped[Optional[int]] = mapped_column('guild_id')
     channel: Mapped[int] = mapped_column('channel')
     author_id: Mapped[int] = mapped_column('author_id', ForeignKey('users.id'), nullable=False)
     used: Mapped[datetime.datetime] = mapped_column('used', default=datetime.datetime.utcnow)
-    prefix: Mapped[str] = mapped_column('prefix', String(length=64), default='/')
     command: Mapped[str] = mapped_column('command', String(length=256))
     failed: Mapped[bool] = mapped_column('failed', default=False)
-    app_command: Mapped[bool] = mapped_column('app_command', default=False)
-    author: Mapped[User] = relationship('User', back_populates='command_uses')
+    author: Mapped[User] = relationship('User', back_populates='app_command_uses')
     
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
@@ -72,20 +70,16 @@ class Command(Base):
         channel: int,
         author: int,
         used: datetime.datetime,
-        prefix: str,
         command: str,
-        failed: bool,
-        app_command: bool,
+        failed: bool
     ) -> Self:
-        cmd = Command(
+        cmd = AppCommand(
             guild=guild,
             channel=channel,
             author_id=author,
             used=used,
-            prefix=prefix,
             command=command,
             failed=failed,
-            app_command=app_command,
         )
         session.add(cmd)
         await session.flush()

@@ -40,9 +40,10 @@ os.environ['JISHAKU_HIDE'] = 'True'
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
-    'cogs.jsk',
-    'cogs.errors',
     'cogs.about',
+    'cogs.errors',
+    'cogs.jsk',
+    'cogs.stats',
     'cogs.valorant',
     # 'cogs.admin',
     # 'cogs.events',
@@ -63,7 +64,16 @@ class LatteMaid(commands.AutoShardedBot):
     def __init__(self) -> None:
         # intents
         intents = discord.Intents.default()
-        intents.typing = False  # guild_typing and dm_typing
+        intents.auto_moderation = False
+        intents.emojis = False
+        intents.guild_scheduled_events = False
+        intents.integrations = False
+        intents.invites = False
+        intents.moderation = False
+        intents.reactions = True
+        intents.typing = False
+        intents.voice_states = False
+        intents.webhooks = False
 
         # allowed_mentions
         allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
@@ -80,9 +90,8 @@ class LatteMaid(commands.AutoShardedBot):
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
         self.db = DatabaseConnection(self, os.getenv('DATABASE_URI_TEST'))  # type: ignore
-        # bot stuff
-        # self.launch_time: str = f'<t:{round(datetime.datetime.now().timestamp())}:R>'
 
+        # config
         self._debug_mode: bool = True if os.getenv('DEBUG_MODE') == 'True' else False
         self._version: str = '1.0.0a'
 
@@ -101,7 +110,7 @@ class LatteMaid(commands.AutoShardedBot):
         self.support_invite_url: str = 'https://discord.gg/mKysT7tr2v'
 
         # oauth2
-        self.linked_role_uri: str = 'http://localhost:8000/v1/linked-role'
+        # self.linked_role_uri: str = 'http://localhost:8000/v1/linked-role'
 
         # maintenance
         self._is_maintenance: bool = False
@@ -119,13 +128,6 @@ class LatteMaid(commands.AutoShardedBot):
 
         # app commands
         self._app_commands: Dict[str, Union[app_commands.AppCommand, app_commands.AppCommandGroup]] = {}
-
-        # valorantx
-        # self.riot_username: str = config.riot_username
-        # self.riot_password: str = config.riot_password
-
-        # config
-        # self.blacklist: Config[bool] = Config('blacklist.json')
 
         # colour
         self.colors: Dict[str, List[discord.Colour]] = {}
@@ -158,7 +160,7 @@ class LatteMaid(commands.AutoShardedBot):
     #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
     #     return hook
 
-    # bot setup
+    # bot extension setup
 
     async def cogs_load(self) -> None:
         """Load cogs."""
@@ -231,10 +233,29 @@ class LatteMaid(commands.AutoShardedBot):
 
         await self.fetch_app_commands()
 
+    # cogs property
+
+    @property
+    def about(self) -> Optional[About]:
+        return self.get_cog('about')  # type: ignore
+
+    @property
+    def jsk(self) -> Optional[Jishaku]:
+        return self.get_cog('jishaku')  # type: ignore
+
+    @property
+    def developer(self) -> Optional[Developer]:
+        return self.get_cog('developer')  # type: ignore
+
+    @property
+    def valorant(self) -> Optional[Valorant]:
+        return self.get_cog('valorant')  # type: ignore
+
+    # bot event
+
     async def on_ready(self) -> None:
         if not hasattr(self, 'launch_time'):
             self.launch_time: datetime.datetime = datetime.datetime.now()
-            # self.launch_time: str = f'<t:{round(datetime.datetime.now().timestamp())}:R>'
 
         _log.info(
             f'logged in as: {self.user} '
@@ -260,24 +281,6 @@ class LatteMaid(commands.AutoShardedBot):
     # @discord.utils.cached_property
     # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
     #     return self.get_channel(config.traceback_channel_id)
-
-    # cogs property
-
-    @property
-    def about(self) -> Optional[About]:
-        return self.get_cog('about')  # type: ignore
-
-    @property
-    def developer(self) -> Optional[Developer]:
-        return self.get_cog('developer')  # type: ignore
-
-    @property
-    def valorant(self) -> Optional[Valorant]:
-        return self.get_cog('valorant')  # type: ignore
-
-    @property
-    def jsk(self) -> Optional[Jishaku]:
-        return self.get_cog('jishaku')  # type: ignore
 
     # app commands
 

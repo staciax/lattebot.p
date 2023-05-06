@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from .errors import BlacklistAlreadyExists, BlacklistDoesNotExist, UserAlreadyExists, UserDoesNotExist
+from .models.app_command import AppCommand
 from .models.base import Base
 from .models.blacklist import BlackList
-from .models.command import Command
 from .models.user import User
 
 # fmt: off
@@ -139,39 +139,35 @@ class DatabaseConnection:
 
     # command
 
-    async def create_command(
+    async def create_app_command(
         self,
         guild: Optional[int],
         channel: int,
         author: int,
         used: datetime.datetime,
-        prefix: str,
         command: str,
         failed: bool,
-        app_command: bool,
-    ) -> Command:
+    ) -> AppCommand:
         async with self._async_session() as session:
-            cmd = await Command.create(
+            cmd = await AppCommand.create(
                 session=session,
                 guild=guild,
                 channel=channel,
                 author=author,
                 used=used,
-                prefix=prefix,
                 command=command,
                 failed=failed,
-                app_command=app_command,
             )
             await session.commit()
-            self._log.info(f'created command with id {command!r}')
+            self._log.info(f'created app command with id {command!r}')
             return cmd
 
-    async def get_commands(self) -> AsyncIterator[Command]:
+    async def get_app_commands(self) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for cmd in Command.read_all(session):
+            async for cmd in AppCommand.read_all(session):
                 yield cmd
 
-    async def get_commands_by_name(self, name: str) -> AsyncIterator[Command]:
+    async def get_app_commands_by_name(self, name: str) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for cmd in Command.read_all_by_name(session, name):
+            async for cmd in AppCommand.read_all_by_name(session, name):
                 yield cmd

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Union
+import os
+from typing import TYPE_CHECKING
 
 import discord
-from discord.app_commands import Command, ContextMenu
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -20,68 +20,16 @@ class Event(commands.Cog, name='events'):
     """Bot Events"""
 
     def __init__(self, bot: LatteMaid) -> None:
-        load_dotenv()
         self.bot: LatteMaid = bot
 
     @discord.utils.cached_property
     def webhook(self) -> discord.Webhook:
-        wh_id, wh_token = self.bot.config.stat_webhook
-        hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.bot.session)
+        load_dotenv()
+        wh_url = os.getenv('WEBHOOK_GUILD_URI')
+        hook = discord.Webhook.from_url(url=wh_url, session=self.bot.session)  # type: ignore
         return hook
 
-    @commands.Cog.listener('on_app_command_completion')
-    async def on_latte_app_command(
-        self, interaction: discord.Interaction[LatteMaid], app_command: Union[Command, ContextMenu]
-    ) -> None:
-        #     if interaction.user == self.bot.owner:
-        #         return
-        command = app_command.qualified_name
-        message = interaction.message
-        channel = interaction.channel
-        assert message is not None
-        assert channel is not None
-
-        destination = None
-        if interaction.guild is None:
-            destination = 'Private Message'
-            guild_id = None
-        else:
-            destination = f'#{channel} ({interaction.guild})'
-            guild_id = interaction.guild.id
-        if interaction.command:
-            content = f'/{interaction.command.qualified_name}'
-        else:
-            content = message.content
-        assert message is not None
-        _log.info(f'{message.created_at}: {message.author} in {destination}: {content}')
-        await self.bot.db.create_command(
-            guild=guild_id,
-            command=command,
-            channel=channel.id,
-            author=interaction.user.id,
-            used=interaction.created_at,
-            prefix='/',
-            failed=False,
-            app_command=True,
-        )
-        
-        # await interaction.client.pool.execute(
-        #     "INSERT INTO commands (guild_id, user_id, command, timestamp) VALUES ($1, $2, $3, $4)",
-        #     getattr(interaction.guild, "id", None),
-        #     interaction.user.id,
-        #     command.qualified_name,
-        #     interaction.created_at,
-        # )
-
-    #     """Called when a command is completed"""
-
-    # data = self.bot.app_stats.get(command.name)
-    # if data is not None:
-    #     await self.bot.app_stats.put(command.name, data + 1)
-    # else:
-    #     await self.bot.app_stats.put(command.name, 1)
-
-    # @commands.Cog.listener('on_message_edit')
+    # @commands.Cog.isltener('on_message_edit')
     # async def on_latte_message_edit(self, before: discord.Message, after: discord.Message) -> None:
     #     if before.author.bot:
     #         return

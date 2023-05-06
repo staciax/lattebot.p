@@ -12,8 +12,8 @@ from .base import Base
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+    from .app_command import AppCommand
     from .blacklist import BlackList
-    from .command import Command
 
 # fmt: off
 __all__ = (
@@ -26,10 +26,10 @@ class User(Base):
 
     id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True) 
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
-    command_uses: Mapped[List[Command]] = relationship(
-        'Command',
+    app_command_uses: Mapped[List[AppCommand]] = relationship(
+        'AppCommand',
         back_populates='author',
-        order_by='Command.used',
+        order_by='AppCommand.used',
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
     )
     _blacklist: Mapped[Optional[BlackList]] = relationship(
