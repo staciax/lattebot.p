@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import discord
-from discord.app_commands import AppCommandError
+from discord.app_commands import AppCommandError as DiscordAppCommandError
 
 if TYPE_CHECKING:
     from discord.ui import View
 
 
-class LatteMaidError(AppCommandError):
+class LatteMaidError(DiscordAppCommandError):
     """Base class for all Latte errors."""
 
     def __init__(
@@ -29,7 +29,7 @@ class LatteMaidError(AppCommandError):
         self.extras: Dict[Any, Any] = kwargs
 
 
-class CommandError(LatteMaidError):
+class AppCommandError(LatteMaidError):
     """Base class for all Latte app command errors."""
 
     pass
@@ -66,18 +66,6 @@ class CommandOnCooldown(LatteMaidError):
 
 
 class UserNotFound(LatteMaidError):
-    """Raised when a user is not found."""
-
-    pass
-
-
-class NotInDatabase(LatteMaidError):
-    """Raised when a user is not found."""
-
-    pass
-
-
-class EmptyDatabase(LatteMaidError):
     """Raised when a user is not found."""
 
     pass

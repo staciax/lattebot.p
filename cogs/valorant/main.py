@@ -14,12 +14,15 @@ from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
+from core.errors import AppCommandError
+from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.useful import MiadEmbed as Embed
 
 from . import valorantx3 as valorantx
 from .abc import ValorantCog
 from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
 from .valorantx3 import Client as ValorantClient, utils as v_utils
+from .valorantx3.auth import RiotAuth
 from .valorantx3.errors import RiotMultifactorError
 
 if TYPE_CHECKING:
@@ -76,9 +79,15 @@ class Valorant(ValorantCog):
         # TODO: website login ?
         # TODO: TOS, privacy policy
 
-        # try_auth = RiotAuth()
+        user = await self.bot.db.get_or_create_user(id=interaction.user.id, locale=interaction.locale)
+
+        if len(user.riot_accounts) >= 5:
+            raise AppCommandError('You can only link up to 5 accounts.')
+
+        try_auth = RiotAuth()
+
         try:
-            await self.v_client.authorize(username.strip(), password.strip())  # remember=True
+            await try_auth.authorize(username.strip(), password.strip())  # remember=True
         except RiotMultifactorError:
             ...
             # wait_modal = RiotMultiFactorModal(try_auth)
@@ -98,40 +107,53 @@ class Valorant(ValorantCog):
             # wait_modal.stop()
 
         except valorantx.RiotAuthenticationError as e:
-            print(e)
-            # raise CommandError('Invalid username or password.') from e
+            raise AppCommandError('Invalid username or password.') from e
         except aiohttp.ClientResponseError as e:
-            print(e)
-            # raise CommandError('Riot server is currently unavailable.') from e
+            _log.error('Riot server is currently unavailable.', exc_info=e)
+            raise AppCommandError('Riot server is currently unavailable.') from e
+
+        await interaction.response.defer(ephemeral=True)
+
+        # check if already linked
+        riot_account = await self.bot.db.get_riot_account_by_puuid_and_owner_id(
+            puuid=try_auth.puuid, owner_id=interaction.user.id
+        )
+        if riot_account is not None:
+            raise AppCommandError('You already have this account linked.')
+
+        # fetch userinfo and region
+        try:
+            await try_auth.fetch_userinfo()
+        except Exception as e:
+            _log.error('riot auth error fetching userinfo', exc_info=e)
+        try:
+            await try_auth.fetch_region()
+        except Exception as e:
+            _log.error('riot auth error fetching region', exc_info=e)
+
+        # save to database
+        # TODO: encrypt token before saving
+        try:
+            await self.bot.db.create_riot_account(
+                puuid=try_auth.puuid,
+                name=try_auth.name,
+                tag=try_auth.tag,
+                region=try_auth.region,  # type: ignore
+                scope=try_auth.scope,  # type: ignore
+                token_type=try_auth.token_type,  # type: ignore
+                expires_at=try_auth.expires_at,
+                access_token=try_auth.access_token,  # type: ignore
+                entitlements_token=try_auth.entitlements_token,  # type: ignore
+                owner_id=interaction.user.id,
+            )
+        except RiotAccountAlreadyExists:
+            raise AppCommandError('You already have this account linked.')
         else:
-            await interaction.response.defer(ephemeral=True)
+            ...
+            # invalidate cache
+            # self.??.invalidate(self, id=interaction.user.id)
 
-        # if v_user is None:
-        #     try_auth.acc_num = 1
-        #     v_user = self.set_valorant_user(interaction.user.id, interaction.guild_id, interaction.locale, try_auth)
-        # else:
-        #     for auth_u in v_user.get_riot_accounts():
-        #         if auth_u.puuid == try_auth.puuid:
-        #             raise CommandError('You already have this account linked.')
-        #     self.add_riot_auth(interaction.user.id, try_auth)
-
-        # payload = list(riot_auth.to_dict() for riot_auth in v_user.get_riot_accounts())
-        # payload = self.bot.encryption.encrypt(json.dumps(payload))  # encrypt
-
-        # await self.db.upsert_user(
-        #     payload,
-        #     interaction.user.id,
-        #     interaction.guild_id or interaction.user.id,
-        #     interaction.locale,
-        # )
-
-        # invalidate cache
-        # try:
-        #     self.fetch_user.invalidate(self, id=interaction.user.id)
-        # except:
-        #     pass
-
-        e = Embed(description=f"Successfully logged in {chat.bold(self.v_client.me.riot_id)}")
+        e = Embed(description=f"Successfully logged in {chat.bold(try_auth.display_name)}")
         await interaction.followup.send(embed=e, ephemeral=True)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))

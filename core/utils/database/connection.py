@@ -7,10 +7,18 @@ from typing import AsyncIterator, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from .errors import BlacklistAlreadyExists, BlacklistDoesNotExist, UserAlreadyExists, UserDoesNotExist
+from .errors import (
+    BlacklistAlreadyExists,
+    BlacklistDoesNotExist,
+    RiotAccountAlreadyExists,
+    RiotAccountDoesNotExist,
+    UserAlreadyExists,
+    UserDoesNotExist,
+)
 from .models.app_command import AppCommand
 from .models.base import Base
 from .models.blacklist import BlackList
+from .models.riot_account import RiotAccount
 from .models.user import User
 
 # fmt: off
@@ -171,3 +179,103 @@ class DatabaseConnection:
         async with self._async_session() as session:
             async for cmd in AppCommand.read_all_by_name(session, name):
                 yield cmd
+
+    # riot account
+
+    async def create_riot_account(
+        self,
+        *,
+        puuid: str,
+        name: Optional[str],
+        tag: Optional[str],
+        region: str,
+        scope: str,
+        token_type: str,
+        expires_at: int,
+        access_token: str,
+        entitlements_token: str,
+        owner_id: int,
+    ) -> RiotAccount:
+        async with self._async_session() as session:
+            exist_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            if exist_account:
+                raise RiotAccountAlreadyExists(f"riot account with id {puuid!r} already exists")
+            riot_account = await RiotAccount.create(
+                session=session,
+                puuid=puuid,
+                name=name,
+                tag=tag,
+                region=region,
+                scope=scope,
+                token_type=token_type,
+                expires_at=expires_at,
+                access_token=access_token,
+                entitlements_token=entitlements_token,
+                owner_id=owner_id,
+            )
+            await session.commit()
+
+            self._log.info(f'created riot account with id {puuid!r} for user with id {owner_id!r}')
+            return riot_account
+
+    async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
+        async with self._async_session() as session:
+            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            return riot_account
+
+    async def get_riot_accounts_by_puuid_and_owner_id(self, owner_id: int) -> AsyncIterator[RiotAccount]:
+        async with self._async_session() as session:
+            async for riot_account in RiotAccount.read_all_by_owner_id(session, owner_id):
+                yield riot_account
+
+    async def get_riot_accounts(self) -> AsyncIterator[RiotAccount]:
+        async with self._async_session() as session:
+            async for riot_account in RiotAccount.read_all(session):
+                yield riot_account
+
+    async def update_riot_account(
+        self,
+        puuid: str,
+        owner_id: int,
+        *,
+        name: Optional[str],
+        tag: Optional[str],
+        region: Optional[str],
+        scope: Optional[str],
+        token_type: Optional[str],
+        expires_at: Optional[int],
+        access_token: Optional[str],
+        entitlements_token: Optional[str],
+    ) -> None:
+        async with self._async_session() as session:
+            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            if not riot_account:
+                raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
+            await riot_account.update(
+                session=session,
+                name=name,
+                tag=tag,
+                region=region,
+                scope=scope,
+                token_type=token_type,
+                expires_at=expires_at,
+                access_token=access_token,
+                entitlements_token=entitlements_token,
+            )
+            await session.commit()
+            self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
+
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> None:
+        async with self._async_session() as session:
+            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            if not riot_account:
+                raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
+            await RiotAccount.delete(session, riot_account)
+            await session.commit()
+            self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
+
+    async def delete_all_riot_accounts(self, owner_id: int) -> None:
+        async with self._async_session() as session:
+            await RiotAccount.delete_all_by_owner_id(session, owner_id)
+            await session.commit()
+            self._log.info(f'deleted all riot accounts for user with id {owner_id!r}')

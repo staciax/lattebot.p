@@ -4,8 +4,10 @@ from typing import Any, Coroutine, List, Optional, TypeVar
 import valorantx2 as valorantx
 from async_lru import alru_cache
 from valorantx2 import Locale
+from valorantx2.auth import RiotAuth
 from valorantx2.client import _loop  # _authorize_required
 from valorantx2.enums import try_enum
+from valorantx2.models.store import StoreFront
 from valorantx2.models.user import ClientUser
 from valorantx2.utils import MISSING
 from valorantx2.valorant_api.models.version import Version as ValorantAPIVersion
@@ -36,7 +38,8 @@ class Client(valorantx.Client):
         self._version: ValorantAPIVersion = MISSING
         self._ready: asyncio.Event = MISSING
         self.me: ClientUser = MISSING
-        # self.lock = asyncio.Lock()
+        # global lock
+        self._lock: asyncio.Lock = asyncio.Lock()
 
     # patch note
 
@@ -73,7 +76,7 @@ class Client(valorantx.Client):
             return None
         return PartialUser(state=self.valorant_api.cache, data=data['data'])
 
-    @alru_cache(maxsize=1, ttl=60 * 60 * 12)
+    @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
     async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
         # TODO: cache re-use
         # try:
@@ -85,3 +88,8 @@ class Client(valorantx.Client):
         #     riot_acc = v_user.get_account()
         data = await self.fetch_storefront()
         return data.bundles
+
+    async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
+        async with self._lock:
+            data = await self.http.get_store_storefront()
+            return StoreFront(self.valorant_api.cache, data)

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
     from .app_command import AppCommand
     from .blacklist import BlackList
+    from .riot_account import RiotAccount
 
 # fmt: off
 __all__ = (
@@ -24,24 +25,31 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True) 
+    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True) 
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
-    app_command_uses: Mapped[List[AppCommand]] = relationship(
-        'AppCommand',
-        back_populates='author',
-        order_by='AppCommand.used',
-        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
-    )
-    _blacklist: Mapped[Optional[BlackList]] = relationship(
+    blacklist: Mapped[Optional[BlackList]] = relationship(
         'BlackList',
         back_populates='maybe_user',
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='joined',
     )
+    app_command_uses: Mapped[List[AppCommand]] = relationship(
+        'AppCommand',
+        back_populates='author',
+        order_by='AppCommand.used',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+        lazy='selectin',
+    )
+    riot_accounts: Mapped[List[RiotAccount]] = relationship(
+        'RiotAccount',
+        back_populates='owner',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+        lazy='selectin',
+    )
 
     @hybrid_method
     def is_blacklisted(self) -> bool:
-        return self._blacklist is not None
+        return self.blacklist is not None
 
     async def update(self, session: AsyncSession, locale: str) -> None:
         self.locale = locale
@@ -49,7 +57,7 @@ class User(Base):
 
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
-        stmt = select(cls)
+        stmt = select(cls).options()
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream:
             yield row

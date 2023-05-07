@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, AsyncIterator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional
 
-from core.utils.database import BlackList, DatabaseConnection as BaseDatabaseConnection, User
+from core.utils.database.connection import DatabaseConnection as BaseDatabaseConnection
+from core.utils.database.models.blacklist import BlackList
+from core.utils.database.models.riot_account import RiotAccount
+from core.utils.database.models.user import User
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -23,19 +26,25 @@ class DatabaseConnection(BaseDatabaseConnection):
         self._users: Dict[int, User] = {}
         self._blacklist: Dict[int, BlackList] = {}
 
-    async def initialize(self, drop_table: bool = True) -> None:
+    async def initialize(self, drop_table: bool = False) -> None:
         await super().initialize(drop_table)
         await self._cache_users()
         await self._cache_blacklist()
         self._log.info('cached %d users and %d blacklists', len(self._users), len(self._blacklist))
 
     async def _cache_users(self) -> None:
-        async for user in self.get_users():
+        async for user in super().get_users():
             self._users[user.id] = user
+        self._log.info('cached %d users', len(self._users))
 
     async def _cache_blacklist(self) -> None:
-        async for user in self.get_blacklists():
+        async for user in super().get_blacklists():
             self._blacklist[user.id] = user
+        self._log.info('cached %d blacklists', len(self._blacklist))
+
+    async def reload_cache(self) -> None:
+        await self._cache_users()
+        await self._cache_blacklist()
 
     @property
     def users(self) -> List[User]:
@@ -45,13 +54,13 @@ class DatabaseConnection(BaseDatabaseConnection):
     def blacklist(self) -> List[BlackList]:
         return list(self._blacklist.values())
 
-    # user overrides
+    # user
 
     def _store_user(self, user: User) -> None:
         self._users[user.id] = user
 
-    async def create_user(self, *, id: int, locale: str = 'en_US') -> User:
-        user = await super().create_user(id=id, locale=locale)
+    async def create_user(self, *, id: int, locale: Any = 'en_US') -> User:
+        user = await super().create_user(id=id, locale=str(locale))
         if user is not None and user.id not in self._users:
             self._store_user(user)
         return user
@@ -62,6 +71,12 @@ class DatabaseConnection(BaseDatabaseConnection):
         user = await super().get_user(id)
         if user is not None:
             self._store_user(user)
+        return user
+
+    async def get_or_create_user(self, *, id: int, locale: Any = 'en_US') -> User:
+        user = await self.get_user(id)
+        if user is None:
+            user = await self.create_user(id=id, locale=locale)
         return user
 
     async def get_users(self) -> AsyncIterator[User]:
@@ -77,15 +92,20 @@ class DatabaseConnection(BaseDatabaseConnection):
 
     async def delete_user(self, id: int) -> None:
         await super().delete_user(id)
+
+        # delete from cache
         try:
             del self._users[id]
         except KeyError:
             pass
 
-    # blacklist overrides
+        self._log.info('deleted user %d from cache', id)
+
+    # blacklist
 
     def _store_blacklist(self, blacklist: BlackList) -> None:
         self._blacklist[blacklist.id] = blacklist
+        self._log.info('stored blacklist %d in cache', blacklist.id)
 
     async def create_blacklist(self, *, id: int) -> BlackList:
         blacklist = await super().create_blacklist(id=id)
@@ -113,3 +133,68 @@ class DatabaseConnection(BaseDatabaseConnection):
             del self._blacklist[id]
         except KeyError:
             pass
+        else:
+            self._log.info('deleted blacklist %d from cache', id)
+
+    # riot account
+
+    async def create_riot_account(
+        self,
+        *,
+        puuid: str,
+        name: Optional[str],
+        tag: Optional[str],
+        region: str,
+        scope: str,
+        token_type: str,
+        expires_at: int,
+        access_token: str,
+        entitlements_token: str,
+        owner_id: int,
+    ) -> RiotAccount:
+        riot_account = await super().create_riot_account(
+            puuid=puuid,
+            name=name,
+            tag=tag,
+            region=region,
+            scope=scope,
+            token_type=token_type,
+            expires_at=expires_at,
+            access_token=access_token,
+            entitlements_token=entitlements_token,
+            owner_id=owner_id,
+        )
+
+        # validate cache
+        try:
+            self._users.pop(owner_id)
+        except KeyError:
+            pass
+        else:
+            # refresh user from database
+            self._bot.loop.create_task(self.get_user(owner_id))
+
+        return riot_account
+
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> None:
+        await super().delete_riot_account(puuid, owner_id)
+
+        # validate cache
+        try:
+            self._users.pop(owner_id)
+        except KeyError:
+            pass
+        else:
+            # refresh user from database
+            self._bot.loop.create_task(self.get_user(owner_id))
+
+    async def delete_all_riot_accounts(self, owner_id: int) -> None:
+        await super().delete_all_riot_accounts(owner_id)
+
+        # validate cache
+        try:
+            self._users.pop(owner_id)
+        except KeyError:
+            pass
+        else:
+            self._bot.loop.create_task(self.get_user(owner_id))

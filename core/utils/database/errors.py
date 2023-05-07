@@ -4,6 +4,8 @@ __all__ = (
     'UserDoesNotExist',
     'BlacklistAlreadyExists',
     'BlacklistDoesNotExist',
+    'RiotAccountAlreadyExists',
+    'RiotAccountDoesNotExist',
 )
 
 
@@ -32,6 +34,18 @@ class BlacklistAlreadyExists(DatabaseBaseError):
 
 
 class BlacklistDoesNotExist(DatabaseBaseError):
+    """Raised when a user does not exist in the database."""
+
+    pass
+
+
+class RiotAccountDoesNotExist(DatabaseBaseError):
+    """Raised when a user does not exist in the database."""
+
+    pass
+
+
+class RiotAccountAlreadyExists(DatabaseBaseError):
     """Raised when a user does not exist in the database."""
 
     pass

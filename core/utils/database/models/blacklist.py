@@ -26,7 +26,7 @@ class BlackList(Base):
     reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
     maybe_user: Mapped[Optional[User]] = relationship(
         'User',
-        back_populates='_blacklist',
+        back_populates='blacklist',
         lazy='joined',
     )
 

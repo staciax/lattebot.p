@@ -25,35 +25,36 @@ class Event(commands.Cog, name='events'):
     async def on_latte_app_command(
         self, interaction: discord.Interaction[LatteMaid], app_command: Union[Command, ContextMenu]
     ) -> None:
+        ...
         # if interaction.user == self.bot.owner:
         #     return
-        command = app_command.qualified_name
-        message = interaction.message
-        channel = interaction.channel
-        assert message is not None
-        assert channel is not None
+        # command = app_command.qualified_name
+        # message = interaction.message
+        # channel = interaction.channel
+        # assert message is not None
+        # assert channel is not None
 
-        destination = None
-        if interaction.guild is None:
-            destination = 'Private Message'
-            guild_id = None
-        else:
-            destination = f'#{channel} ({interaction.guild})'
-            guild_id = interaction.guild.id
-        if interaction.command:
-            content = f'/{interaction.command.qualified_name}'
-        else:
-            content = message.content
-        assert message is not None
-        _log.info(f'{message.created_at}: {message.author} in {destination}: {content}')
-        await self.bot.db.create_app_command(
-            guild=guild_id,
-            command=command,
-            channel=channel.id,
-            author=interaction.user.id,
-            used=interaction.created_at,
-            failed=False,
-        )
+        # destination = None
+        # if interaction.guild is None:
+        #     destination = 'Private Message'
+        #     guild_id = None
+        # else:
+        #     destination = f'#{channel} ({interaction.guild})'
+        #     guild_id = interaction.guild.id
+        # if interaction.command:
+        #     content = f'/{interaction.command.qualified_name}'
+        # else:
+        #     content = message.content
+        # assert message is not None
+        # _log.info(f'{message.created_at}: {message.author} in {destination}: {content}')
+        # await self.bot.db.create_app_command(
+        #     guild=guild_id,
+        #     command=command,
+        #     channel=channel.id,
+        #     author=interaction.user.id,
+        #     used=interaction.created_at,
+        #     failed=False,
+        # )
 
 
 async def setup(bot: LatteMaid) -> None:
