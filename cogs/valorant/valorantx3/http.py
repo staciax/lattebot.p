@@ -28,6 +28,17 @@ class HTTPClient(ValorantXHTTPClient):
     def __init__(self, loop: AbstractEventLoop) -> None:
         super().__init__(loop, region=Region.AP)  # default is AP
 
+    @property
+    def riot_auth(self) -> RiotAuth:
+        return self._riot_auth
+
+    @riot_auth.setter
+    def riot_auth(self, riot_auth: RiotAuth) -> None:
+        self._riot_auth = riot_auth
+
+    async def build_headers(self) -> None:
+        await self.__build_headers()
+
     def get_partial_account(self, name: str, tagline: str) -> Response[account_henrikdev.Response]:
         class HenrikRoute(ValorantXRoute):
             def __init__(self, method: str, path: str) -> None:

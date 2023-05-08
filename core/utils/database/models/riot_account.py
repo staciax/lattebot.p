@@ -25,8 +25,8 @@ class RiotAccount(Base):
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=True)
     puuid: Mapped[str] = mapped_column('puuid', String(length=36), nullable=False)
-    name: Mapped[Optional[str]] = mapped_column('name', String(length=16))
-    tag: Mapped[Optional[str]] = mapped_column('tag', String(length=5))
+    game_name: Mapped[Optional[str]] = mapped_column('name', String(length=16))
+    tag_line: Mapped[Optional[str]] = mapped_column('tag', String(length=5))
     region: Mapped[str] = mapped_column('region', String(length=16), nullable=False)
     scope: Mapped[str] = mapped_column('scope', String(length=64), nullable=False)
     token_type: Mapped[str] = mapped_column('token_type', String(length=64), nullable=False)
@@ -66,8 +66,8 @@ class RiotAccount(Base):
         cls,
         session: AsyncSession,
         puuid: str,
-        name: Optional[str],
-        tag: Optional[str],
+        game_name: Optional[str],
+        tag_line: Optional[str],
         region: str,
         scope: str,
         token_type: str,
@@ -78,8 +78,8 @@ class RiotAccount(Base):
     ) -> Self:
         riot_account = cls(
             puuid=puuid,
-            name=name,
-            tag=tag,
+            game_name=game_name,
+            tag_line=tag_line,
             region=region,
             scope=scope,
             token_type=token_type,
@@ -99,8 +99,8 @@ class RiotAccount(Base):
     async def update(
         self,
         session: AsyncSession,
-        name: Optional[str] = None,
-        tag: Optional[str] = None,
+        game_name: Optional[str] = None,
+        tag_line: Optional[str] = None,
         region: Optional[str] = None,
         scope: Optional[str] = None,
         token_type: Optional[str] = None,
@@ -108,10 +108,10 @@ class RiotAccount(Base):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
     ) -> Self:
-        if name is not None:
-            self.name = name
-        if tag is not None:
-            self.tag = tag
+        if game_name is not None:
+            self.game_name = game_name
+        if tag_line is not None:
+            self.tag_line = tag_line
         if region is not None:
             self.region = region
         if scope is not None:

@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, List
 
 import aiohttp
 import discord
-
-# import valorantx2 as valorantx
 from async_lru import alru_cache
 from discord import app_commands
 from discord.app_commands import Choice, locale_str as _T
@@ -20,6 +18,7 @@ from core.utils.useful import MiadEmbed as Embed
 
 from . import valorantx3 as valorantx
 from .abc import ValorantCog
+from .tests.images import StoreImage
 from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
 from .valorantx3 import Client as ValorantClient, utils as v_utils
 from .valorantx3.auth import RiotAuth
@@ -136,8 +135,8 @@ class Valorant(ValorantCog):
         try:
             await self.bot.db.create_riot_account(
                 puuid=try_auth.puuid,
-                name=try_auth.name,
-                tag=try_auth.tag,
+                game_name=try_auth.game_name,
+                tag_line=try_auth.tag_line,
                 region=try_auth.region,  # type: ignore
                 scope=try_auth.scope,  # type: ignore
                 token_type=try_auth.token_type,  # type: ignore
@@ -571,22 +570,27 @@ class Valorant(ValorantCog):
     #
     #     await interaction.followup.send(embed=embed, file=file)
 
-    @app_commands.command(name=_T('test_store_image'))
-    async def test_store_image(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    @app_commands.command(name=_T('test_image'), description=_T('...'))
+    @app_commands.choices(type=[Choice(name=_T('store'), value='store')])
+    @app_commands.describe(type=_T('Choose the type'))
+    @app_commands.rename(type=_T('type'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def test_image(self, interaction: discord.Interaction, type: Choice[str]) -> None:
         await interaction.response.defer()
 
-        from .tests.images import StoreImage
+        if type.value == 'store':
 
-        class StoreImageDiscord(StoreImage):
-            def to_discord_file(self) -> discord.File:
-                return discord.File(fp=self.to_buffer(), filename='store.png')
+            class StoreImageDiscord(StoreImage):
+                def to_discord_file(self) -> discord.File:
+                    return discord.File(fp=self.to_buffer(), filename='store.png')
 
-        sf = await self.v_client.fetch_storefront()
+            sf = await self.v_client.fetch_storefront()
 
-        sid = StoreImageDiscord()
-        await sid.generate(sf.daily_store.skins)
+            sid = StoreImageDiscord()
+            await sid.generate(sf.daily_store.skins)
 
-        embed = Embed(colour=0x63C0B5)
-        embed.set_image(url="attachment://store.png")
+            embed = Embed(colour=0x63C0B5)
+            embed.set_image(url="attachment://store.png")
 
-        await interaction.followup.send(embed=embed, file=sid.to_discord_file())
+            await interaction.followup.send(embed=embed, file=sid.to_discord_file())

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 
 # import random
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Dict
 
 import discord
 
@@ -34,10 +34,24 @@ __all__ = (
 )
 
 
-class SomeThing:
-    def __init__(self, client: ValorantClient) -> None:
-        self.client: ValorantClient = client
+class AccountManager:
 
+    def __init__(self, user_id: int, locale: ValorantLocale, valorant_client: ValorantClient) -> None:
+        self.user_id: int = user_id
+        self.locale: ValorantLocale = locale
+        self.valorant_client: ValorantClient = valorant_client
+        self.riot_accounts: Dict[str, RiotAuth] = {}
+        self._storefront: Dict[str, StoreFront] = {}
+        # self.current_riot_account: Optional[RiotAuth] = None
+
+    def set_locale_from_discord(self, locale: discord.Locale) -> None:
+        self.locale = valorantx.utils.locale_converter(locale)
+
+    # def get_first_riot_account(self) -> Optional[RiotAuth]:
+    #     return next(iter(self.riot_accounts.values()), None)
+
+    # async def fetch_storefront(self) -> valorantx.StoreFront:
+    #     return await self.valorant_client.fetch_storefront(self.current_riot_account)
 
 class ViewAuthorValorantClient(ViewAuthor):
     def __init__(
@@ -236,6 +250,29 @@ class StoreSwitchView(SwitchView):
     #     return store_e(sf.get_store(), riot_auth, locale=locale)
 
     async def start_view(self) -> None:
+
+        user = await self.bot.db.get_user(self.interaction.user.id)
+        if user is None:
+            return await self.interaction.followup.send("You don't have any accounts linked")
+        
+        if len(user.riot_accounts) == 0:
+            return await self.interaction.followup.send("You don't have any accounts linked")
+
+        riot_account = user.riot_accounts[0]
+
+        riot_auth = RiotAuth()
+        # riot_auth.game_name = riot_account.name
+        # riot_auth.tag_line = riot_account.tag
+        # riot_auth.access_token = riot_account.access_token
+        # riot_auth.entitlements_token = riot_account.entitlements_token
+        # riot_auth.id_token = riot_account.to
+        # riot_auth.user_id = riot_account.puuid
+        # riot_auth.region = riot_account.region
+        # riot_auth.token_type = riot_account.token_type
+
+        # riot_auth.from_data(user.riot_accounts[0])
+        
+
         sf = await self.fetch(self.v_client.http._riot_auth)
         embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=self.v_locale)
         await self.interaction.followup.send(embeds=embeds, view=self)

@@ -142,8 +142,8 @@ class DatabaseConnection(BaseDatabaseConnection):
         self,
         *,
         puuid: str,
-        name: Optional[str],
-        tag: Optional[str],
+        game_name: Optional[str],
+        tag_line: Optional[str],
         region: str,
         scope: str,
         token_type: str,
@@ -154,8 +154,8 @@ class DatabaseConnection(BaseDatabaseConnection):
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
             puuid=puuid,
-            name=name,
-            tag=tag,
+            game_name=game_name,
+            tag_line=tag_line,
             region=region,
             scope=scope,
             token_type=token_type,
