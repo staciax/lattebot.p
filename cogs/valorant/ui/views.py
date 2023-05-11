@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 
 # import random
-from typing import TYPE_CHECKING, Any, List, Optional, Dict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import discord
 
@@ -11,6 +11,7 @@ import discord
 from discord import ui
 
 import core.utils.chat_formatting as chat
+from core.i18n import _
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 
@@ -35,7 +36,6 @@ __all__ = (
 
 
 class AccountManager:
-
     def __init__(self, user_id: int, locale: ValorantLocale, valorant_client: ValorantClient) -> None:
         self.user_id: int = user_id
         self.locale: ValorantLocale = locale
@@ -52,6 +52,7 @@ class AccountManager:
 
     # async def fetch_storefront(self) -> valorantx.StoreFront:
     #     return await self.valorant_client.fetch_storefront(self.current_riot_account)
+
 
 class ViewAuthorValorantClient(ViewAuthor):
     def __init__(
@@ -250,11 +251,10 @@ class StoreSwitchView(SwitchView):
     #     return store_e(sf.get_store(), riot_auth, locale=locale)
 
     async def start_view(self) -> None:
-
         user = await self.bot.db.get_user(self.interaction.user.id)
         if user is None:
             return await self.interaction.followup.send("You don't have any accounts linked")
-        
+
         if len(user.riot_accounts) == 0:
             return await self.interaction.followup.send("You don't have any accounts linked")
 
@@ -271,7 +271,6 @@ class StoreSwitchView(SwitchView):
         # riot_auth.token_type = riot_account.token_type
 
         # riot_auth.from_data(user.riot_accounts[0])
-        
 
         sf = await self.fetch(self.v_client.http._riot_auth)
         embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=self.v_locale)

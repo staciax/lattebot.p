@@ -19,6 +19,7 @@ from core.utils.useful import MiadEmbed as Embed
 from . import valorantx3 as valorantx
 from .abc import ValorantCog
 from .tests.images import StoreImage
+from .ui.modal import RiotMultiFactorModal
 from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
 from .valorantx3 import Client as ValorantClient, utils as v_utils
 from .valorantx3.auth import RiotAuth
@@ -86,25 +87,22 @@ class Valorant(ValorantCog):
         try_auth = RiotAuth()
 
         try:
-            await try_auth.authorize(username.strip(), password.strip())  # remember=True
+            await try_auth.authorize(username.strip(), password.strip(), remember=True)
         except RiotMultifactorError:
-            ...
-            # wait_modal = RiotMultiFactorModal(try_auth)
-            # await interaction.response.send_modal(wait_modal)
-            # await wait_modal.wait()
+            multi_modal = RiotMultiFactorModal(try_auth)
+            await interaction.response.send_modal(multi_modal)
+            await multi_modal.wait()
 
-            # # when timeout
-            # if wait_modal.code is None:
-            #     raise CommandError('You did not enter the code in time.')
-            # try:
-            #     await try_auth.authorize_multi_factor(wait_modal.code, remember=True)
-            # except Exception as e:
-            #     raise CommandError('Invalid Multi-factor code.') from e
-
-            # interaction = wait_modal.interaction
-            # await interaction.response.defer(ephemeral=True)
-            # wait_modal.stop()
-
+            # when timeout
+            if multi_modal.code is None:
+                raise AppCommandError('You did not enter the code in time.')
+            try:
+                await try_auth.authorize_multi_factor(multi_modal.code, remember=True)
+            except Exception as e:
+                raise AppCommandError('Invalid Multi-factor code.') from e
+            assert multi_modal.interaction is not None
+            interaction = multi_modal.interaction
+            multi_modal.stop()
         except valorantx.RiotAuthenticationError as e:
             raise AppCommandError('Invalid username or password.') from e
         except aiohttp.ClientResponseError as e:
