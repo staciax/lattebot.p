@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from valorantx2.valorant_api import Localization
-from valorantx2.valorant_api.models import GameMode as ValorantAPIGameMode
+from valorantx.valorant_api import Localization
+from valorantx.valorant_api.models import GameMode as ValorantAPIGameMode
 
 from ..emojis import get_game_mode_emoji
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.types.gamemodes import GameMode as GameModePayload
+    from valorantx.valorant_api.types.gamemodes import GameMode as GameModePayload
 
     from ..valorant_api_cache import Cache
 

@@ -3,14 +3,14 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, TypeVar
 
-import valorantx2 as valorantx
+import valorantx
 from async_lru import alru_cache
-from valorantx2 import Locale
-from valorantx2.client import _authorize_required, _loop
-from valorantx2.enums import try_enum
-from valorantx2.models.user import ClientUser, User
-from valorantx2.utils import MISSING
-from valorantx2.valorant_api.models.version import Version as ValorantAPIVersion
+from valorantx import Locale
+from valorantx.client import _authorize_required, _loop
+from valorantx.enums import try_enum
+from valorantx.models.user import ClientUser, User
+from valorantx.utils import MISSING
+from valorantx.valorant_api.models.version import Version as ValorantAPIVersion
 
 from .auth import RiotAuth
 from .http import HTTPClient
@@ -58,7 +58,7 @@ class Client(valorantx.Client):
             tag_line=riot_auth.tag_line,
             region=riot_auth.region,
         )
-        user = User(data=payload)  # type: ignore
+        user = User(client=self, data=payload)
         if user.puuid not in self._users:
             self._users[user.puuid] = user
             # self.loop.create_task(user.update_identities())

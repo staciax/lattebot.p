@@ -1,4 +1,4 @@
-from valorantx2.valorant_api.models import ContentTier as ValorantAPIContentTier
+from valorantx.valorant_api.models import ContentTier as ValorantAPIContentTier
 
 from ..emojis import get_content_tier_emoji
 

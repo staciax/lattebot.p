@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from valorantx2.valorant_api import Asset
+from valorantx.valorant_api import Asset
 
 if TYPE_CHECKING:
     from ..client import Client
@@ -34,7 +34,7 @@ class PatchNoteScraper:
     def banner(self) -> Optional[Asset]:
         if self._banner_url is None:
             return None
-        return Asset._from_url(self._client.valorant_api._cache, self._banner_url)
+        return Asset._from_url(self._client.valorant_api.cache, self._banner_url)
 
     @staticmethod
     def __to_soup(text: str) -> BeautifulSoup:

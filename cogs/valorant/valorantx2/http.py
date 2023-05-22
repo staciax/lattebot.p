@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Coroutine, TypeVar
 
-from valorantx2 import Region
-from valorantx2.http import HTTPClient as ValorantXHTTPClient, Route as ValorantXRoute
+from valorantx import Region
+from valorantx.http import HTTPClient as ValorantXHTTPClient, Route as ValorantXRoute
+
+from .auth import RiotAuth
 
 if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
@@ -27,14 +29,7 @@ class HTTPClient(ValorantXHTTPClient):
 
     def __init__(self, loop: AbstractEventLoop) -> None:
         super().__init__(loop, region=Region.AP)  # default is AP
-
-    @property
-    def riot_auth(self) -> RiotAuth:
-        return self._riot_auth
-
-    @riot_auth.setter
-    def riot_auth(self, riot_auth: RiotAuth) -> None:
-        self._riot_auth = riot_auth
+        self.riot_auth: RiotAuth = RiotAuth()
 
     async def build_headers(self) -> None:
         await self.__build_headers()

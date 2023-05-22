@@ -1,5 +1,5 @@
 from discord import Locale as DiscordLocale
-from valorantx2 import Locale as ValorantLocale
+from valorantx import Locale as ValorantLocale
 
 
 def locale_converter(discord_locale: DiscordLocale) -> ValorantLocale:

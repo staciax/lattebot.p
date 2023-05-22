@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from valorantx2 import Locale
-from valorantx2.valorant_api_client import Client as ValorantAPIClient
+from valorantx import Locale
+from valorantx.valorant_api_client import Client as ValorantAPIClient
 
 from .valorant_api_cache import Cache
 

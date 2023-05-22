@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from ..valorantx3 import RiotAuth
+from ..valorantx2 import RiotAuth
 
 # import asyncio
 
 if TYPE_CHECKING:
-    from ..valorantx3 import Client
+    from ..valorantx2 import Client
 
 # TODO: dirname ui to usecase หรือ อะไรสักอย่าง
 

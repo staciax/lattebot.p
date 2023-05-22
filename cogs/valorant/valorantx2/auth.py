@@ -1,5 +1,5 @@
 import aiohttp
-from valorantx2 import RiotAuth as RiotAuth_
+from valorantx import RiotAuth as RiotAuth_
 
 # fmt: off
 __all__ = (

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from valorantx2.valorant_api_cache import CacheState as ValorantAPICacheState
+from valorantx.valorant_api_cache import CacheState as ValorantAPICacheState
 
 from .models import Agent, ContentTier, Currency, GameMode
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.types import agents, content_tiers, currencies, gamemodes
+    from valorantx.valorant_api.types import agents, content_tiers, currencies, gamemodes
 
 # fmt: off
 __all__ = (

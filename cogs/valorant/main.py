@@ -16,14 +16,14 @@ from core.errors import AppCommandError
 from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.useful import MiadEmbed as Embed
 
-from . import valorantx3 as valorantx
+from . import valorantx2 as valorantx
 from .abc import ValorantCog
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
 from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
-from .valorantx3 import Client as ValorantClient, utils as v_utils
-from .valorantx3.auth import RiotAuth
-from .valorantx3.errors import RiotMultifactorError
+from .valorantx2 import Client as ValorantClient, utils as v_utils
+from .valorantx2.auth import RiotAuth
+from .valorantx2.errors import RiotMultifactorError
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -67,6 +67,14 @@ class Valorant(ValorantCog):
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
     @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
     @app_commands.rename(username=_T('username'), password=_T('password'))
+    @app_commands.choices(
+        region=[
+            Choice(name=_T('Asia Pacific'), value='ap'),
+            Choice(name=_T('Europe'), value='eu'),
+            Choice(name=_T('North America / Latin America / Brazil'), value='ba'),
+            Choice(name=_T('Korea'), value='kr'),
+        ]
+    )
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def login(
@@ -74,6 +82,7 @@ class Valorant(ValorantCog):
         interaction: discord.Interaction[LatteMaid],
         username: app_commands.Range[str, 1, 24],
         password: app_commands.Range[str, 1, 128],
+        region: Choice | None = None,
     ) -> None:
         # TODO: transformers params
         # TODO: website login ?
@@ -123,6 +132,7 @@ class Valorant(ValorantCog):
             await try_auth.fetch_userinfo()
         except Exception as e:
             _log.error('riot auth error fetching userinfo', exc_info=e)
+
         try:
             await try_auth.fetch_region()
         except Exception as e:
@@ -150,6 +160,8 @@ class Valorant(ValorantCog):
             # invalidate cache
             # self.??.invalidate(self, id=interaction.user.id)
 
+        _log.info(f'{interaction.user} linked {try_auth.display_name} ({try_auth.region})')
+
         e = Embed(description=f"Successfully logged in {chat.bold(try_auth.display_name)}")
         await interaction.followup.send(embed=e, ephemeral=True)
 
@@ -165,6 +177,7 @@ class Valorant(ValorantCog):
 
         # # invalidate cache
         # self.fetch_user.invalidate(self, id=interaction.user.id)
+        _log.info(f'{interaction.user} logged out all accounts')
 
     @logout.autocomplete('number')
     async def logout_autocomplete(

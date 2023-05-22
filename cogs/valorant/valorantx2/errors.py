@@ -1,4 +1,4 @@
-from valorantx2.errors import (
+from valorantx.errors import (
     AuthRequired as AuthRequired,
     BadRequest as BadRequest,
     Forbidden as Forbidden,

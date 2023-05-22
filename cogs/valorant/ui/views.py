@@ -15,15 +15,16 @@ from core.i18n import _
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 
-from .. import valorantx3 as valorantx
-from ..valorantx3.enums import Locale as ValorantLocale, RelationType
-from ..valorantx3.models import FeaturedBundle, RewardValorantAPI, StoreFront, Wallet
+from .. import valorantx2 as valorantx
+from ..valorantx2 import RiotAuth
+from ..valorantx2.enums import Locale as ValorantLocale, RelationType
+from ..valorantx2.models import FeaturedBundle, RewardValorantAPI, StoreFront, Wallet
 from . import embeds as e
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
-    from ..valorantx3 import Client as ValorantClient, RiotAuth
+    from ..valorantx2 import Client as ValorantClient
     from .embeds import Embed
 
 __all__ = (
@@ -242,7 +243,7 @@ class StoreSwitchView(SwitchView):
 
     # @alru_cache(maxsize=5)
     async def fetch(self, riot_auth: RiotAuth) -> StoreFront:
-        sf = await self.v_client.fetch_storefront()
+        sf = await self.v_client.fetch_storefront(riot_auth=riot_auth)
         return sf
 
     # @alru_cache(maxsize=32, ttl=60 * 60)
@@ -251,16 +252,16 @@ class StoreSwitchView(SwitchView):
     #     return store_e(sf.get_store(), riot_auth, locale=locale)
 
     async def start_view(self) -> None:
-        user = await self.bot.db.get_user(self.interaction.user.id)
-        if user is None:
-            return await self.interaction.followup.send("You don't have any accounts linked")
+        # user = await self.bot.db.get_user(self.interaction.user.id)
+        # if user is None:
+        #     return await self.interaction.followup.send("You don't have any accounts linked")
 
-        if len(user.riot_accounts) == 0:
-            return await self.interaction.followup.send("You don't have any accounts linked")
+        # if len(user.riot_accounts) == 0:
+        #     return await self.interaction.followup.send("You don't have any accounts linked")
 
-        riot_account = user.riot_accounts[0]
+        # riot_account = user.riot_accounts[0]
 
-        riot_auth = RiotAuth()
+        # riot_auth = RiotAuth()
         # riot_auth.game_name = riot_account.name
         # riot_auth.tag_line = riot_account.tag
         # riot_auth.access_token = riot_account.access_token
@@ -272,8 +273,8 @@ class StoreSwitchView(SwitchView):
 
         # riot_auth.from_data(user.riot_accounts[0])
 
-        sf = await self.fetch(self.v_client.http._riot_auth)
-        embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http._riot_auth, locale=self.v_locale)
+        sf = await self.fetch(self.v_client.http.riot_auth)
+        embeds = e.store_e(sf.skins_panel_layout, riot_auth=self.v_client.http.riot_auth, locale=self.v_locale)
         await self.interaction.followup.send(embeds=embeds, view=self)
         # await self.send(embeds=embeds)
 

@@ -12,7 +12,7 @@ from core.i18n import _
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
-    from ..valorantx3 import RiotAuth
+    from ..valorantx2 import RiotAuth
 
 
 #  TODO: from base Modal

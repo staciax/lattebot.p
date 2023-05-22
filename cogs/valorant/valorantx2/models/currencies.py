@@ -1,4 +1,4 @@
-from valorantx2.valorant_api.models import Currency as ValorantAPICurrency
+from valorantx.valorant_api.models import Currency as ValorantAPICurrency
 
 from ..emojis import get_currency_emoji
 

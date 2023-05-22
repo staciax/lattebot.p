@@ -25,10 +25,10 @@ class Profile:
 
 
 class Colors(str, enum.Enum):
-    username = "#252627"
-    tagline = "#64666a"
-    title = "#64666a"
-    level = "#e8e1cd"
+    username = '#252627'
+    tagline = '#64666a'
+    title = '#64666a'
+    level = '#e8e1cd'
 
     def __str__(self) -> str:
         return self.value

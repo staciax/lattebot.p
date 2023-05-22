@@ -14,7 +14,7 @@ else:
     import chardet
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.models import LevelBorder, PlayerCard, PlayerTitle, Tier
+    from valorantx.valorant_api.models import LevelBorder, PlayerCard, PlayerTitle, Tier
 
 
 FILEPATH = os.path.dirname(__file__)

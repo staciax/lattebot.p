@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from valorantx2 import ClientUser
+from valorantx import ClientUser
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.models import PlayerCard
+    from valorantx.valorant_api.models import PlayerCard
 
     from ..types.account_henrikdev import Account as AccountPayload
     from ..valorant_api_cache import Cache

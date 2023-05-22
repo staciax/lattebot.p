@@ -11,11 +11,11 @@ from discord.utils import format_dt
 import core.utils.chat_formatting as chat
 from core.utils.useful import MiadEmbed as Embed
 
-from .. import valorantx3 as valorantx
-from ..valorantx3 import RiotAuth
-from ..valorantx3.emojis import VALORANT_POINT_EMOJI
-from ..valorantx3.enums import Locale as ValorantLocale, RelationType
-from ..valorantx3.models import (
+from .. import valorantx2 as valorantx
+from ..valorantx2 import RiotAuth
+from ..valorantx2.emojis import VALORANT_POINT_EMOJI
+from ..valorantx2.enums import Locale as ValorantLocale, RelationType
+from ..valorantx2.models import (
     BonusStore,
     Buddy,
     BuddyLevel,
@@ -41,7 +41,7 @@ from ..valorantx3.models import (
 )
 
 if TYPE_CHECKING:
-    from ..valorantx3.models import RewardValorantAPI
+    from ..valorantx2.models import RewardValorantAPI
 
 BundleItem = Union[Skin, Buddy, Spray, PlayerCard]
 FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle]

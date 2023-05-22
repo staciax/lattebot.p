@@ -1,4 +1,4 @@
-from valorantx2.models import (
+from valorantx.models import (
     BonusStore as BonusStore,
     Buddy as Buddy,
     BuddyLevel as BuddyLevel,

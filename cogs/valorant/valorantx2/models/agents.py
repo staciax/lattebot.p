@@ -3,7 +3,7 @@ from __future__ import annotations
 # from functools import cached_property
 from typing import TYPE_CHECKING, List
 
-from valorantx2.valorant_api.models import (
+from valorantx.valorant_api.models import (
     Ability as ValorantAPIAbility,
     Agent as ValorantAPIAgent,
     Media as Media,
@@ -15,7 +15,7 @@ from valorantx2.valorant_api.models import (
 from ..emojis import get_ability_emoji, get_agent_emoji
 
 if TYPE_CHECKING:
-    from valorantx2.valorant_api.types.agents import Agent as AgentPayload
+    from valorantx.valorant_api.types.agents import Agent as AgentPayload
 
     from ..valorant_api_cache import Cache
 
