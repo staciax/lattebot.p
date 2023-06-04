@@ -34,6 +34,7 @@ class RiotAccount(Base):
     id_token: Mapped[str] = mapped_column('id_token', String(length=4096), nullable=False)
     access_token: Mapped[str] = mapped_column('access_token', String(length=4096), nullable=False)
     entitlements_token: Mapped[str] = mapped_column('entitlements_token', String(length=4096), nullable=False)
+    ssid: Mapped[str] = mapped_column('ssid', String(length=4096), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
@@ -76,6 +77,7 @@ class RiotAccount(Base):
         id_token: str,
         access_token: str,
         entitlements_token: str,
+        ssid: str,
         owner_id: int,
     ) -> Self:
         riot_account = cls(
@@ -89,6 +91,7 @@ class RiotAccount(Base):
             id_token=id_token,
             access_token=access_token,
             entitlements_token=entitlements_token,
+            ssid=ssid,
             owner_id=owner_id,
         )
         session.add(riot_account)
@@ -108,8 +111,10 @@ class RiotAccount(Base):
         scope: Optional[str] = None,
         token_type: Optional[str] = None,
         expires_at: Optional[int] = None,
+        id_token: Optional[str] = None,
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
+        ssid: Optional[str] = None,
     ) -> Self:
         if game_name is not None:
             self.game_name = game_name
@@ -123,10 +128,14 @@ class RiotAccount(Base):
             self.token_type = token_type
         if expires_at is not None:
             self.expires_at = expires_at
+        if id_token is not None:
+            self.id_token = id_token
         if access_token is not None:
             self.access_token = access_token
         if entitlements_token is not None:
             self.entitlements_token = entitlements_token
+        if ssid is not None:
+            self.ssid = ssid
         await session.flush()
         # To fetch the new object
         new = await self.read_by_id(session, self.id)

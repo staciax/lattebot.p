@@ -151,6 +151,7 @@ class DatabaseConnection(BaseDatabaseConnection):
         id_token: str,
         access_token: str,
         entitlements_token: str,
+        ssid: str,
         owner_id: int,
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
@@ -164,6 +165,7 @@ class DatabaseConnection(BaseDatabaseConnection):
             expires_at=expires_at,
             access_token=access_token,
             entitlements_token=entitlements_token,
+            ssid=ssid,
             owner_id=owner_id,
         )
 
@@ -179,7 +181,8 @@ class DatabaseConnection(BaseDatabaseConnection):
             #         account = riot_account
             #         break
             # refresh user from database
-            self._bot.loop.create_task(self.get_user(owner_id))
+            if self._bot is not None:
+                self._bot.loop.create_task(self.get_user(owner_id))
 
         return riot_account
 
@@ -204,4 +207,6 @@ class DatabaseConnection(BaseDatabaseConnection):
         except KeyError:
             pass
         else:
-            self._bot.loop.create_task(self.get_user(owner_id))
+            if self._bot is not None:
+                # refresh user from database
+                self._bot.loop.create_task(self.get_user(owner_id))

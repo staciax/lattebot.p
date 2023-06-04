@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import aiohttp
+import yarl
 from valorantx import RiotAuth as RiotAuth_
 
 if TYPE_CHECKING:
@@ -58,7 +59,6 @@ class RiotAuth(RiotAuth_):
     @classmethod
     def from_db(cls, data: RiotAccountDB) -> Self:
         self = cls()
-        # TODO: cookie_jar
         self.id_token = data.id_token
         self.entitlements_token = data.entitlements_token
         self.access_token = data.access_token
@@ -68,4 +68,10 @@ class RiotAuth(RiotAuth_):
         self.game_name = data.game_name
         self.tag_line = data.tag_line
         self.region = data.tag_line
+        self._cookie_jar.update_cookies({'ssid': data.ssid}, yarl.URL('https://auth.riotgames.com'))
         return self
+
+    def get_ssid(self) -> str:
+        url = yarl.URL('https://auth.riotgames.com')
+        riot_cookies = self._cookie_jar.filter_cookies(url)
+        return riot_cookies['ssid'].value

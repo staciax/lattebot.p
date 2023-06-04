@@ -195,6 +195,7 @@ class DatabaseConnection:
         id_token: str,
         access_token: str,
         entitlements_token: str,
+        ssid: str,
         owner_id: int,
     ) -> RiotAccount:
         async with self._async_session() as session:
@@ -213,6 +214,7 @@ class DatabaseConnection:
                 id_token=id_token,
                 access_token=access_token,
                 entitlements_token=entitlements_token,
+                ssid=ssid,
                 owner_id=owner_id,
             )
             await session.commit()
@@ -246,8 +248,10 @@ class DatabaseConnection:
         scope: Optional[str],
         token_type: Optional[str],
         expires_at: Optional[int],
+        id_token: Optional[str],
         access_token: Optional[str],
         entitlements_token: Optional[str],
+        ssid: Optional[str],
     ) -> None:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
@@ -261,8 +265,10 @@ class DatabaseConnection:
                 scope=scope,
                 token_type=token_type,
                 expires_at=expires_at,
+                id_token=id_token,
                 access_token=access_token,
                 entitlements_token=entitlements_token,
+                ssid=ssid,
             )
             await session.commit()
             self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')

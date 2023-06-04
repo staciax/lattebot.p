@@ -157,6 +157,7 @@ class Valorant(ValorantCog):
                 id_token=riot_auth.id_token,  # type: ignore
                 access_token=riot_auth.access_token,  # type: ignore
                 entitlements_token=riot_auth.entitlements_token,  # type: ignore
+                ssid=riot_auth.get_ssid(),
                 owner_id=interaction.user.id,
             )
         except RiotAccountAlreadyExists:
