@@ -7,7 +7,8 @@ import valorantx
 from async_lru import alru_cache
 from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
-from valorantx.enums import try_enum
+
+# from valorantx.enums import try_enum
 from valorantx.models.user import ClientUser, User
 from valorantx.utils import MISSING
 from valorantx.valorant_api.models.version import Version as ValorantAPIVersion
@@ -19,6 +20,8 @@ from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+
+    from core.bot import LatteMaid
 
 # fmt: off
 __all__ = (
@@ -32,8 +35,9 @@ Response = Coroutine[Any, Any, T]
 
 # valorantx Client customized for lattemaid
 class Client(valorantx.Client):
-    def __init__(self, locale=valorantx.Locale.english) -> None:
-        self.locale: Locale = try_enum(Locale, locale) if isinstance(locale, str) else locale
+    def __init__(self, bot: Optional[LatteMaid] = None) -> None:
+        self.bot: Optional[LatteMaid] = bot
+        self.locale: Locale = valorantx.Locale.english
         self.loop: asyncio.AbstractEventLoop = _loop
         self.http: HTTPClient = HTTPClient(self.loop)
         self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
@@ -46,10 +50,21 @@ class Client(valorantx.Client):
         self._lock: asyncio.Lock = asyncio.Lock()
         # client users
         self._users: Dict[str, User] = {}
+        self._storefront: Dict[str, valorantx.StoreFront] = {}
 
     # auth related
 
-    def set_authorize(self, riot_auth: RiotAuth) -> Self:
+    def store_storefront(self, puuid: Optional[str], storefront: valorantx.StoreFront) -> valorantx.StoreFront:
+        if puuid is None:
+            return storefront
+        if puuid not in self._storefront:
+            self._storefront[puuid] = storefront
+        return storefront
+
+    def get_storefront(self, puuid: Optional[str]) -> Optional[valorantx.StoreFront]:
+        return self._storefront.get(puuid)  # type: ignore
+
+    async def set_authorize(self, riot_auth: RiotAuth) -> Self:
         # set riot auth
         self.http.riot_auth = riot_auth
         payload = dict(
@@ -58,13 +73,13 @@ class Client(valorantx.Client):
             tag_line=riot_auth.tag_line,
             region=riot_auth.region,
         )
-        user = User(client=self, data=payload)
-        if user.puuid not in self._users:
-            self._users[user.puuid] = user
-            # self.loop.create_task(user.update_identities())
+        # user = User(client=self, data=payload)
+        # if user.puuid not in self._users:
+        # self._users[user.puuid] = user
+        # self.loop.create_task(user.update_identities())
 
         # rebuild headers
-        self.loop.create_task(self.http.build_headers())
+        await self.http.re_build_headers()
         return self
 
     def get_user(self, puuid: str) -> Optional[User]:
@@ -121,9 +136,18 @@ class Client(valorantx.Client):
     @_authorize_required
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.StoreFront:
         async with self._lock:
+            puuid: Optional[str] = None
             if riot_auth is not None:
-                self.set_authorize(riot_auth)
-            return await super().fetch_storefront()
+                puuid = riot_auth.puuid
+                await self.set_authorize(riot_auth)
+
+            # sf = self.get_storefront(puuid)
+            # if sf is not None:
+            #     return sf
+
+            data = await self.http.get_store_storefront(puuid)
+            sf = valorantx.StoreFront(self.valorant_api.cache, data)
+            return self.store_storefront(puuid, sf)
 
     # @_authorize_required
     # async def fetch_match_details(self, match_id: str) -> Optional[MatchDetails]:
@@ -134,7 +158,7 @@ class Client(valorantx.Client):
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Contracts:
         async with self._lock:
             if riot_auth is not None:
-                self.set_authorize(riot_auth)
+                await self.set_authorize(riot_auth)
             return await super().fetch_contracts()
 
     # @_authorize_required

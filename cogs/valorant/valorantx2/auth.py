@@ -1,5 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import aiohttp
 from valorantx import RiotAuth as RiotAuth_
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+    from core.utils.database.models.riot_account import RiotAccount as RiotAccountDB
 
 # fmt: off
 __all__ = (
@@ -45,3 +54,18 @@ class RiotAuth(RiotAuth_):
                 # json={'urn': 'urn:entitlement:%'},
             ) as r:
                 self.entitlements_token = (await r.json())['entitlements_token']
+
+    @classmethod
+    def from_db(cls, data: RiotAccountDB) -> Self:
+        self = cls()
+        # TODO: cookie_jar
+        self.id_token = data.id_token
+        self.entitlements_token = data.entitlements_token
+        self.access_token = data.access_token
+        self.token_type = data.token_type
+        self.expires_at = int(data.expires_at)
+        self.user_id = data.puuid
+        self.game_name = data.game_name
+        self.tag_line = data.tag_line
+        self.region = data.tag_line
+        return self

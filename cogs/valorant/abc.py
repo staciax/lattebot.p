@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 class ValorantCog(LatteMaidCog):
-    v_client: valorantx.Client
-    bot: LatteMaid
-
     def __init__(self, *_args):
-        pass
+        v_client: valorantx.Client
+        bot: LatteMaid

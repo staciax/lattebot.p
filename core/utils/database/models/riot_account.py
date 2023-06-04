@@ -31,6 +31,7 @@ class RiotAccount(Base):
     scope: Mapped[str] = mapped_column('scope', String(length=64), nullable=False)
     token_type: Mapped[str] = mapped_column('token_type', String(length=64), nullable=False)
     expires_at: Mapped[int] = mapped_column('expires_at', nullable=False)
+    id_token: Mapped[str] = mapped_column('id_token', String(length=4096), nullable=False)
     access_token: Mapped[str] = mapped_column('access_token', String(length=4096), nullable=False)
     entitlements_token: Mapped[str] = mapped_column('entitlements_token', String(length=4096), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
@@ -72,6 +73,7 @@ class RiotAccount(Base):
         scope: str,
         token_type: str,
         expires_at: int,
+        id_token: str,
         access_token: str,
         entitlements_token: str,
         owner_id: int,
@@ -84,6 +86,7 @@ class RiotAccount(Base):
             scope=scope,
             token_type=token_type,
             expires_at=expires_at,
+            id_token=id_token,
             access_token=access_token,
             entitlements_token=entitlements_token,
             owner_id=owner_id,

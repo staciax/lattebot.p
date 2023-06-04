@@ -192,6 +192,7 @@ class DatabaseConnection:
         scope: str,
         token_type: str,
         expires_at: int,
+        id_token: str,
         access_token: str,
         entitlements_token: str,
         owner_id: int,
@@ -209,13 +210,14 @@ class DatabaseConnection:
                 scope=scope,
                 token_type=token_type,
                 expires_at=expires_at,
+                id_token=id_token,
                 access_token=access_token,
                 entitlements_token=entitlements_token,
                 owner_id=owner_id,
             )
             await session.commit()
 
-            self._log.info(f'created riot account with id {puuid!r} for user with id {owner_id!r}')
+            self._log.info(f'created riot account with id {game_name}#{tag_line}({puuid}) for user with id {owner_id}')
             return riot_account
 
     async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:

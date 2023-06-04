@@ -87,12 +87,10 @@ def skin_e(
     return embed
 
 
-def store_e(
-    panel: SkinsPanelLayout, riot_auth: RiotAuth, *, locale: ValorantLocale = ValorantLocale.english
-) -> List[Embed]:
+def store_e(panel: SkinsPanelLayout, riot_id: str, *, locale: ValorantLocale = ValorantLocale.english) -> List[Embed]:
     embeds = [
         Embed(
-            description='Daily store for {user}\n'.format(user=chat.bold(riot_auth.display_name))
+            description='Daily store for {user}\n'.format(user=chat.bold(riot_id))
             + f"Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style='R')}",
         ).purple(),
     ]

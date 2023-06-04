@@ -20,7 +20,8 @@ from . import valorantx2 as valorantx
 from .abc import ValorantCog
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
-from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, StoreSwitchView, WalletSwitchView
+from .ui.tests import AccountManager, StoreFrontView
+from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, WalletSwitchView
 from .valorantx2 import Client as ValorantClient, utils as v_utils
 from .valorantx2.auth import RiotAuth
 from .valorantx2.errors import RiotMultifactorError
@@ -34,7 +35,7 @@ _log = logging.getLogger(__name__)
 class Valorant(ValorantCog):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        self.v_client: ValorantClient = ValorantClient()
+        self.v_client: ValorantClient = ValorantClient(self.bot)
 
     @property
     def display_emoji(self) -> discord.Emoji | None:
@@ -65,13 +66,13 @@ class Valorant(ValorantCog):
     # app commands
 
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
-    @app_commands.describe(username=_T('Input username'), password=_T('Input password'))
-    @app_commands.rename(username=_T('username'), password=_T('password'))
+    @app_commands.describe(username=_T('Input username'), password=_T('Input password'), region=_T('Select region'))
+    @app_commands.rename(username=_T('username'), password=_T('password'), region=_T('region'))
     @app_commands.choices(
         region=[
             Choice(name=_T('Asia Pacific'), value='ap'),
             Choice(name=_T('Europe'), value='eu'),
-            Choice(name=_T('North America / Latin America / Brazil'), value='ba'),
+            Choice(name=_T('North America / Latin America / Brazil'), value='na'),
             Choice(name=_T('Korea'), value='kr'),
         ]
     )
@@ -82,7 +83,7 @@ class Valorant(ValorantCog):
         interaction: discord.Interaction[LatteMaid],
         username: app_commands.Range[str, 1, 24],
         password: app_commands.Range[str, 1, 128],
-        region: Choice | None = None,
+        region: Choice[str] | None = None,
     ) -> None:
         # TODO: transformers params
         # TODO: website login ?
@@ -93,12 +94,12 @@ class Valorant(ValorantCog):
         if len(user.riot_accounts) >= 5:
             raise AppCommandError('You can only link up to 5 accounts.')
 
-        try_auth = RiotAuth()
+        riot_auth = RiotAuth()
 
         try:
-            await try_auth.authorize(username.strip(), password.strip(), remember=True)
+            await riot_auth.authorize(username.strip(), password.strip(), remember=True)
         except RiotMultifactorError:
-            multi_modal = RiotMultiFactorModal(try_auth)
+            multi_modal = RiotMultiFactorModal(riot_auth)
             await interaction.response.send_modal(multi_modal)
             await multi_modal.wait()
 
@@ -106,12 +107,14 @@ class Valorant(ValorantCog):
             if multi_modal.code is None:
                 raise AppCommandError('You did not enter the code in time.')
             try:
-                await try_auth.authorize_multi_factor(multi_modal.code, remember=True)
-            except Exception as e:
+                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
+            except aiohttp.ClientResponseError as e:
+                _log.error('riot auth multifactor error', exc_info=e)
                 raise AppCommandError('Invalid Multi-factor code.') from e
-            assert multi_modal.interaction is not None
-            interaction = multi_modal.interaction
-            multi_modal.stop()
+            else:
+                assert multi_modal.interaction is not None
+                interaction = multi_modal.interaction
+                multi_modal.stop()
         except valorantx.RiotAuthenticationError as e:
             raise AppCommandError('Invalid username or password.') from e
         except aiohttp.ClientResponseError as e:
@@ -122,84 +125,103 @@ class Valorant(ValorantCog):
 
         # check if already linked
         riot_account = await self.bot.db.get_riot_account_by_puuid_and_owner_id(
-            puuid=try_auth.puuid, owner_id=interaction.user.id
+            puuid=riot_auth.puuid, owner_id=interaction.user.id
         )
         if riot_account is not None:
             raise AppCommandError('You already have this account linked.')
 
         # fetch userinfo and region
         try:
-            await try_auth.fetch_userinfo()
+            await riot_auth.fetch_userinfo()
         except Exception as e:
             _log.error('riot auth error fetching userinfo', exc_info=e)
 
-        try:
-            await try_auth.fetch_region()
-        except Exception as e:
-            _log.error('riot auth error fetching region', exc_info=e)
+        if region is not None:
+            riot_auth.region = region.value
+        else:
+            try:
+                await riot_auth.fetch_region()
+            except Exception as e:
+                _log.error('riot auth error fetching region', exc_info=e)
 
-        # save to database
         # TODO: encrypt token before saving
         try:
             await self.bot.db.create_riot_account(
-                puuid=try_auth.puuid,
-                game_name=try_auth.game_name,
-                tag_line=try_auth.tag_line,
-                region=try_auth.region,  # type: ignore
-                scope=try_auth.scope,  # type: ignore
-                token_type=try_auth.token_type,  # type: ignore
-                expires_at=try_auth.expires_at,
-                access_token=try_auth.access_token,  # type: ignore
-                entitlements_token=try_auth.entitlements_token,  # type: ignore
+                puuid=riot_auth.puuid,
+                game_name=riot_auth.game_name,
+                tag_line=riot_auth.tag_line,
+                region=riot_auth.region,  # type: ignore
+                scope=riot_auth.scope,  # type: ignore
+                token_type=riot_auth.token_type,  # type: ignore
+                expires_at=riot_auth.expires_at,
+                id_token=riot_auth.id_token,  # type: ignore
+                access_token=riot_auth.access_token,  # type: ignore
+                entitlements_token=riot_auth.entitlements_token,  # type: ignore
                 owner_id=interaction.user.id,
             )
         except RiotAccountAlreadyExists:
             raise AppCommandError('You already have this account linked.')
         else:
-            ...
+            _log.info(
+                f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) with region {riot_auth.region!r}'
+            )
             # invalidate cache
             # self.??.invalidate(self, id=interaction.user.id)
 
-        _log.info(f'{interaction.user} linked {try_auth.display_name} ({try_auth.region})')
-
-        e = Embed(description=f"Successfully logged in {chat.bold(try_auth.display_name)}")
+        e = Embed(description=f"Successfully logged in {chat.bold(riot_auth.display_name)}")
         await interaction.followup.send(embed=e, ephemeral=True)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
-    @app_commands.rename(number=_T('account'))
+    @app_commands.rename(puuid=_T('account'))
+    @app_commands.describe(puuid=_T('Select account to logout'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def logout(self, interaction: discord.Interaction[LatteMaid], number: str | None = None) -> None:
+    async def logout(self, interaction: discord.Interaction[LatteMaid], puuid: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        e = Embed(description=f"Successfully logged out all accounts")
+        e = Embed(description=f'Successfully logged out all accounts')
+
+        if puuid is None:
+            ...
+            # await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
+            _log.info(f'{interaction.user} logged out all accounts')
+        else:
+            puuid, riot_id = puuid.split(':')
+            e.description = f'Successfully logged out account {chat.bold(riot_id)}'
+            # await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
+            _log.info(f'{interaction.user}({interaction.user.id}) logged out account {riot_id}({puuid})')
+
         await interaction.followup.send(embed=e, ephemeral=True)
 
         # # invalidate cache
         # self.fetch_user.invalidate(self, id=interaction.user.id)
-        _log.info(f'{interaction.user} logged out all accounts')
 
-    @logout.autocomplete('number')
+    @logout.autocomplete('puuid')
     async def logout_autocomplete(
         self, interaction: discord.Interaction[LatteMaid], current: str
     ) -> List[app_commands.Choice[str]]:
-        # get_user = self._get_user(interaction.user.id)
-        # if get_user is None:
+        user = await self.bot.db.get_user(id=interaction.user.id)
+        if user is None:
+            return []
+
+        if len(user.riot_accounts) == 0:
+            return [app_commands.Choice(name="You have no accounts linked.", value="-")]
+
         return [
-            app_commands.Choice(name="You have no accounts linked.", value="-"),
+            app_commands.Choice(
+                name=f'{account.game_name}#{account.tag_line}',
+                value=account.puuid + ':' + f'{account.game_name}#{account.tag_line}',
+            )
+            for account in user.riot_accounts
         ]
-        # return [
-        #     app_commands.Choice(name=f"{user.acc_num}. {user.display_name} ", value=str(user.acc_num))
-        #     for user in sorted(get_user.get_riot_accounts(), key=lambda x: x.acc_num)
-        # ]
 
     @app_commands.command(name=_T('store'), description=_T('Shows your daily store in your accounts'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        view = StoreSwitchView(interaction, self.v_client)
-        await view.start_view()
+        view = StoreFrontView(interaction, AccountManager(interaction.user.id, self.v_client))
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.guild_only()

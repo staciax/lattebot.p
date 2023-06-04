@@ -148,6 +148,7 @@ class DatabaseConnection(BaseDatabaseConnection):
         scope: str,
         token_type: str,
         expires_at: int,
+        id_token: str,
         access_token: str,
         entitlements_token: str,
         owner_id: int,
@@ -159,6 +160,7 @@ class DatabaseConnection(BaseDatabaseConnection):
             region=region,
             scope=scope,
             token_type=token_type,
+            id_token=id_token,
             expires_at=expires_at,
             access_token=access_token,
             entitlements_token=entitlements_token,
@@ -171,6 +173,11 @@ class DatabaseConnection(BaseDatabaseConnection):
         except KeyError:
             pass
         else:
+            # user = self._users[owner_id]
+            # for account in user.riot_accounts:
+            #     if account.puuid == puuid:
+            #         account = riot_account
+            #         break
             # refresh user from database
             self._bot.loop.create_task(self.get_user(owner_id))
 
