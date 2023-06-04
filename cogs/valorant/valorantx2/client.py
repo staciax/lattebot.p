@@ -7,6 +7,7 @@ import valorantx
 from async_lru import alru_cache
 from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
+from valorantx.models.store import StoreFront, Wallet
 
 # from valorantx.enums import try_enum
 from valorantx.models.user import ClientUser, User
@@ -54,14 +55,14 @@ class Client(valorantx.Client):
 
     # auth related
 
-    def store_storefront(self, puuid: Optional[str], storefront: valorantx.StoreFront) -> valorantx.StoreFront:
+    def store_storefront(self, puuid: Optional[str], storefront: StoreFront) -> StoreFront:
         if puuid is None:
             return storefront
         if puuid not in self._storefront:
             self._storefront[puuid] = storefront
         return storefront
 
-    def get_storefront(self, puuid: Optional[str]) -> Optional[valorantx.StoreFront]:
+    def get_storefront(self, puuid: Optional[str]) -> Optional[StoreFront]:
         return self._storefront.get(puuid)  # type: ignore
 
     async def set_authorize(self, riot_auth: RiotAuth) -> Self:
@@ -134,20 +135,21 @@ class Client(valorantx.Client):
         return data.bundles
 
     @_authorize_required
-    async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.StoreFront:
+    async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
         async with self._lock:
             puuid: Optional[str] = None
             if riot_auth is not None:
                 puuid = riot_auth.puuid
                 await self.set_authorize(riot_auth)
-
+            sf = await super().fetch_storefront()
+            return self.store_storefront(puuid, sf)
             # sf = self.get_storefront(puuid)
             # if sf is not None:
             #     return sf
 
-            data = await self.http.get_store_storefront(puuid)
-            sf = valorantx.StoreFront(self.valorant_api.cache, data)
-            return self.store_storefront(puuid, sf)
+            # data = await self.http.get_store_storefront(puuid)
+            # sf = StoreFront(self.valorant_api.cache, data)
+            # return self.store_storefront(puuid, sf)
 
     # @_authorize_required
     # async def fetch_match_details(self, match_id: str) -> Optional[MatchDetails]:
@@ -160,6 +162,13 @@ class Client(valorantx.Client):
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_contracts()
+
+    @_authorize_required
+    async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
+        async with self._lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            return await super().fetch_wallet()
 
     # @_authorize_required
     # async def fetch_mmr(self, puuid: Optional[str] = None, *, riot_auth: RiotAuth) -> valorantx.MMR:

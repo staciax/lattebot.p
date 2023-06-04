@@ -27,6 +27,7 @@ from ..valorantx2.models import (
     PlayerCard,
     PlayerCardBundle,
     PlayerTitle,
+    PlayerTitleBundle,
     Skin,
     SkinChroma,
     SkinLevel,
@@ -43,8 +44,8 @@ from ..valorantx2.models import (
 if TYPE_CHECKING:
     from ..valorantx2.models import RewardValorantAPI
 
-BundleItem = Union[Skin, Buddy, Spray, PlayerCard]
-FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle]
+BundleItem = Union[Skin, Buddy, Spray, PlayerCard, PlayerTitle]
+FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle, PlayerTitleBundle]
 SkinItem = Union[Skin, SkinLevel, SkinChroma]
 SprayItem = Union[Spray, SprayLevel]
 BuddyItem = Union[Buddy, BuddyLevel]
@@ -180,7 +181,9 @@ def bundle_item_e(
         else:
             embed.description += str(item.cost)
 
-    if isinstance(item, PlayerCard):
+    if isinstance(item, PlayerTitle):
+        item_icon = None
+    elif isinstance(item, PlayerCard):
         item_icon = item.large_art
     elif isinstance(item, Spray):
         item_icon = item.animation_gif or item.full_transparent_icon or item.full_icon or item.display_icon
@@ -256,13 +259,13 @@ class BundleEmbed:
         return embeds
 
 
-def wallet_e(wallet: Wallet, riot_auth: RiotAuth, *, locale: ValorantLocale) -> Embed:
+def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:
     # vp = wallet.valorant_points
     # rad = wallet.radiant_points
 
     # vp_name = vp.name_localizations.from_locale(str(locale))
 
-    embed = Embed(title=f'{riot_auth.display_name} Point:').purple()
+    embed = Embed(title=f'{riot_id} Point:').purple()
 
     # embed.add_field(
     #     name=f'{(vp_name if vp_name != "VP" else "Valorant")}',

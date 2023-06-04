@@ -20,8 +20,7 @@ from . import valorantx2 as valorantx
 from .abc import ValorantCog
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
-from .ui.tests import AccountManager, StoreFrontView
-from .ui.views import FeaturedBundleView, GamePassView, NightMarketSwitchView, WalletSwitchView
+from .ui.views import AccountManager, GamePassView, NightMarketView, StoreFrontView, WalletView
 from .valorantx2 import Client as ValorantClient, utils as v_utils
 from .valorantx2.auth import RiotAuth
 from .valorantx2.errors import RiotMultifactorError
@@ -52,14 +51,16 @@ class Valorant(ValorantCog):
         try:
             await asyncio.wait_for(self.v_client.init(), timeout=30)
         except asyncio.TimeoutError:
-            # TODO: send webhook to bot owner
-            _log.error('Valorant API Client failed to initialize within 30 seconds.')
+            # self.bot.loop.create_task(self.bot.unload_extension('cogs.valorant'))
+            _log.error('valorant client failed to initialize within 30 seconds.')
+            # try again in 30 seconds
+            # await asyncio.sleep(30)
         else:
             _log.info('Valorant API Client is ready.')
             await self.v_client.authorize('ragluxs', '4869_lucky')
-            # self.bot.dispatch('v_client_ready')
+            # self.bot.dispatch('valorant_client_ready')
 
-    @alru_cache(maxsize=32, ttl=60 * 60 * 12)
+    @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
         return await self.v_client.fetch_patch_notes(v_utils.locale_converter(locale))
 
@@ -164,7 +165,7 @@ class Valorant(ValorantCog):
             raise AppCommandError('You already have this account linked.')
         else:
             _log.info(
-                f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) with region {riot_auth.region!r}'
+                f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) - {riot_auth.region}'
             )
             # invalidate cache
             # self.??.invalidate(self, id=interaction.user.id)
@@ -183,13 +184,12 @@ class Valorant(ValorantCog):
         e = Embed(description=f'Successfully logged out all accounts')
 
         if puuid is None:
-            ...
-            # await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
+            await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
             _log.info(f'{interaction.user} logged out all accounts')
         else:
             puuid, riot_id = puuid.split(':')
             e.description = f'Successfully logged out account {chat.bold(riot_id)}'
-            # await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
+            await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
             _log.info(f'{interaction.user}({interaction.user.id}) logged out account {riot_id}({puuid})')
 
         await interaction.followup.send(embed=e, ephemeral=True)
@@ -229,40 +229,48 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
         await interaction.response.defer()
-        view = NightMarketSwitchView(interaction, self.v_client, hide)
-        await view.start_view()
+        view = NightMarketView(interaction, AccountManager(interaction.user.id, self.v_client), hide)
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        view = FeaturedBundleView(interaction, self.v_client)
-        await view.start_view()
+        # view = FeaturedBundleView(interaction, self.v_client)
+        # await view.start_view()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
         await interaction.response.defer(ephemeral=private)
-        wallet = WalletSwitchView(interaction, self.v_client)
-        await wallet.start_view()
+        wallet = WalletView(interaction, AccountManager(interaction.user.id, self.v_client))
+        await wallet.callback(interaction)
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
         await interaction.response.defer()
-        view = GamePassView(interaction, self.v_client, valorantx.RelationType.season)
-        await view.start_view()
+        view = GamePassView(
+            interaction,
+            AccountManager(interaction.user.id, self.v_client),
+            valorantx.RelationType.season,
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
         await interaction.response.defer()
-        view = GamePassView(interaction, self.v_client, valorantx.RelationType.event)
-        await view.start_view()
+        view = GamePassView(
+            interaction,
+            AccountManager(interaction.user.id, self.v_client),
+            valorantx.RelationType.event,
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()

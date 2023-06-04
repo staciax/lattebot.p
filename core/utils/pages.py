@@ -200,7 +200,6 @@ class LattePages(discord.ui.View):
         self.compact: bool = compact
         self.clear_items()
         if self.source is not MISSING:
-            self._fill_items_called = True
             self.fill_items()
 
     def fill_items(self) -> None:
@@ -326,12 +325,13 @@ class LattePages(discord.ui.View):
             )
             return
         self.current_page = page_number
+
         try:
-            getattr(self, '_fill_items_called')
+            self.__prepare
         except AttributeError:
             self.fill_items()
-        else:
-            delattr(self, '_fill_items_called')
+            self.__prepare = True
+
         await self.source._prepare_once()
         page = await self.source.get_page(page_number)
         kwargs = await self._get_kwargs_from_page(page)

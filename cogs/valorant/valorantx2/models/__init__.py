@@ -13,6 +13,7 @@ from valorantx.models import (
     PlayerCard as PlayerCard,
     PlayerCardBundle as PlayerCardBundle,
     PlayerTitle as PlayerTitle,
+    PlayerTitleBundle as PlayerTitleBundle,
     ProcessedMatch as ProcessedMatch,
     Progression as Progression,
     Reward as Reward,
