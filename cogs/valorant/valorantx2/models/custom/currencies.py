@@ -1,6 +1,6 @@
 from valorantx.valorant_api.models import Currency as ValorantAPICurrency
 
-from ..emojis import get_currency_emoji
+from ...emojis import get_currency_emoji
 
 # fmt: off
 __all__ = (

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from valorantx.valorant_api import Localization
 from valorantx.valorant_api.models import GameMode as ValorantAPIGameMode
 
-from ..emojis import get_game_mode_emoji
+from ...emojis import get_game_mode_emoji
 
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.gamemodes import GameMode as GameModePayload

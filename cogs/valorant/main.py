@@ -20,10 +20,10 @@ from . import valorantx2 as valorantx
 from .abc import ValorantCog
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
-from .ui.views import AccountManager, GamePassView, NightMarketView, StoreFrontView, WalletView
+from .ui.views import AccountManager, FeaturedBundleView, GamePassView, NightMarketView, StoreFrontView, WalletView
 from .valorantx2 import Client as ValorantClient, utils as v_utils
 from .valorantx2.auth import RiotAuth
-from .valorantx2.errors import RiotMultifactorError
+from .valorantx2.errors import RiotAuthenticationError, RiotMultifactorError
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -34,7 +34,7 @@ _log = logging.getLogger(__name__)
 class Valorant(ValorantCog):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        self.v_client: ValorantClient = ValorantClient(self.bot)
+        self.valorant_client: ValorantClient = ValorantClient(self.bot)
 
     @property
     def display_emoji(self) -> discord.Emoji | None:
@@ -45,24 +45,28 @@ class Valorant(ValorantCog):
         self.bot.loop.create_task(self.run())
 
     async def cog_unload(self) -> None:
-        await self.v_client.close()
+        await self.valorant_client.close()
 
     async def run(self) -> None:
         try:
-            await asyncio.wait_for(self.v_client.init(), timeout=30)
+            await asyncio.wait_for(self.valorant_client.init(), timeout=45)
         except asyncio.TimeoutError:
             # self.bot.loop.create_task(self.bot.unload_extension('cogs.valorant'))
             _log.error('valorant client failed to initialize within 30 seconds.')
             # try again in 30 seconds
             # await asyncio.sleep(30)
         else:
-            _log.info('Valorant API Client is ready.')
-            await self.v_client.authorize('ragluxs', '4869_lucky')
-            # self.bot.dispatch('valorant_client_ready')
+            _log.info('valorant client is initialized.')
+            try:
+                await self.valorant_client.authorize('ragluxs', '4869_lucky')
+            except RiotAuthenticationError as e:
+                _log.warning(f'valorant client failed to authorized', exc_info=e)
+            # else:
+            #     _log.info('valorant client is authorized.')
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
-        return await self.v_client.fetch_patch_notes(v_utils.locale_converter(locale))
+        return await self.valorant_client.fetch_patch_notes(v_utils.locale_converter(locale))
 
     # app commands
 
@@ -112,10 +116,9 @@ class Valorant(ValorantCog):
             except aiohttp.ClientResponseError as e:
                 _log.error('riot auth multifactor error', exc_info=e)
                 raise AppCommandError('Invalid Multi-factor code.') from e
-            else:
-                assert multi_modal.interaction is not None
-                interaction = multi_modal.interaction
-                multi_modal.stop()
+            assert multi_modal.interaction is not None
+            interaction = multi_modal.interaction
+            multi_modal.stop()
         except valorantx.RiotAuthenticationError as e:
             raise AppCommandError('Invalid username or password.') from e
         except aiohttp.ClientResponseError as e:
@@ -221,7 +224,7 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        view = StoreFrontView(interaction, AccountManager(interaction.user.id, self.v_client))
+        view = StoreFrontView(interaction, AccountManager(interaction.user.id, self.valorant_client))
         await view.callback(interaction)
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
@@ -229,7 +232,7 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
         await interaction.response.defer()
-        view = NightMarketView(interaction, AccountManager(interaction.user.id, self.v_client), hide)
+        view = NightMarketView(interaction, AccountManager(interaction.user.id, self.valorant_client), hide)
         await view.callback(interaction)
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
@@ -237,15 +240,18 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        # view = FeaturedBundleView(interaction, self.v_client)
-        # await view.start_view()
+        view = FeaturedBundleView(interaction, self.valorant_client)
+        await view.start()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
         await interaction.response.defer(ephemeral=private)
-        wallet = WalletView(interaction, AccountManager(interaction.user.id, self.v_client))
+        wallet = WalletView(
+            interaction,
+            AccountManager(interaction.user.id, self.valorant_client),
+        )
         await wallet.callback(interaction)
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
@@ -255,7 +261,7 @@ class Valorant(ValorantCog):
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(interaction.user.id, self.v_client),
+            AccountManager(interaction.user.id, self.valorant_client),
             valorantx.RelationType.season,
         )
         await view.callback(interaction)
@@ -267,7 +273,7 @@ class Valorant(ValorantCog):
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(interaction.user.id, self.v_client),
+            AccountManager(interaction.user.id, self.valorant_client),
             valorantx.RelationType.event,
         )
         await view.callback(interaction)
@@ -288,7 +294,6 @@ class Valorant(ValorantCog):
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await interaction.response.defer()
         ...
 
     @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
@@ -345,7 +350,7 @@ class Valorant(ValorantCog):
 
         # latest = patch_notes.get_latest_patch_note()
         # if latest is not None:
-        #     pns = await self.v_client.fetch_patch_note_from_site(latest.url)
+        #     pns = await self.valorant_client.fetch_patch_note_from_site(latest.url)
 
         #     embed = e.patch_note(latest, pns.banner.url)
 
@@ -367,7 +372,7 @@ class Valorant(ValorantCog):
         # else:
         #     raise CommandError('Patch note not found')
 
-    # # infomation commands
+    # infomation commands
 
     # @app_commands.command(name=_T('agent'), description=_T('View agent info'))
     # @app_commands.guild_only()
@@ -601,7 +606,7 @@ class Valorant(ValorantCog):
     #     await interaction.response.defer()
     #
     #     riot_acc = await self.get_riot_account(user_id=interaction.user.id)
-    #     client = await self.v_client.run(auth=riot_acc)
+    #     client = await self.valorant_client.run(auth=riot_acc)
     #
     #     loadout = await client.fetch_player_loadout()
     #
@@ -627,7 +632,7 @@ class Valorant(ValorantCog):
                 def to_discord_file(self) -> discord.File:
                     return discord.File(fp=self.to_buffer(), filename='store.png')
 
-            sf = await self.v_client.fetch_storefront()
+            sf = await self.valorant_client.fetch_storefront()
 
             sid = StoreImageDiscord()
             await sid.generate(sf.daily_store.skins)

@@ -1,6 +1,6 @@
 from valorantx.valorant_api.models import ContentTier as ValorantAPIContentTier
 
-from ..emojis import get_content_tier_emoji
+from ...emojis import get_content_tier_emoji
 
 # fmt: off
 __all__ = (

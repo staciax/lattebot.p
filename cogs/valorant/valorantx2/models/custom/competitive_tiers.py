@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, List
 
 from valorantx.valorant_api.models import CompetitiveTier as ValorantAPICompetitiveTier, Tier as ValorantAPITier
 
-from ..emojis import get_tier_emoji
+from ...emojis import get_tier_emoji
 
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.competitive_tiers import CompetitiveTier as CompetitiveTierPayload
 
-    from ..valorant_api_cache import Cache
+    from ...valorant_api_cache import Cache
 
 # fmt: off
 __all__ = (

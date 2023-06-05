@@ -206,8 +206,10 @@ class BundleEmbed:
     ) -> None:
         self.bundle: Union[Bundle, FeaturedBundle] = bundle
         self.locale: ValorantLocale = locale
+        # self.banner_embed: Embed = self.build_banner_embed()
+        # self.item_embeds: List[Embed] = self._build_items_embeds()
 
-    def banner_embed(self) -> Embed:
+    def build_banner_embed(self) -> Embed:
         embed = Embed().purple()
         if self.bundle.display_icon_2 is not None:
             embed.set_image(url=self.bundle.display_icon_2.url)
@@ -222,7 +224,8 @@ class BundleEmbed:
                 expires=chat.italics(
                     '(Expires {expires})'.format(
                         expires=format_dt(
-                            self.bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style='R'
+                            self.bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc),
+                            style='R',
                         )
                     )
                 ),
@@ -237,7 +240,7 @@ class BundleEmbed:
 
         return embed
 
-    def item_embeds(self) -> List[Embed]:
+    def build_items_embeds(self) -> List[Embed]:
         embeds = []
 
         def item_priorities(i: Union[BundleItem, FeaturedBundleItem]) -> int:
@@ -257,6 +260,11 @@ class BundleEmbed:
         for item in sorted(self.bundle.items, key=item_priorities):
             embeds.append(bundle_item_e(item, isinstance(self.bundle, FeaturedBundle), locale=self.locale))
         return embeds
+
+    # def rebuild(self, locale: ValorantLocale) -> None:
+    #     self.locale = locale
+    #     self.banner_embed = self.build_banner_embed()
+    #     self.item_embeds = self.build_items_embeds()
 
 
 def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:

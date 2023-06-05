@@ -7,6 +7,8 @@ import discord
 from discord.app_commands import AppCommandError
 from discord.ext import commands
 
+from core.i18n import _
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
@@ -44,3 +46,4 @@ class Errors(commands.Cog, name='errors'):
         self, interaction: discord.Interaction[LatteMaid], error: Exception, modal: discord.ui.Modal
     ) -> None:
         self._log_error(interaction, error)
+        await interaction.response.send_message(_('Oops! Something went wrong.'), ephemeral=True)

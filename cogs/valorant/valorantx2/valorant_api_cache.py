@@ -4,7 +4,12 @@ from typing import TYPE_CHECKING
 
 from valorantx.valorant_api_cache import CacheState as ValorantAPICacheState
 
-from .models import Agent, ContentTier, Currency, GameMode
+from .models.custom.agents import Agent
+
+# from .models.custom.competitive_tiers import CompetitiveTier
+from .models.custom.content_tiers import ContentTier
+from .models.custom.currencies import Currency
+from .models.custom.gamemodes import GameMode
 
 if TYPE_CHECKING:
     from valorantx.valorant_api.types import agents, content_tiers, currencies, gamemodes

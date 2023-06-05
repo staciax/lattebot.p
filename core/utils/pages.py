@@ -200,6 +200,7 @@ class LattePages(discord.ui.View):
         self.compact: bool = compact
         self.clear_items()
         if self.source is not MISSING:
+            self.__prepare = True
             self.fill_items()
 
     def fill_items(self) -> None:

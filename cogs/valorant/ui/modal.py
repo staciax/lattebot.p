@@ -29,7 +29,7 @@ class RiotMultiFactorModal(ui.Modal, title=_('Two-factor authentication')):
             max_length=6,
             # min_length=6,
             style=discord.TextStyle.short,
-            custom_id=self.custom_id + '_2fa',
+            # custom_id=self.custom_id + '_2fa' + try_auth.puuid,  # TODO: + puuid
             placeholder=(
                 _('You have 2FA enabled!')
                 if self.try_auth.multi_factor_email is None
@@ -56,6 +56,5 @@ class RiotMultiFactorModal(ui.Modal, title=_('Two-factor authentication')):
 
     async def on_error(self, interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
         interaction.client.dispatch('modal_error', interaction, error, self)
-        await interaction.response.send_message(_('Oops! Something went wrong.'), ephemeral=True)
         # Make sure we know what the error actually is
         # traceback.print_tb(error.__traceback__)
