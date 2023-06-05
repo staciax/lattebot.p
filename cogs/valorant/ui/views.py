@@ -73,6 +73,7 @@ class AccountManager:
 
         for index, riot_account in enumerate(sorted(user.riot_accounts, key=lambda x: x.created_at)):
             riot_auth = RiotAuth.from_db(riot_account)
+            riot_auth.bot = self._bot
             self._riot_accounts[riot_auth.puuid] = riot_auth
             if index == 0:
                 self.first_account = riot_auth
@@ -82,23 +83,23 @@ class AccountManager:
     def hide_display_name(self) -> bool:
         return self._hide_display_name
 
-    def is_ready(self) -> bool:
-        return self._ready.is_set()
-
-    async def wait_until_ready(self) -> None:
-        await self._ready.wait()
-
     @property
     def riot_accounts(self) -> List[RiotAuth]:
         return list(self._riot_accounts.values())
 
-    def get_riot_account(self, puuid: Optional[str]) -> Optional[RiotAuth]:
-        return self._riot_accounts.get(puuid)  # type: ignore
+    async def wait_until_ready(self) -> None:
+        await self._ready.wait()
 
     async def fetch_storefront(self, riot_auth: RiotAuth) -> valorantx.StoreFront:
         if sf := self.valorant_client.get_storefront(riot_auth.puuid):
             return sf
         return await self.valorant_client.fetch_storefront(riot_auth)
+
+    def is_ready(self) -> bool:
+        return self._ready.is_set()
+
+    def get_riot_account(self, puuid: Optional[str]) -> Optional[RiotAuth]:
+        return self._riot_accounts.get(puuid)  # type: ignore
 
     def set_locale_from_discord(self, locale: discord.Locale) -> None:
         self.locale = valorantx.utils.locale_converter(locale)

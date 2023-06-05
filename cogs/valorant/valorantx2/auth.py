@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import aiohttp
 import yarl
@@ -9,6 +9,7 @@ from valorantx import RiotAuth as RiotAuth_
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+    from core.bot import LatteMaid
     from core.utils.database.models.riot_account import RiotAccount as RiotAccountDB
 
 # fmt: off
@@ -19,6 +20,10 @@ __all__ = (
 
 
 class RiotAuth(RiotAuth_):
+    def __init__(self) -> None:
+        super().__init__()
+        self.bot: Optional[LatteMaid] = None
+
     async def authorize_multi_factor(self, code: str, remember: bool = False):
         headers = {
             'Accept-Encoding': 'deflate, gzip, zstd',
@@ -75,3 +80,10 @@ class RiotAuth(RiotAuth_):
         url = yarl.URL('https://auth.riotgames.com')
         riot_cookies = self._cookie_jar.filter_cookies(url)
         return riot_cookies['ssid'].value
+
+    async def reauthorize(self) -> bool:
+        if await super().reauthorize():
+            if self.bot is not None:
+                self.bot.dispatch('riot_account_update', self)
+            return True
+        return False
