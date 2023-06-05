@@ -137,15 +137,18 @@ class Valorant(ValorantCog):
         # fetch userinfo and region
         try:
             await riot_auth.fetch_userinfo()
-        except Exception as e:
+        except aiohttp.ClientResponseError as e:
             _log.error('riot auth error fetching userinfo', exc_info=e)
 
+        # set region if specified
         if region is not None:
             riot_auth.region = region.value
         else:
+            # fetch region if not specified
             try:
                 await riot_auth.fetch_region()
-            except Exception as e:
+            except aiohttp.ClientResponseError as e:
+                riot_auth.region = 'ap'  # default to ap
                 _log.error('riot auth error fetching region', exc_info=e)
 
         # TODO: encrypt token before saving
@@ -224,7 +227,7 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        view = StoreFrontView(interaction, AccountManager(interaction.user.id, self.valorant_client))
+        view = StoreFrontView(interaction, AccountManager(self.bot, interaction.user.id, self.valorant_client))
         await view.callback(interaction)
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
@@ -232,7 +235,7 @@ class Valorant(ValorantCog):
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
         await interaction.response.defer()
-        view = NightMarketView(interaction, AccountManager(interaction.user.id, self.valorant_client), hide)
+        view = NightMarketView(interaction, AccountManager(self.bot, interaction.user.id, self.valorant_client), hide)
         await view.callback(interaction)
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
@@ -250,7 +253,7 @@ class Valorant(ValorantCog):
         await interaction.response.defer(ephemeral=private)
         wallet = WalletView(
             interaction,
-            AccountManager(interaction.user.id, self.valorant_client),
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
         )
         await wallet.callback(interaction)
 
@@ -261,7 +264,7 @@ class Valorant(ValorantCog):
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(interaction.user.id, self.valorant_client),
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
             valorantx.RelationType.season,
         )
         await view.callback(interaction)
@@ -273,7 +276,7 @@ class Valorant(ValorantCog):
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(interaction.user.id, self.valorant_client),
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
             valorantx.RelationType.event,
         )
         await view.callback(interaction)
@@ -294,7 +297,13 @@ class Valorant(ValorantCog):
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+        await interaction.response.defer()
+        view = GamePassView(
+            interaction,
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            valorantx.RelationType.agent,
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
     @app_commands.choices(

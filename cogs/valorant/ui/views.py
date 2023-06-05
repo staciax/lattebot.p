@@ -23,8 +23,6 @@ from core.utils.pages import LattePages, ListPageSource
 from .. import valorantx2 as valorantx
 from ..valorantx2 import RiotAuth
 from ..valorantx2.enums import Locale as ValorantLocale, RelationType
-
-# from ..valorantx2.models import FeaturedBundle, RewardValorantAPI, StoreFront, Wallet
 from . import embeds as e
 
 if TYPE_CHECKING:
@@ -50,11 +48,13 @@ _log = logging.getLogger(__name__)
 class AccountManager:
     def __init__(
         self,
+        bot: LatteMaid,
         user_id: int,
         valorant_client: ValorantClient,
         *,
         locale: ValorantLocale = ValorantLocale.american_english,
     ) -> None:
+        self._bot: LatteMaid = bot
         self.user_id: int = user_id
         self.locale: ValorantLocale = locale
         self.valorant_client: ValorantClient = valorant_client
@@ -65,11 +65,11 @@ class AccountManager:
 
     async def init(self) -> None:
         assert self.valorant_client.bot is not None
-        user = await self.valorant_client.bot.db.get_user(self.user_id)
+        user = await self._bot.db.get_user(self.user_id)
 
         if user is None:
             _log.info(f'User {self.user_id!r} not found in database. creating new user.')
-            user = await self.valorant_client.bot.db.create_user(id=self.user_id, locale=self.locale.value)
+            user = await self._bot.db.create_user(id=self.user_id, locale=self.locale.value)
 
         for index, riot_account in enumerate(sorted(user.riot_accounts, key=lambda x: x.created_at)):
             riot_auth = RiotAuth.from_db(riot_account)
@@ -489,11 +489,6 @@ class FeaturedBundlePageView(LattePages):
     def __init__(self, source: FeaturedBundlePageSource, *, interaction: discord.Interaction[LatteMaid], **kwargs):
         super().__init__(source, interaction=interaction, check_embeds=True, compact=True, **kwargs)
 
-    # def fill_items(self) -> None:
-    #     super().fill_items()
-    #     self.remove_item(self.go_to_first_page)
-    #     self.remove_item(self.go_to_last_page)
-
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
         if await super().interaction_check(interaction):
             if self.source.locale != interaction.locale:
@@ -522,76 +517,14 @@ class FeaturedBundlePageView(LattePages):
     #         return
     #     self.message = await self.interaction.followup.send(**kwargs, view=self, ephemeral=ephemeral)
 
-
-# async def on_timeout(self) -> None:
-#     if not self.selected:
-#         original_response = await self.interaction.original_response()
-#         if original_response:
-#             for item in self.children:
-#                 if isinstance(item, ui.Button):
-#                     item.disabled = True
-#             await original_response.edit(view=self)
-
-
-# class FeaturedBundleView(_ViewAuthor):
-
-#     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
-#         super().__init__(interaction, account_manager)
-
-#     # def __init__(self, interaction: discord.Interaction[LatteMaid], client: ValorantClient) -> None:
-#     #     super().__init__(interaction, client, timeout=600)
-#     #     # self.all_embeds: Dict[str, List[discord.Embed]] = {}
-#     #     self.selected: bool = False
-#     #     self.banner_embed: Optional[Embed] = None
-#     #     self.item_embeds: Optional[List[Embed]] = None
-
-#     # def build_buttons(self, bundles: List[FeaturedBundle]) -> None:
-#     #     for index, bundle in enumerate(bundles, start=1):
-#     #         self.add_item(
-#     #             FeaturedBundleButton(
-#     #                 other_view=self,
-#     #                 label=str(index) + '. ' + bundle.display_name_localized(),
-#     #                 custom_id=bundle.uuid,
-#     #                 style=discord.ButtonStyle.blurple,
-#     #             )
-#     #         )
-
-#     # async def on_timeout(self) -> None:
-#     #     if not self.selected:
-#     #         original_response = await self.interaction.original_response()
-#     #         if original_response:
-#     #             for item in self.children:
-#     #                 if isinstance(item, ui.Button):
-#     #                     item.disabled = True
-#     #             await original_response.edit(view=self)
-
-#     # async def start_view(self) -> None:
-#     #     bundles = await self.v_client.fetch_featured_bundle()
-
-#     #     if len(bundles) > 1:
-#     #         # self.build_buttons(bundles)
-#     #         embeds = e.select_featured_bundles_e(bundles, locale=self.v_locale)
-#     #         # for embed in embeds:
-#     #         #     if embed.custom_id is not None and embed.thumbnail.url is not None:
-#     #         #         color_thief = await self.bot.get_or_fetch_colors(embed.custom_id, embed.thumbnail.url)
-#     #         #         embed.colour = random.choice(color_thief)
-#     #         await self.interaction.followup.send(embeds=embeds, view=self)
-#     #         return
-#     #     elif len(bundles) == 1:
-#     #         bundle = bundles[0]
-#     #         if bundle is not None:
-#     #             b = e.BundleEmbed(bundle, locale=self.v_locale)
-#     #             self.banner_embed = embed_banner = b.banner_embed()
-#     #             self.item_embeds = embed_items = b.item_embeds()
-#     #             embeds = [embed_banner, *embed_items]
-#     #             # TODO: make bundle view if embed_i more than 10
-#     #             await self.interaction.followup.send(embeds=embeds[:10])
-#     #             return
-
-#     #     if None in bundles:
-#     #         self.bot.dispatch('bundle_not_found')
-
-#     #     await self.interaction.followup.send("No featured bundles found")
+    # async def on_timeout(self) -> None:
+    #     if not self.selected:
+    #         original_response = await self.interaction.original_response()
+    #         if original_response:
+    #             for item in self.children:
+    #                 if isinstance(item, ui.Button):
+    #                     item.disabled = True
+    #             await original_response.edit(view=self)
 
 
 class GamePassPageSource(ListPageSource['RewardValorantAPI']):
