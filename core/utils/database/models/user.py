@@ -51,6 +51,13 @@ class User(Base):
     def is_blacklisted(self) -> bool:
         return self.blacklist is not None
 
+    @hybrid_method
+    def get_riot_account(self, puuid: str) -> Optional[RiotAccount]:
+        for account in self.riot_accounts:
+            if account.puuid == puuid:
+                return account
+        return None
+
     async def update(self, session: AsyncSession, locale: str) -> None:
         self.locale = locale
         await session.flush()

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 from typing import TYPE_CHECKING, Optional
 
 import aiohttp
 import yarl
 from valorantx import RiotAuth as RiotAuth_
+from valorantx.errors import RiotAuthenticationError
+from valorantx.utils import MISSING
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -18,11 +22,15 @@ __all__ = (
 )
 # fmt: on
 
+_log = logging.getLogger(__name__)
+
 
 class RiotAuth(RiotAuth_):
     def __init__(self) -> None:
         super().__init__()
-        self.bot: Optional[LatteMaid] = None
+        self.owner_id: Optional[int] = None
+        self.bot: LatteMaid = MISSING
+        self.session_is_outdated: bool = False
 
     async def authorize_multi_factor(self, code: str, remember: bool = False):
         headers = {
@@ -64,6 +72,7 @@ class RiotAuth(RiotAuth_):
     @classmethod
     def from_db(cls, data: RiotAccountDB) -> Self:
         self = cls()
+        self.owner_id = data.owner_id
         self.id_token = data.id_token
         self.entitlements_token = data.entitlements_token
         self.access_token = data.access_token
@@ -81,9 +90,32 @@ class RiotAuth(RiotAuth_):
         riot_cookies = self._cookie_jar.filter_cookies(url)
         return riot_cookies['ssid'].value
 
-    async def reauthorize(self) -> bool:
-        if await super().reauthorize():
-            if self.bot is not None:
-                self.bot.dispatch('riot_account_update', self)
-            return True
-        return False
+    async def reauthorize(self) -> None:
+        _log.info(f're authorizing {self.game_name}#{self.tag_line}({self.puuid})')
+
+        if self.session_is_outdated:
+            raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')
+
+        for tries in range(4):
+            try:
+                await self.authorize('', '')
+            except RiotAuthenticationError as e:
+                if e.status == 403 and tries <= 1:  # 403 Forbidden
+                    if self.bot is not MISSING:
+                        # self.bot.dispatch('re_authorize_forbidden', RiotAuth.RIOT_CLIENT_USER_AGENT)
+                        if self.bot.valorant is None:
+                            continue
+                        version = await self.bot.valorant.valorant_client.valorant_api.fetch_version()
+                        RiotAuth.RIOT_CLIENT_USER_AGENT = (
+                            f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
+                        )
+                    await asyncio.sleep(1)
+                    continue
+                else:
+                    raise e
+            else:
+                _log.info(f'successfully re authorized {self.game_name}#{self.tag_line}({self.puuid})')
+                break
+        else:
+            self.session_is_outdated = True
+            raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')

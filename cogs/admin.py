@@ -10,7 +10,7 @@ from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
 
 from core.checks import owner_only
-from core.errors import CommandError
+from core.errors import AppCommandError
 from core.utils.chat_formatting import bold, inline
 from core.utils.useful import MiadEmbed
 
@@ -55,10 +55,10 @@ class Developer(commands.Cog, name='developer'):
             await self.bot.load_extension(f'{extension}')
             _log.info(f'Loading extension {extension}')
         except commands.ExtensionAlreadyLoaded:
-            raise CommandError(f"The extension is already loaded.")
+            raise AppCommandError(f"The extension is already loaded.")
         except Exception as e:
             _log.error(e)
-            raise CommandError('The extension load failed')
+            raise AppCommandError('The extension load failed')
         else:
             embed = MiadEmbed(description=f"Load : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
@@ -73,10 +73,10 @@ class Developer(commands.Cog, name='developer'):
             await self.bot.unload_extension(f'{extension}')
             _log.info(f'Unloading extension {extension}')
         except commands.ExtensionNotLoaded:
-            raise CommandError(f'The extension was not loaded.')
+            raise AppCommandError(f'The extension was not loaded.')
         except Exception as e:
             _log.error(e)
-            raise CommandError('The extension unload failed')
+            raise AppCommandError('The extension unload failed')
         else:
             embed = MiadEmbed(description=f"Unload : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
@@ -93,12 +93,12 @@ class Developer(commands.Cog, name='developer'):
             await self.bot.reload_extension(f'{extension}')
             _log.info(f'Reloading extension {extension}')
         except commands.ExtensionNotLoaded:
-            raise CommandError(f'The extension was not loaded.')
+            raise AppCommandError(f'The extension was not loaded.')
         except commands.ExtensionNotFound:
-            raise CommandError(f'The Extension Not Found')
+            raise AppCommandError(f'The Extension Not Found')
         except Exception as e:
             _log.error(e)
-            raise CommandError('The extension reload failed')
+            raise AppCommandError('The extension reload failed')
         else:
             embed = MiadEmbed(description=f"Reload : `{extension}`").success()
             await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
@@ -154,7 +154,7 @@ class Developer(commands.Cog, name='developer'):
         await interaction.response.defer(ephemeral=True)
 
         if object_id in self.bot.db._blacklist:  # TODO: fix this
-            raise CommandError(f'`{object_id}` is already in blacklist')
+            raise AppCommandError(f'`{object_id}` is already in blacklist')
 
         await self.bot.db.create_blacklist(id=int(object_id))
 
@@ -181,7 +181,7 @@ class Developer(commands.Cog, name='developer'):
         await interaction.response.defer(ephemeral=True)
 
         if object_id not in self.bot.db._blacklist:
-            raise CommandError(f'`{object_id}` is not in blacklist')
+            raise AppCommandError(f'`{object_id}` is not in blacklist')
 
         await self.bot.db.delete_blacklist(int(object_id))
 

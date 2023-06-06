@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-# import abc
-# import contextlib
 import asyncio
+import contextlib
 import logging
+
+# import abc
+import time
 
 # import random
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -74,6 +76,9 @@ class AccountManager:
         for index, riot_account in enumerate(sorted(user.riot_accounts, key=lambda x: x.created_at)):
             riot_auth = RiotAuth.from_db(riot_account)
             riot_auth.bot = self._bot
+            if time.time() > riot_auth.expires_at:
+                with contextlib.suppress(Exception):
+                    await riot_auth.reauthorize()
             self._riot_accounts[riot_auth.puuid] = riot_auth
             if index == 0:
                 self.first_account = riot_auth

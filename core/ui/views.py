@@ -155,6 +155,9 @@ class ViewAuthor(BaseView):
     async def interaction_check(self, interaction: Interaction[LatteMaid]) -> bool:
         """Only allowing the context author to interact with the view"""
 
+        if interaction.command is None and self.interaction is not None:
+            interaction.extras['command'] = self.interaction.command
+
         user = interaction.user
 
         if await self.bot.is_owner(user):

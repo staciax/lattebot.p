@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from abc import ABC
 from typing import TYPE_CHECKING, List
 
 import aiohttp
@@ -12,12 +13,14 @@ from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
 from core.checks import cooldown_short, dynamic_cooldown
+from core.cog import LatteMaidCog
 from core.errors import AppCommandError
 from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.useful import MiadEmbed as Embed
 
 from . import valorantx2 as valorantx
-from .abc import ValorantCog
+from .events import Events
+from .notify import Notify
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
 from .ui.views import AccountManager, FeaturedBundleView, GamePassView, NightMarketView, StoreFrontView, WalletView
@@ -31,7 +34,16 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
-class Valorant(ValorantCog):
+class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
+    """
+    This allows the metaclass used for proper type detection to
+    coexist with discord.py's metaclass
+    """
+
+    pass
+
+
+class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
         self.valorant_client: ValorantClient = ValorantClient(self.bot)
