@@ -10,7 +10,7 @@ from discord import app_commands
 # i18n
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import dynamic_cooldown
-from discord.ext import tasks
+from discord.ext import commands, tasks
 
 from core.checks import cooldown_short
 
@@ -37,18 +37,18 @@ class Notify(MixinMeta):
         await self.valorant_client.wait_until_ready()
         _log.info('Notify alert loop started')
 
-    # notify = app_commands.Group(name=_T('notify'), description=_T('Notify commands'), guild_only=True)
+    notify = app_commands.Group(name=_T('notify'), description=_T('Notify commands'), guild_only=True)
 
-    # @notify.command(
-    #     name=_T('add'),
-    #     description=_T('Set a notification when a specific skin is available on your store'),
-    # )  # type: ignore
-    # @app_commands.describe(skin=_T('The name of the skin you want to notify'))
-    # @app_commands.rename(skin=_T('skin'))
-    # @dynamic_cooldown(cooldown_short)
-    # async def notify_add(self, interaction: discord.Interaction[LatteMaid], skin: str) -> None:
-    #     """Set a notification when a specific skin is available on your store"""
-    #     ...
+    @notify.command(
+        name=_T('add'),
+        description=_T('Set a notification when a specific skin is available on your store'),
+    )  # type: ignore
+    @app_commands.describe(skin=_T('The name of the skin you want to notify'))
+    @app_commands.rename(skin=_T('skin'))
+    @dynamic_cooldown(cooldown_short)
+    async def notify_add(self, interaction: discord.Interaction[LatteMaid], skin: str) -> None:
+        """Set a notification when a specific skin is available on your store"""
+        ...
 
     # @notify_add.autocomplete('skin')  # type: ignore
     # async def notify_add_autocomplete(

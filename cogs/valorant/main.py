@@ -162,6 +162,7 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
             except aiohttp.ClientResponseError as e:
                 riot_auth.region = 'ap'  # default to ap
                 _log.error('riot auth error fetching region', exc_info=e)
+        assert riot_auth.region is not None
 
         # TODO: encrypt token before saving
         try:
@@ -169,7 +170,7 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
                 puuid=riot_auth.puuid,
                 game_name=riot_auth.game_name,
                 tag_line=riot_auth.tag_line,
-                region=riot_auth.region,  # type: ignore
+                region=riot_auth.region,
                 scope=riot_auth.scope,  # type: ignore
                 token_type=riot_auth.token_type,  # type: ignore
                 expires_at=riot_auth.expires_at,

@@ -5,6 +5,7 @@ import logging
 from typing import AsyncIterator, Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from .errors import (
@@ -95,23 +96,37 @@ class DatabaseConnection:
             async for user in User.read_all(session):
                 yield user
 
-    async def update_user(self, id: int, locale: str) -> None:
+    async def update_user(self, id: int, locale: str) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(f"user with id {id!r} does not exist")
-            await user.update(session, locale)
-            await session.commit()
-            self._log.info(f'updated user with id {id!r} to locale {locale!r}')
+            try:
+                await user.update(session, locale)
+            except SQLAlchemyError as e:
+                await session.rollback()
+                self._log.error(f'failed to update user with id {id!r} due to {e!r}')
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'updated user with id {id!r} to locale {locale!r}')
+                return True
 
-    async def delete_user(self, id: int) -> None:
+    async def delete_user(self, id: int) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(f"user with id {id!r} does not exist")
-            await User.delete(session, user)
-            await session.commit()
-            self._log.info(f'deleted user with id {id!r}')
+            try:
+                await User.delete(session, user)
+            except SQLAlchemyError as e:
+                await session.rollback()
+                self._log.error(f'failed to delete user with id {id!r} due to {e!r}')
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted user with id {id!r}')
+                return True
 
     # blacklist
 
@@ -252,38 +267,64 @@ class DatabaseConnection:
         access_token: Optional[str],
         entitlements_token: Optional[str],
         ssid: Optional[str],
-    ) -> None:
+    ) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
                 raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
-            await riot_account.update(
-                session=session,
-                game_name=game_name,
-                tag_line=tag_line,
-                region=region,
-                scope=scope,
-                token_type=token_type,
-                expires_at=expires_at,
-                id_token=id_token,
-                access_token=access_token,
-                entitlements_token=entitlements_token,
-                ssid=ssid,
-            )
-            await session.commit()
-            self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
+            try:
+                await riot_account.update(
+                    session=session,
+                    game_name=game_name,
+                    tag_line=tag_line,
+                    region=region,
+                    scope=scope,
+                    token_type=token_type,
+                    expires_at=expires_at,
+                    id_token=id_token,
+                    access_token=access_token,
+                    entitlements_token=entitlements_token,
+                    ssid=ssid,
+                )
+            except SQLAlchemyError as e:
+                self._log.error(
+                    f'failed to update riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}'
+                )
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
+                return True
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> None:
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
                 raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
-            await RiotAccount.delete(session, riot_account)
-            await session.commit()
-            self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
 
-    async def delete_all_riot_accounts(self, owner_id: int) -> None:
+            try:
+                await RiotAccount.delete(session, riot_account)
+            except SQLAlchemyError as e:
+                self._log.error(
+                    f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}'
+                )
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
+                return True
+
+    async def delete_all_riot_accounts(self, owner_id: int) -> bool:
         async with self._async_session() as session:
-            await RiotAccount.delete_all_by_owner_id(session, owner_id)
-            await session.commit()
-            self._log.info(f'deleted all riot accounts for user with id {owner_id!r}')
+            try:
+                await RiotAccount.delete_all_by_owner_id(session, owner_id)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to delete all riot accounts for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted all riot accounts for user with id {owner_id!r}')
+                return True
