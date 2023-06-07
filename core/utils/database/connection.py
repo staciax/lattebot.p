@@ -33,7 +33,7 @@ class DatabaseConnection:
     _async_session: async_sessionmaker[AsyncSession]
     _async_engine: AsyncEngine
 
-    def __init__(self, uri: str, echo: bool = False) -> None:
+    def __init__(self, uri: str, *, echo: bool = False) -> None:
         self.__uri: str = uri
         self._echo: bool = echo
         self._ready: asyncio.Event = asyncio.Event()
@@ -257,16 +257,16 @@ class DatabaseConnection:
         puuid: str,
         owner_id: int,
         *,
-        game_name: Optional[str],
-        tag_line: Optional[str],
-        region: Optional[str],
-        scope: Optional[str],
-        token_type: Optional[str],
-        expires_at: Optional[int],
-        id_token: Optional[str],
-        access_token: Optional[str],
-        entitlements_token: Optional[str],
-        ssid: Optional[str],
+        game_name: Optional[str] = None,
+        tag_line: Optional[str] = None,
+        region: Optional[str] = None,
+        scope: Optional[str] = None,
+        token_type: Optional[str] = None,
+        expires_at: Optional[int] = None,
+        id_token: Optional[str] = None,
+        access_token: Optional[str] = None,
+        entitlements_token: Optional[str] = None,
+        ssid: Optional[str] = None,
     ) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Generic, List, Optional, TypeVar, Union
 
-from core.utils.database.connection import DatabaseConnection as BaseDatabaseConnection
+from core.utils.database.connection import DatabaseConnection as _DatabaseConnection
 from core.utils.database.models.blacklist import BlackList
 from core.utils.database.models.riot_account import RiotAccount
 from core.utils.database.models.user import User
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from discord.ext.commands import AutoShardedBot, Bot
+
+BotT = TypeVar('BotT', bound=Union['Bot', 'AutoShardedBot'], covariant=True)
 
 __all__ = (
     'DatabaseConnection',
@@ -18,12 +20,12 @@ __all__ = (
 )
 
 
-class DatabaseConnection(BaseDatabaseConnection):
-    def __init__(self, bot: LatteMaid, uri: str) -> None:
-        super().__init__(uri)
-        self._bot: LatteMaid = bot
+class DatabaseConnection(_DatabaseConnection, Generic[BotT]):
+    def __init__(self, uri: str, bot: Optional[BotT] = None) -> None:
+        super().__init__(uri, echo=False)
+        self._bot: Optional[BotT] = bot
         self._log = logging.getLogger(__name__)
-        self._users: Dict[int, User] = {}
+        self._users: Dict[int, User] = {}  # TODO: key to string
         self._blacklist: Dict[int, BlackList] = {}
 
     async def initialize(self, drop_table: bool = False) -> None:
@@ -196,7 +198,8 @@ class DatabaseConnection(BaseDatabaseConnection):
             pass
         else:
             # refresh user from database
-            self._bot.loop.create_task(self.get_user(owner_id))
+            if self._bot is not None:
+                self._bot.loop.create_task(self.get_user(owner_id))
 
     async def delete_all_riot_accounts(self, owner_id: int) -> None:
         await super().delete_all_riot_accounts(owner_id)

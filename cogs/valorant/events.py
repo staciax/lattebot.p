@@ -4,8 +4,8 @@ import datetime
 import logging
 from typing import TYPE_CHECKING
 
-from discord import app_commands
-from discord.app_commands import locale_str as _T
+# from discord import app_commands
+# from discord.app_commands import locale_str as _T
 from discord.ext import commands, tasks
 
 from .abc import MixinMeta
@@ -21,58 +21,41 @@ class Events(MixinMeta):
     @commands.Cog.listener()
     async def on_re_authorized_success(self, riot_auth: RiotAuth, wait_for: bool) -> None:
         if wait_for:
-            user = await self.bot.db.get_user(riot_auth.discord_id)
-
-            if user is None:
+            if riot_auth.owner_id is None:
+                _log.debug(f'riot_auth owner_id is None, not updating database')
                 return
 
-            riot_auth_db = user.get_riot_account(riot_auth.puuid)
-            # await riot_auth.reauthorize(wait_for=False)
+            assert riot_auth.user_id is not None
 
-            # v_user = await self.fetch_user(id=riot_auth.discord_id)
-            # for acc in v_user.get_riot_accounts():
-            #     if acc.puuid != riot_auth.puuid:
-            #         await acc.re_authorize(wait_for=False)
-
-            # # wait for re_authorize
-            # async with self.bot.pool.acquire() as conn:
-            #     # Update the riot account in the database
-
-            #     old_data = self._get_user(riot_auth.discord_id)
-            #     if old_data is not None:
-            #         new_data = [
-            #             riot_auth if auth_u.puuid == riot_auth.puuid else auth_u
-            #             for auth_u in old_data.get_riot_accounts()
-            #         ]
-
-            #         payload = [user_riot_auth.to_dict() for user_riot_auth in new_data]
-
-            #         dumps_payload = json.dumps(payload)
-
-            #         # encryption
-            #         encrypt_payload = self.bot.encryption.encrypt(dumps_payload)
-
-            #         await self.db.upsert_user(
-            #             encrypt_payload,
-            #             v_user.id,
-            #             v_user.guild_id,
-            #             v_user.locale,
-            #             v_user.date_signed,
-            #             conn=conn,
-            #         )
+            if await self.bot.db.update_riot_account(
+                puuid=riot_auth.user_id,
+                owner_id=riot_auth.owner_id,
+                game_name=riot_auth.game_name,
+                tag_line=riot_auth.tag_line,
+                region=riot_auth.region,
+                scope=riot_auth.scope,
+                token_type=riot_auth.token_type,
+                expires_at=riot_auth.expires_at,
+                id_token=riot_auth.id_token,
+                access_token=riot_auth.access_token,
+                entitlements_token=riot_auth.entitlements_token,
+                ssid=riot_auth.get_ssid(),
+            ):
+                _log.info(f"riot_auth {riot_auth.puuid} successfully updated in database for {riot_auth.owner_id}")
+            else:
+                _log.info(f"riot_auth {riot_auth.puuid} failed to update in database for {riot_auth.owner_id}")
 
             # # invalidate cache
             # try:
             #     self.fetch_user.invalidate(self, id=riot_auth.discord_id)  # type:
             # except Exception:
             #     pass
-        # _log.info(f'User {riot_auth.discord_id} re-authorized')
 
     @commands.Cog.listener()
     async def on_re_authorize_fail(self, riot_auth: RiotAuth) -> None:
         """Called when a user's riot account fails to update"""
+        _log.info(f'riot_auth failed to re-authorized {riot_auth.puuid} for {riot_auth.owner_id}')
         # self.cache_invalidate(riot_auth)  # validate cache
-        # _log.info(f'User {riot_auth.discord_id} failed to re-authorized')
 
     # @commands.Cog.listener()
     # async def on_re_authorize_forbidden(self, user_agent: str) -> None:
