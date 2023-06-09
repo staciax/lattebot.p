@@ -1,17 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 from core.utils.database.connection import DatabaseConnection as _DatabaseConnection
 from core.utils.database.models.blacklist import BlackList
 from core.utils.database.models.riot_account import RiotAccount
 from core.utils.database.models.user import User
-
-if TYPE_CHECKING:
-    from discord.ext.commands import AutoShardedBot, Bot
-
-BotT = TypeVar('BotT', bound=Union['Bot', 'AutoShardedBot'], covariant=True)
 
 __all__ = (
     'DatabaseConnection',
@@ -20,10 +16,10 @@ __all__ = (
 )
 
 
-class DatabaseConnection(_DatabaseConnection, Generic[BotT]):
-    def __init__(self, uri: str, bot: Optional[BotT] = None) -> None:
+class DatabaseConnection(_DatabaseConnection):
+    def __init__(self, uri: str) -> None:
         super().__init__(uri, echo=False)
-        self._bot: Optional[BotT] = bot
+        self.loop = asyncio.get_running_loop()
         self._log = logging.getLogger(__name__)
         self._users: Dict[int, User] = {}  # TODO: key to string
         self._blacklist: Dict[int, BlackList] = {}
@@ -177,14 +173,8 @@ class DatabaseConnection(_DatabaseConnection, Generic[BotT]):
         except KeyError:
             pass
         else:
-            # user = self._users[owner_id]
-            # for account in user.riot_accounts:
-            #     if account.puuid == puuid:
-            #         account = riot_account
-            #         break
             # refresh user from database
-            if self._bot is not None:
-                self._bot.loop.create_task(self.get_user(owner_id))
+            self.loop.create_task(self.get_user(owner_id))
 
         return riot_account
 
@@ -198,8 +188,7 @@ class DatabaseConnection(_DatabaseConnection, Generic[BotT]):
             pass
         else:
             # refresh user from database
-            if self._bot is not None:
-                self._bot.loop.create_task(self.get_user(owner_id))
+            self.loop.create_task(self.get_user(owner_id))
 
     async def delete_all_riot_accounts(self, owner_id: int) -> None:
         await super().delete_all_riot_accounts(owner_id)
@@ -210,6 +199,47 @@ class DatabaseConnection(_DatabaseConnection, Generic[BotT]):
         except KeyError:
             pass
         else:
-            if self._bot is not None:
+            # refresh user from database
+            self.loop.create_task(self.get_user(owner_id))
+
+    async def update_riot_account(
+        self,
+        puuid: str,
+        owner_id: int,
+        *,
+        game_name: Optional[str] = None,
+        tag_line: Optional[str] = None,
+        region: Optional[str] = None,
+        scope: Optional[str] = None,
+        token_type: Optional[str] = None,
+        expires_at: Optional[int] = None,
+        id_token: Optional[str] = None,
+        access_token: Optional[str] = None,
+        entitlements_token: Optional[str] = None,
+        ssid: Optional[str] = None,
+    ) -> bool:
+        update = await super().update_riot_account(
+            puuid,
+            owner_id,
+            game_name=game_name,
+            tag_line=tag_line,
+            region=region,
+            scope=scope,
+            token_type=token_type,
+            expires_at=expires_at,
+            id_token=id_token,
+            access_token=access_token,
+            entitlements_token=entitlements_token,
+            ssid=ssid,
+        )
+        if update:
+            # validate cache
+            try:
+                self._users.pop(owner_id)
+            except KeyError:
+                pass
+            else:
                 # refresh user from database
-                self._bot.loop.create_task(self.get_user(owner_id))
+                self.loop.create_task(self.get_user(owner_id))
+
+        return update

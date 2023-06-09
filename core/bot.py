@@ -24,8 +24,6 @@ from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from cogs.about import About
     from cogs.admin import Developer
     from cogs.jsk import Jishaku
@@ -60,7 +58,7 @@ class LatteMaid(commands.AutoShardedBot):
     if TYPE_CHECKING:
         tree: LatteMaidTree
 
-    db: DatabaseConnection[Self]
+    db: DatabaseConnection
     bot_app_info: discord.AppInfo
 
     def __init__(self) -> None:
@@ -91,7 +89,7 @@ class LatteMaid(commands.AutoShardedBot):
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
-        self.db: DatabaseConnection[Self] = DatabaseConnection(os.getenv('DATABASE_URI_TEST'), self)  # type: ignore
+        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore
 
         # config
         self._debug_mode: bool = True if os.getenv('DEBUG_MODE') == 'True' else False
