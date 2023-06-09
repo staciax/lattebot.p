@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 
 # import datetime
-# import random
+import random
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from discord.utils import format_dt
@@ -14,8 +14,9 @@ from core.utils.useful import MiadEmbed as Embed
 from .. import valorantx2 as valorantx
 from ..valorantx2 import RiotAuth
 from ..valorantx2.emojis import VALORANT_POINT_EMOJI
-from ..valorantx2.enums import Locale as ValorantLocale, RelationType
+from ..valorantx2.enums import Locale as ValorantLocale, MissionType, RelationType
 from ..valorantx2.models import (
+    Agent,
     BonusStore,
     Buddy,
     BuddyLevel,
@@ -24,6 +25,8 @@ from ..valorantx2.models import (
     BundleItemOffer,
     Contract,
     FeaturedBundle,
+    Loadout,
+    MatchmakingRating,
     PlayerCard,
     PlayerCardBundle,
     PlayerTitle,
@@ -320,7 +323,189 @@ class GamePassEmbed:
         return embed
 
 
-# def game_pass_e(
+def mission_e(
+    contracts: valorantx.Contracts,
+    riot_id: str,
+    *,
+    locale: ValorantLocale = ValorantLocale.american_english,
+) -> Embed:
+    daily = []
+    weekly = []
+    tutorial = []
+    npe = []
+
+    all_completed = True
+
+    daily_format = '{0} | **+ {1.xp_grant:,} XP**\n- **`{1.current_progress}/{1.total_progress}`**'
+    for mission in contracts.missions:
+        title = mission.title.from_locale(locale)
+        if mission.type == MissionType.daily:
+            daily.append(daily_format.format(title, mission))
+        elif mission.type == MissionType.weekly:
+            weekly.append(daily_format.format(title, mission))
+        elif mission.type == MissionType.tutorial:
+            tutorial.append(daily_format.format(title, mission))
+        elif mission.type == MissionType.npe:
+            npe.append(daily_format.format(title, mission))
+
+        if not mission.is_completed():
+            all_completed = False
+
+    embed = Embed(title=f'{riot_id} Mission:')
+    if all_completed:
+        embed.colour = 0x77DD77
+
+    if len(daily) > 0:
+        embed.add_field(
+            name=f"**Daily**",
+            value='\n'.join(daily),
+            inline=False,
+        )
+
+    if len(weekly) > 0:
+        embed.add_field(
+            name=f"**Weekly**",
+            value='\n'.join(weekly)
+            + '\n\n Refill Time: {refill_time}'.format(
+                refill_time=format_dt(
+                    contracts.mission_metadata.weekly_refill_time.replace(tzinfo=datetime.timezone.utc), style='R'
+                )
+                if contracts.mission_metadata is not None and contracts.mission_metadata.weekly_refill_time is not None
+                else '-'
+            ),
+        )
+
+    if len(tutorial) > 0:
+        embed.add_field(
+            name=f"**Tutorial**",
+            value='\n'.join(tutorial),
+            inline=False,
+        )
+
+    if len(npe) > 0:
+        embed.add_field(
+            name=f"**NPE**",
+            value='\n'.join(npe),
+            inline=False,
+        )
+
+    return embed
+
+
+def agent_e(agent: Agent, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+    embed = Embed(
+        title=agent.display_name.from_locale(locale),
+        description=chat.italics(agent.description.from_locale(locale)),
+        colour=int(random.choice(agent.background_gradient_colors)[:-2], 16),
+    ).purple()
+    embed.set_image(url=agent.full_portrait)
+    embed.set_thumbnail(url=agent.display_icon)
+    embed.set_footer(
+        text=agent.role.display_name.from_locale(locale),
+        icon_url=agent.role.display_icon,
+    )
+    return embed
+
+
+def buddy_e(buddy: Union[Buddy, BuddyLevel], *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+    embed = Embed().purple()
+    if isinstance(buddy, valorantx.Buddy):
+        embed.set_author(
+            name=buddy.display_name.from_locale(locale),
+            icon_url=buddy.theme.display_icon if buddy.theme is not None else None,
+            url=buddy.display_icon,
+        )
+
+    elif isinstance(buddy, valorantx.BuddyLevel):
+        # assert buddy.parent is not None
+        embed.set_author(
+            name=buddy.parent.display_name.from_locale(locale),
+            url=buddy.display_icon,
+            icon_url=buddy.parent.theme.display_icon if buddy.parent.theme is not None else None,
+        )
+    embed.set_image(url=buddy.display_icon)
+
+    return embed
+
+
+def spray_e(spray: Union[Spray, SprayLevel], *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+    embed = Embed().purple()
+
+    if isinstance(spray, valorantx.Spray):
+        embed.set_author(
+            name=spray.display_name.from_locale(locale),
+            url=spray.display_icon,
+            icon_url=spray.theme.display_icon if spray.theme is not None else None,
+        )
+        embed.set_image(url=spray.animation_gif or spray.full_transparent_icon or spray.display_icon)
+
+    elif isinstance(spray, valorantx.SprayLevel):
+        # assert spray.parent is not None
+        embed.set_author(
+            name=spray.parent.display_name.from_locale(locale),
+            icon_url=spray.parent.theme.display_icon if spray.parent.theme is not None else None,
+            url=spray.display_icon,
+        )
+        embed.set_image(
+            url=spray.parent.animation_gif
+            or spray.parent.full_transparent_icon
+            or spray.parent.display_icon
+            or spray.display_icon
+        )
+
+    return embed
+
+
+def player_card_e(
+    player_card: valorantx.PlayerCard, *, locale: valorantx.Locale = valorantx.Locale.american_english
+) -> Embed:
+    embed = Embed().purple()
+    embed.set_author(
+        name=player_card.display_name.from_locale(locale),
+        icon_url=player_card.theme.display_icon if player_card.theme is not None else None,
+        url=player_card.large_art,
+    )
+    if player_card.large_art is not None:
+        embed.set_image(url=player_card.large_art)
+    return embed
+
+
+def collection_front_e(
+    loadout: Loadout,
+    mmr: MatchmakingRating,
+    riot_id: str,
+    *,
+    locale: valorantx.Locale = valorantx.Locale.american_english,
+) -> Embed:
+    latest_tier = mmr.get_latest_rank_tier() if mmr is not None else None
+
+    embed = Embed()
+    # e.description = '{vp_emoji} {wallet_vp} {rad_emoji} {wallet_rad}'.format(
+    #     vp_emoji=wallet.get_valorant().emoji,  # type: ignore
+    #     wallet_vp=wallet.valorant_points,
+    #     rad_emoji=wallet.get_radiant().emoji,  # type: ignore
+    #     wallet_rad=wallet.radiant_points,
+    # )
+
+    embed.set_author(
+        name=f'{riot_id} - Collection',
+        icon_url=latest_tier.large_icon if latest_tier is not None else None,
+    )
+    embed.set_footer(text=f'Lv. {loadout.identity.account_level}')
+
+    if loadout.identity.player_title is not None:
+        embed.title = loadout.identity.player_title.text.from_locale(locale)
+
+    if loadout.identity.player_card is not None:
+        embed.set_image(url=loadout.identity.player_card.wide_art)
+        # card_color_thief = await self.bot.get_or_fetch_colors(
+        #     loadout.identity.player_card.uuid, loadout.identity.player_card.wide_art
+        # )
+        # embed.colour = random.choice(card_color_thief)
+
+    return embed
+
+
 #     reward: contract.Reward,
 #     contract: contract.ContractU,
 #     relation_type: valorantx.RelationType,

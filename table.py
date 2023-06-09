@@ -12,7 +12,7 @@ if DATABASE_URI_TEST is None:
     raise EnvironmentError('DATABASE_URI_TEST is not set')
 
 
-db = DatabaseConnection(None, DATABASE_URI_TEST)
+db = DatabaseConnection(DATABASE_URI_TEST)
 
 
 async def main():

@@ -11,7 +11,7 @@ from utils.pages import LattePages, ListPageSource
 from utils.ui import LatteEmbed as Embed
 from utils.views import ViewAuthor
 
-from core.checks import cooldown_5s
+from core.checks import cooldown_short
 from core.i18n import _
 
 if TYPE_CHECKING:
@@ -55,7 +55,8 @@ class CogButton(ui.Button['HelpCommand']):
             self.label = cog.qualified_name
 
     def get_cog_app_commands(
-        self, cog_app_commands: List[Union[app_commands.Command, app_commands.Group]]
+        self,
+        cog_app_commands: List[Union[app_commands.Command, app_commands.Group]],
     ) -> List[app_commands.AppCommand]:
         assert self.view is not None
         fetch_app_commands = self.view.bot.get_app_commands()
@@ -94,16 +95,16 @@ class HelpCommand(ViewAuthor, LattePages):
         super().__init__(interaction, timeout=600.0)
         self.cogs = cogs
         self.current_cog: commands.Cog = discord.utils.MISSING
-        self.first_page.row = self.previous_page.row = self.next_page.row = self.last_page.row = 1
         self.embed: Embed = self.front_help_command_embed()
         self.home_button.emoji = self.bot.emoji.latte_icon
+        self.first_page.row = self.previous_page.row = self.next_page.row = self.last_page.row = 1
         self.clear_items()
 
     def front_help_command_embed(self) -> Embed:
         embed = Embed.secondary()
         embed.set_author(
-            name=f'{self.bot.user.display_name} - Help',  # type: ignore
-            icon_url=self.bot.user.display_avatar,  # type: ignore
+            name=f'{self.bot.user.display_name} - Help',
+            icon_url=self.bot.user.display_avatar,
         )
         embed.set_image(url=str(self.bot.cdn.help_banner))
         return embed
@@ -117,16 +118,16 @@ class HelpCommand(ViewAuthor, LattePages):
             await self.message.edit(embed=self.embed, view=self)
 
     def add_nav_buttons(self) -> None:
-        self.add_item(self.first_page)  # type: ignore
-        self.add_item(self.previous_page)  # type: ignore
-        self.add_item(self.next_page)  # type: ignore
-        self.add_item(self.last_page)  # type: ignore
+        self.add_item(self.first_page)
+        self.add_item(self.previous_page)
+        self.add_item(self.next_page)
+        self.add_item(self.last_page)
 
     def remove_nav_buttons(self) -> None:
-        self.remove_item(self.first_page)  # type: ignore
-        self.remove_item(self.previous_page)  # type: ignore
-        self.remove_item(self.next_page)  # type: ignore
-        self.remove_item(self.last_page)  # type: ignore
+        self.remove_item(self.first_page)
+        self.remove_item(self.previous_page)
+        self.remove_item(self.next_page)
+        self.remove_item(self.last_page)
 
     def add_cog_buttons(self) -> None:
         for cog in sorted(self.bot.cogs.values(), key=lambda c: c.qualified_name):
@@ -149,7 +150,7 @@ class Help(commands.Cog, name='help'):
 
     @app_commands.command(name=_T('help'), description=_T('help command'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    @dynamic_cooldown(cooldown_5s)
+    @dynamic_cooldown(cooldown_short)
     async def help_command(self, interaction: Interaction[LatteMaid]):
         cogs = ['About', 'Valorant']
         help_command = HelpCommand(interaction, cogs)

@@ -36,11 +36,13 @@ if TYPE_CHECKING:
 
 __all__ = (
     'AccountManager',
-    'StoreFrontView',
-    'NightMarketView',
-    'WalletView',
-    'GamePassView',
+    'CollectionView',
     'FeaturedBundleView',
+    'GamePassView',
+    'MissionView',
+    'NightMarketView',
+    'StoreFrontView',
+    'WalletView',
 )
 
 
@@ -195,8 +197,13 @@ class BaseSwitchView(BaseValorantView):
 
     async def _initialize(self) -> None:
         await self.account_manager.init()
+        self.account_manager.set_locale_from_discord(self.interaction.locale)
         self._build_buttons()
         self._ready.set()
+
+    @property
+    def valorant_client(self) -> ValorantClient:
+        return self.account_manager.valorant_client
 
     def _build_buttons(self) -> None:
         for index, acc in enumerate(self.account_manager.riot_accounts, start=1):
@@ -575,3 +582,43 @@ class GamePassView(BaseSwitchView, LattePages):
         self.source = GamePassPageSource(contract, riot_auth, locale=self.account_manager.locale)
         self.compact = True
         await self.start(page_number=contract.current_level)
+
+
+class MissionView(BaseSwitchView):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
+        super().__init__(interaction, account_manager)
+        self.row = 1
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await super().callback(interaction)
+
+        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
+        if riot_auth is None:
+            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
+            return
+
+        contracts = await self.account_manager.valorant_client.fetch_contracts(riot_auth)
+
+        embed = e.mission_e(contracts, riot_auth.display_name, locale=self.account_manager.locale)
+        await self.send(embed=embed)
+
+
+class CollectionView(BaseSwitchView):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
+        super().__init__(interaction, account_manager)
+
+    # @alru_cache(maxsize=5)
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await super().callback(interaction)
+
+        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
+        if riot_auth is None:
+            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
+            return
+
+        collection = await self.valorant_client.fetch_loudout()
+        mmr = await self.valorant_client.fetch_mmr()
+
+        embed = e.collection_front_e(collection, mmr, riot_auth.display_name, locale=self.account_manager.locale)
+        await self.send(embed=embed)

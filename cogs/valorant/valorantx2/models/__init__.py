@@ -1,4 +1,5 @@
 from valorantx.models import (
+    Agent as Agent,
     BonusStore as BonusStore,
     Buddy as Buddy,
     BuddyLevel as BuddyLevel,
@@ -8,6 +9,8 @@ from valorantx.models import (
     Contract as Contract,
     Contracts as Contracts,
     FeaturedBundle as FeaturedBundle,
+    Loadout as Loadout,
+    MatchmakingRating as MatchmakingRating,
     PatchNote as PatchNote,
     PatchNotes as PatchNotes,
     PlayerCard as PlayerCard,

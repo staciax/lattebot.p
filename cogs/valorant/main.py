@@ -23,7 +23,16 @@ from .events import Events
 from .notify import Notify
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
-from .ui.views import AccountManager, FeaturedBundleView, GamePassView, NightMarketView, StoreFrontView, WalletView
+from .ui.views import (
+    AccountManager,
+    CollectionView,
+    FeaturedBundleView,
+    GamePassView,
+    MissionView,
+    NightMarketView,
+    StoreFrontView,
+    WalletView,
+)
 from .valorantx2 import Client as ValorantClient, utils as v_utils
 from .valorantx2.auth import RiotAuth
 from .valorantx2.errors import RiotAuthenticationError, RiotMultifactorError
@@ -61,20 +70,13 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
 
     async def run(self) -> None:
         try:
-            await asyncio.wait_for(self.valorant_client.init(), timeout=45)
+            await asyncio.wait_for(self.valorant_client.authorize('ragluxs', '4869_lucky'), timeout=60)
         except asyncio.TimeoutError:
-            # self.bot.loop.create_task(self.bot.unload_extension('cogs.valorant'))
             _log.error('valorant client failed to initialize within 30 seconds.')
-            # try again in 30 seconds
-            # await asyncio.sleep(30)
+        except RiotAuthenticationError as e:
+            _log.warning(f'valorant client failed to authorized', exc_info=e)
         else:
             _log.info('valorant client is initialized.')
-            try:
-                await self.valorant_client.authorize('ragluxs', '4869_lucky')
-            except RiotAuthenticationError as e:
-                _log.warning(f'valorant client failed to authorized', exc_info=e)
-            # else:
-            #     _log.info('valorant client is authorized.')
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
@@ -235,6 +237,8 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
             for account in user.riot_accounts
         ]
 
+    # TODO: remove defer first
+
     @app_commands.command(name=_T('store'), description=_T('Shows your daily store in your accounts'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
@@ -298,13 +302,23 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+        await interaction.response.defer()
+        view = MissionView(
+            interaction,
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+        await interaction.response.defer()
+        view = CollectionView(
+            interaction,
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
     @app_commands.guild_only()

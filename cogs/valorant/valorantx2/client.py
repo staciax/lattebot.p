@@ -7,12 +7,11 @@ import valorantx
 from async_lru import alru_cache
 from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
+from valorantx.models.seasons import Season
 from valorantx.models.store import StoreFront, Wallet
-
-# from valorantx.enums import try_enum
 from valorantx.models.user import ClientUser, User
+from valorantx.models.version import Version
 from valorantx.utils import MISSING
-from valorantx.valorant_api.models.version import Version as ValorantAPIVersion
 
 from .auth import RiotAuth
 from .http import HTTPClient
@@ -43,10 +42,13 @@ class Client(valorantx.Client):
         self.http: HTTPClient = HTTPClient(self.loop)
         self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
         self._closed: bool = False
-        self._is_authorized: bool = True  # default is False but we want to skip auth
-        self._version: ValorantAPIVersion = MISSING
+        self._version: Version = MISSING
         self._ready: asyncio.Event = MISSING
+        self._authorized: asyncio.Event = MISSING
+        self._season: Season = MISSING
+        self._act: Season = MISSING
         self.me: ClientUser = MISSING
+
         # global lock
         self._lock: asyncio.Lock = asyncio.Lock()
         # client users
@@ -54,6 +56,30 @@ class Client(valorantx.Client):
         self._storefront: Dict[str, valorantx.StoreFront] = {}
 
     # auth related
+
+    @property
+    def version(self) -> Version:
+        return self._version
+
+    @version.setter
+    def version(self, value: Version) -> None:
+        self._version = value
+
+    @property
+    def season(self) -> Season:
+        return self._season
+
+    @season.setter
+    def season(self, value: Season) -> None:
+        self._season = value
+
+    @property
+    def act(self) -> Season:
+        return self._act
+
+    @act.setter
+    def act(self, value: Season) -> None:
+        self._act = value
 
     def store_storefront(self, puuid: Optional[str], storefront: StoreFront) -> StoreFront:
         if puuid is None:
@@ -170,8 +196,13 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             return await super().fetch_wallet()
 
-    # @_authorize_required
-    # async def fetch_mmr(self, puuid: Optional[str] = None, *, riot_auth: RiotAuth) -> valorantx.MMR:
-    #     async with self._lock:
-    #         # self.set_authorize(riot_auth)
-    #         return await super().fetch_mmr(puuid=puuid)
+    @_authorize_required
+    async def fetch_mmr(
+        self,
+        puuid: Optional[str] = None,
+        riot_auth: Optional[RiotAuth] = None,
+    ) -> valorantx.MatchmakingRating:
+        async with self._lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            return await super().fetch_mmr(puuid=puuid)

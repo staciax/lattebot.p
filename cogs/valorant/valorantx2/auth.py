@@ -100,6 +100,7 @@ class RiotAuth(RiotAuth_):
             try:
                 await self.authorize('', '')
             except RiotAuthenticationError as e:
+                _log.info(f'failed status code: {e.status} message: {e.text}')
                 if e.status == 403 and tries <= 1:  # 403 Forbidden
                     if self.bot is not MISSING:
                         # self.bot.dispatch('re_authorize_forbidden', RiotAuth.RIOT_CLIENT_USER_AGENT)
@@ -114,8 +115,12 @@ class RiotAuth(RiotAuth_):
                 else:
                     raise e
             else:
+                if self.bot is not MISSING:
+                    self.bot.dispatch('re_authorized_successfully', self)
+                # self.bot.dispatch('re_authorized_successfully', self)
                 _log.info(f'successfully re authorized {self.game_name}#{self.tag_line}({self.puuid})')
                 break
         else:
             self.session_is_outdated = True
+            self.bot.dispatch('re_authorize_failed', self)
             raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')

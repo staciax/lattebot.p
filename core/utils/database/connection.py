@@ -234,7 +234,7 @@ class DatabaseConnection:
             )
             await session.commit()
 
-            self._log.info(f'created riot account with id {game_name}#{tag_line}({puuid}) for user with id {owner_id}')
+            self._log.info(f'created riot account {game_name}#{tag_line}({puuid}) for user with id {owner_id}')
             return riot_account
 
     async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
@@ -287,9 +287,7 @@ class DatabaseConnection:
                     ssid=ssid,
                 )
             except SQLAlchemyError as e:
-                self._log.error(
-                    f'failed to update riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}'
-                )
+                self._log.error(f'failed to update riot account with puuid {puuid!r} for user id {owner_id!r}: {e!r}')
                 await session.rollback()
                 return False
             else:

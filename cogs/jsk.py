@@ -99,7 +99,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         if use_file_check(ctx, len(source_text)):  # File "full content" preview limit
             await ctx.send(file=discord.File(filename=filename, fp=io.BytesIO(source_text.encode('utf-8'))))
         else:
-            paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1980)
+            paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1900)
 
             paginator.add_line(source_text.replace('```', '``\N{zero width space}`'))
 

@@ -1,4 +1,9 @@
-from valorantx.enums import ItemType as ItemType, Locale as Locale, RelationType as RelationType
+from valorantx.enums import (
+    ItemType as ItemType,
+    Locale as Locale,
+    MissionType as MissionType,
+    RelationType as RelationType,
+)
 
 # from __future__ import annotations
 
