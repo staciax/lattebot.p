@@ -74,6 +74,7 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
         except asyncio.TimeoutError:
             _log.error('valorant client failed to initialize within 30 seconds.')
         except RiotAuthenticationError as e:
+            await self.valorant_client._init()  # bypass the auth check
             _log.warning(f'valorant client failed to authorized', exc_info=e)
         else:
             _log.info('valorant client is initialized.')
