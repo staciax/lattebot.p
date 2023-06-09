@@ -177,8 +177,6 @@ class LatteMaid(commands.AutoShardedBot):
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
     async def setup_hook(self) -> None:
-        await self.db.initialize()
-
         # session
         if self.session is MISSING:
             self.session = aiohttp.ClientSession()

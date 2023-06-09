@@ -19,10 +19,11 @@ __all__ = (
 class DatabaseConnection(_DatabaseConnection):
     def __init__(self, uri: str) -> None:
         super().__init__(uri, echo=False)
-        self.loop = asyncio.get_running_loop()
         self._log = logging.getLogger(__name__)
         self._users: Dict[int, User] = {}  # TODO: key to string
         self._blacklist: Dict[int, BlackList] = {}
+        self.loop = asyncio.get_running_loop()
+        self.loop.create_task(self.initialize())
 
     async def initialize(self, drop_table: bool = False) -> None:
         await super().initialize(drop_table)
