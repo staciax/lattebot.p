@@ -32,6 +32,9 @@ class RiotAuth(RiotAuth_):
         self.bot: LatteMaid = MISSING
         self.session_is_outdated: bool = False
 
+    def __hash__(self) -> int:
+        return hash((self.owner_id, self.user_id, self.region))  # self.expires_at
+
     async def authorize_multi_factor(self, code: str, remember: bool = False):
         headers = {
             'Accept-Encoding': 'deflate, gzip, zstd',

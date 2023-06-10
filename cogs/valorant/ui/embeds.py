@@ -15,7 +15,7 @@ from .. import valorantx2 as valorantx
 from ..valorantx2 import RiotAuth
 from ..valorantx2.emojis import VALORANT_POINT_EMOJI
 from ..valorantx2.enums import Locale as ValorantLocale, MissionType, RelationType
-from ..valorantx2.models import (
+from ..valorantx2.models import (  # MatchmakingRating,
     Agent,
     BonusStore,
     Buddy,
@@ -26,7 +26,6 @@ from ..valorantx2.models import (
     Contract,
     FeaturedBundle,
     Loadout,
-    MatchmakingRating,
     PlayerCard,
     PlayerCardBundle,
     PlayerTitle,
@@ -472,12 +471,12 @@ def player_card_e(
 
 def collection_front_e(
     loadout: Loadout,
-    mmr: MatchmakingRating,
+    # mmr: MatchmakingRating,
     riot_id: str,
     *,
     locale: valorantx.Locale = valorantx.Locale.american_english,
 ) -> Embed:
-    latest_tier = mmr.get_latest_rank_tier() if mmr is not None else None
+    # latest_tier = mmr.get_latest_rank_tier() if mmr is not None else None
 
     embed = Embed()
     # e.description = '{vp_emoji} {wallet_vp} {rad_emoji} {wallet_rad}'.format(
@@ -489,7 +488,7 @@ def collection_front_e(
 
     embed.set_author(
         name=f'{riot_id} - Collection',
-        icon_url=latest_tier.large_icon if latest_tier is not None else None,
+        # icon_url=latest_tier.large_icon if latest_tier is not None else None,
     )
     embed.set_footer(text=f'Lv. {loadout.identity.account_level}')
 
@@ -503,6 +502,47 @@ def collection_front_e(
         # )
         # embed.colour = random.choice(card_color_thief)
 
+    return embed
+
+
+def skin_loadout_e(gun: valorantx.Gun, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+    assert gun.skin_loadout is not None
+    skin_name: str = gun.skin_loadout.display_name.from_locale(locale)
+    if isinstance(gun.skin_loadout, valorantx.SkinChroma) and gun.skin_loadout.parent is not None:
+        skin_name = gun.skin_loadout.parent.display_name.from_locale(locale)
+
+    rarity = gun.skin_loadout.rarity
+
+    embed = Embed(
+        description=(rarity.emoji if rarity is not None else '')  # type: ignore
+        + ' '
+        + chat.bold(skin_name)
+        + (' ★' if gun.skin_loadout.is_favorite() else ''),
+        colour=int(rarity.highlight_color[0:6], 16) if rarity is not None else 0x0F1923,
+    ).dark()
+
+    embed.set_thumbnail(url=gun.skin_loadout.display_icon_fix)
+
+    if gun.buddy_loadout is not None:
+        buddy_name = gun.buddy_loadout.display_name.from_locale(locale)
+        embed.set_footer(
+            text=f'{buddy_name}' + (' ★' if gun.buddy_loadout.is_favorite() else ''),
+            icon_url=gun.buddy_loadout.display_icon,
+        )
+    return embed
+
+
+def spray_loadout_e(
+    spray: Spray,
+    slot: int,
+    *,
+    locale: valorantx.Locale = valorantx.Locale.american_english,
+) -> Embed:
+    spray_name = spray.display_name.from_locale(locale)
+    embed = Embed(description=chat.bold(str(slot) + '. ' + spray_name.strip()) + (' ★' if spray.is_favorite() else ''))
+    spray_icon = spray.animation_gif or spray.full_transparent_icon or spray.display_icon
+    if spray_icon is not None:
+        embed.set_thumbnail(url=spray_icon)
     return embed
 
 

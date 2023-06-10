@@ -64,15 +64,17 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     async def cog_load(self) -> None:
         _log.info('Loading Valorant API Client...')
         self.bot.loop.create_task(self.run())
+        self.valorant_version_checker.start()
 
     async def cog_unload(self) -> None:
+        self.valorant_version_checker.cancel()
         await self.valorant_client.close()
 
     async def run(self) -> None:
         try:
             await asyncio.wait_for(self.valorant_client.authorize('ragluxs', '4869_lucky'), timeout=60)
         except asyncio.TimeoutError:
-            _log.error('valorant client failed to initialize within 30 seconds.')
+            _log.error('valorant client failed to initialize within 60 seconds.')
         except RiotAuthenticationError as e:
             await self.valorant_client._init()  # bypass the auth check
             _log.warning(f'valorant client failed to authorized', exc_info=e)

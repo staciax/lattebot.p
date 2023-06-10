@@ -48,6 +48,7 @@ class Client(valorantx.Client):
         self._season: Season = MISSING
         self._act: Season = MISSING
         self.me: ClientUser = MISSING
+        self._tasks: Dict[str, asyncio.Task[Any]] = {}
 
         # global lock
         self._lock: asyncio.Lock = asyncio.Lock()
@@ -206,3 +207,10 @@ class Client(valorantx.Client):
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_mmr(puuid=puuid)
+
+    @_authorize_required
+    async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Loadout:
+        async with self._lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            return await super().fetch_loudout()

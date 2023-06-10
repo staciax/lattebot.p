@@ -45,7 +45,7 @@ INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.jsk',
     'cogs.stats',
     'cogs.valorant',
-    # 'cogs.admin',
+    'cogs.admin',
     # 'cogs.events',
     # 'cogs.help',
     # 'cogs.role_connection',
@@ -209,7 +209,7 @@ class LatteMaid(commands.AutoShardedBot):
         if os.environ.get('SYNCTREE') == 'True':
             await self.tree.sync()
             sync_guilds = [
-                # self.support_guild_id,
+                self.support_guild_id,
                 # 1042503061454729289,  # EMOJI ABILITY 2
                 # 1042502960921452734,  # EMOJI ABILITY 1
                 # 1043965050630705182,  # EMOJI TIER

@@ -16,6 +16,12 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
+utc7 = datetime.timezone(datetime.timedelta(hours=7))
+times = [
+    datetime.time(hour=6, minute=30, tzinfo=utc7),  # 6:30 AM UTC+7
+    datetime.time(hour=20, tzinfo=utc7),  # 8:00 PM UTC+7
+]
+
 
 class Events(MixinMeta):
     @commands.Cog.listener()
@@ -26,7 +32,7 @@ class Events(MixinMeta):
 
         assert riot_auth.user_id is not None
 
-        if await self.bot.db.update_riot_account(
+        await self.bot.db.update_riot_account(
             puuid=riot_auth.user_id,
             owner_id=riot_auth.owner_id,
             game_name=riot_auth.game_name,
@@ -39,11 +45,7 @@ class Events(MixinMeta):
             access_token=riot_auth.access_token,
             entitlements_token=riot_auth.entitlements_token,
             ssid=riot_auth.get_ssid(),
-        ):
-            _log.info(f"riot_auth {riot_auth.puuid} successfully updated in database for {riot_auth.owner_id}")
-        else:
-            _log.info(f"riot_auth {riot_auth.puuid} failed to update in database for {riot_auth.owner_id}")
-
+        )
         # # invalidate cache
         # try:
         #     self.fetch_user.invalidate(self, id=riot_auth.discord_id)  # type:
@@ -65,23 +67,36 @@ class Events(MixinMeta):
     async def on_valorant_version_update(self) -> None:
         ...
 
-    @tasks.loop(time=datetime.time(hour=17, minute=0, second=0))  # looping every 00:00:00 UTC+7
-    async def valorant_client_version(self) -> None:
+    async def do_checker_valorant_version(self) -> None:
+        _log.info(f'checking valorant version')
         version = await self.valorant_client.valorant_api.fetch_version()
 
         if version is None:
+            _log.warning(f'failed to fetch valorant version')
             return
 
         if version != self.valorant_client.version:
-            self.valorant_client._version = version
+            self.valorant_client.version = version
             # TODO: make method to update version
-            await self.valorant_client.valorant_api.init()
+            await self.valorant_client.valorant_api.cache.init()
             RiotAuth.RIOT_CLIENT_USER_AGENT = (
                 f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
             )
             _log.info(f'valorant client version updated to {version}')
 
-    @valorant_client_version.before_loop
-    async def before_valorant_client_version(self) -> None:
+    @tasks.loop(time=times)
+    async def valorant_version_checker(self) -> None:
+        await self.do_checker_valorant_version()
+
+    @valorant_version_checker.before_loop
+    async def before_valorant_version_checker(self) -> None:
         await self.bot.wait_until_ready()
         await self.valorant_client.wait_until_ready()
+        _log.info(f'valorant version checker loop has been started')
+
+    @valorant_version_checker.after_loop
+    async def after_valorant_version_checker(self) -> None:
+        if self.valorant_version_checker.is_being_cancelled():
+            _log.info(f'valorant version checker loop has been cancelled')
+        else:
+            _log.info(f'valorant version checker loop has been stopped')

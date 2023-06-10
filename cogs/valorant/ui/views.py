@@ -11,9 +11,10 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import discord
+from async_lru import alru_cache
 
 # from async_lru import alru_cache
-from discord import ui
+from discord import ButtonStyle, ui
 
 import core.utils.chat_formatting as chat
 from core.bot import LatteMaid
@@ -189,10 +190,15 @@ class ButtonAccountSwitch(ui.Button['BaseSwitchView']):
 
 
 class BaseSwitchView(BaseValorantView):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
+    def __init__(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        account_manager: AccountManager,
+        row: int = 0,
+    ) -> None:
         super().__init__(interaction, account_manager)
         self._ready: asyncio.Event = asyncio.Event()
-        self.row: int = 0
+        self.row: int = row
         asyncio.create_task(self._initialize())
 
     async def _initialize(self) -> None:
@@ -270,8 +276,7 @@ class NightMarketView(BaseSwitchView):
     def __init__(
         self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager, hide: bool
     ) -> None:
-        super().__init__(interaction, account_manager)
-        self.row = 1
+        super().__init__(interaction, account_manager, row=1)
         self.hide: bool = hide
         self.front_embed: Optional[Embed] = None
         self.prompt_embeds: Optional[List[Embed]] = None
@@ -414,7 +419,7 @@ class WalletView(BaseSwitchView):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
             return
 
-        wallet = await self.account_manager.valorant_client.fetch_wallet(riot_auth)
+        wallet = await self.valorant_client.fetch_wallet(riot_auth)
         embed = e.wallet_e(wallet, riot_auth.display_name, locale=self.account_manager.locale)
         await self.send(embed=embed)
 
@@ -557,8 +562,7 @@ class GamePassView(BaseSwitchView, LattePages):
         account_manager: AccountManager,
         relation_type: RelationType,
     ) -> None:
-        super().__init__(interaction, account_manager)
-        self.row = 2
+        super().__init__(interaction, account_manager, row=2)
         self.relation_type = relation_type
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
@@ -569,7 +573,7 @@ class GamePassView(BaseSwitchView, LattePages):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
             return
 
-        contracts = await self.account_manager.valorant_client.fetch_contracts(riot_auth)
+        contracts = await self.valorant_client.fetch_contracts(riot_auth)
 
         contract = (
             contracts.special_contract
@@ -587,7 +591,7 @@ class GamePassView(BaseSwitchView, LattePages):
 class MissionView(BaseSwitchView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
-        self.row = 1
+        # self.row = 1
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await super().callback(interaction)
@@ -597,17 +601,183 @@ class MissionView(BaseSwitchView):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
             return
 
-        contracts = await self.account_manager.valorant_client.fetch_contracts(riot_auth)
+        contracts = await self.valorant_client.fetch_contracts(riot_auth)
 
         embed = e.mission_e(contracts, riot_auth.display_name, locale=self.account_manager.locale)
         await self.send(embed=embed)
 
 
-class CollectionView(BaseSwitchView):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
-        super().__init__(interaction, account_manager)
+# collection
+
+
+class SkinCollectionSourceX(ListPageSource):
+    def __init__(self, gun_loadout: valorantx.GunsLoadout):
+        def gun_priority(gun: valorantx.Gun) -> int:
+            # page 1
+            name = gun.display_name.default.lower()
+
+            if name == 'phantom':
+                return 0
+            elif name == 'vandal':
+                return 1
+            elif name == 'operator':
+                return 2
+            elif gun.is_melee():
+                return 3
+
+            # page 2
+            elif name == 'classic':
+                return 4
+            elif name == 'sheriff':
+                return 5
+            elif name == 'spectre':
+                return 6
+            elif name == 'marshal':
+                return 7
+
+            # page 3
+            elif name == 'stinger':
+                return 8
+            elif name == 'bucky':
+                return 9
+            elif name == 'guardian':
+                return 10
+            elif name == 'ares':
+                return 11
+
+            # page 4
+            elif name == 'shorty':
+                return 12
+            elif name == 'frenzy':
+                return 13
+            elif name == 'ghost':
+                return 14
+            elif name == 'judge':
+                return 15
+
+            # page 5
+            elif name == 'bulldog':
+                return 16
+            elif name == 'odin':
+                return 17
+            else:
+                return 18
+
+        super().__init__(sorted(list(gun_loadout.to_list()), key=gun_priority), per_page=4)
+
+    async def format_page(
+        self,
+        view: SkinCollectionViewX,
+        entries: List[valorantx.Gun],
+    ) -> List[discord.Embed]:
+        return [e.skin_loadout_e(skin, locale=view.collection_view.account_manager.locale) for skin in entries]
+
+
+class SkinCollectionViewX(ViewAuthor, LattePages):
+    def __init__(
+        self,
+        # interaction: discord.Interaction[LatteMaid],
+        collection_view: CollectionView,
+    ) -> None:
+        super().__init__(collection_view.interaction, timeout=600.0)
+        self.collection_view = collection_view
+        self.compact = True
+
+    def fill_items(self) -> None:
+        super().fill_items()
+        self.remove_item(self.stop_pages)
+        self.add_item(self.back)
+
+    @ui.button(label=_('Back'), style=discord.ButtonStyle.green, custom_id='back', row=1)
+    async def back(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+        self.collection_view.reset_timeout()
+        await interaction.response.defer()
+        if self.collection_view.message is None:
+            return
+        if self.collection_view.embed is None:
+            return
+        await self.collection_view.message.edit(embed=self.collection_view.embed, view=self.collection_view)
+
+    # @ui.button(label=_('Change Skin'), style=discord.ButtonStyle.grey, custom_id='change_skin', row=1, disabled=True)
+    # async def change_skin(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+    #     pass
+
+    async def start_view(self) -> None:
+        loadout = self.collection_view.loadout
+        if loadout is None:
+            return
+        self.source = SkinCollectionSourceX(loadout.guns)
+        self.message = self.collection_view.message
+        await self.start()
+
+
+class SprayCollectionView(ViewAuthor):
+    def __init__(
+        self,
+        # interaction: discord.Interaction[LatteMaid],
+        collection_view: CollectionView,
+    ) -> None:
+        super().__init__(collection_view.interaction, timeout=600)
+        self.collection_view = collection_view
+        self.embeds: List[Embed] = []
 
     # @alru_cache(maxsize=5)
+    async def build_embeds(self, spray_loadout: valorantx.SpraysLoadout) -> List[Embed]:
+        embeds = []
+        for slot, spray in enumerate(spray_loadout.to_list(), start=1):
+            if spray is None:
+                continue
+            embed = e.spray_loadout_e(spray, slot, locale=self.collection_view.account_manager.locale)
+
+            # if embed._thumbnail.get('url'):
+            #     color_thief = await self.bot.get_or_fetch_colors(spray.uuid, embed._thumbnail['url'])
+            #     embed.colour = random.choice(color_thief)
+
+            embeds.append(embed)
+        return embeds
+
+    @ui.button(label=_('Back'), style=ButtonStyle.green, custom_id='back', row=0)
+    async def back(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+        self.collection_view.reset_timeout()
+        await interaction.response.defer()
+        if self.collection_view.message is None:
+            return
+        if self.collection_view.embed is None:
+            return
+        await self.collection_view.message.edit(embed=self.collection_view.embed, view=self.collection_view)
+
+    # @ui.button(label=_('Change Spray'), style=discord.ButtonStyle.grey, custom_id='change_spray', row=0, disabled=True)
+    # async def change_spray(self, interaction: dffiscord.Interaction[LatteMaid], button: ui.Button):
+    #     pass
+
+    async def start_view(self) -> None:
+        if self.collection_view.message is None:
+            return
+        if self.collection_view.loadout is None:
+            return
+        self.embeds = await self.build_embeds(self.collection_view.loadout.sprays)
+        await self.collection_view.message.edit(embeds=self.embeds, view=self)
+
+
+class CollectionView(BaseSwitchView):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
+        super().__init__(interaction, account_manager, row=1)
+        self.loadout: Optional[valorantx.Loadout] = None
+        self.mmr: Optional[valorantx.MatchmakingRating] = None
+        self.embed: Optional[Embed] = None
+        # other views
+        self.skin_view = SkinCollectionViewX(self)
+        self.spray_view = SprayCollectionView(self)
+
+    @alru_cache(maxsize=5)
+    async def fetch_loudout(self, riot_auth: RiotAuth) -> valorantx.Loadout:
+        loadout = await self.valorant_client.fetch_loudout(riot_auth)
+        return loadout
+
+    # @alru_cache(maxsize=5)
+    # async def fetch_mmr(self, riot_auth: RiotAuth) -> valorantx.MatchmakingRating:
+    #     mmr = await self.valorant_client.fetch_mmr(riot_auth=riot_auth)
+    #     return mmr
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await super().callback(interaction)
@@ -617,8 +787,28 @@ class CollectionView(BaseSwitchView):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
             return
 
-        collection = await self.valorant_client.fetch_loudout()
-        mmr = await self.valorant_client.fetch_mmr()
+        self.loadout = loadout = await self.fetch_loudout(riot_auth)
+        # self.mmr = mmr = await self.fetch_mmr(riot_auth)
 
-        embed = e.collection_front_e(collection, mmr, riot_auth.display_name, locale=self.account_manager.locale)
+        self.embed = embed = e.collection_front_e(
+            loadout,
+            # mmr,
+            riot_auth.display_name,
+            locale=self.account_manager.locale,
+        )
         await self.send(embed=embed)
+
+    async def on_timeout(self) -> None:
+        await self.fetch_loudout.cache_close()
+        # await self.fetch_mmr.cache_close()
+        return await super().on_timeout()
+
+    @ui.button(label=_('Skin'), style=ButtonStyle.blurple)
+    async def skin(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+        await interaction.response.defer()
+        await self.skin_view.start_view()
+
+    @ui.button(label=_('Spray'), style=ButtonStyle.blurple)
+    async def spray(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+        await interaction.response.defer()
+        await self.spray_view.start_view()

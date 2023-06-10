@@ -51,17 +51,18 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_load(self, interaction: Interaction[LatteMaid], extension: Literal[EXTENSIONS]) -> None:
+        _log.info(f'loading extension {extension}')
         try:
             await self.bot.load_extension(f'{extension}')
-            _log.info(f'Loading extension {extension}')
         except commands.ExtensionAlreadyLoaded:
             raise AppCommandError(f"The extension is already loaded.")
         except Exception as e:
-            _log.error(e)
+            _log.error(f'error loading extension {extension}')
             raise AppCommandError('The extension load failed')
-        else:
-            embed = MiadEmbed(description=f"Load : `{extension}`").success()
-            await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+
+        _log.info(f'loaded extension {extension}')
+        embed = MiadEmbed(description=f"Load : `{extension}`").success()
+        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('unload'), description=_T('Unload an extension'))
     @app_commands.describe(extension=_T('extension name'))
@@ -69,17 +70,20 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_unload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
+        _log.info(f'unloading extension {extension}')
+
         try:
             await self.bot.unload_extension(f'{extension}')
-            _log.info(f'Unloading extension {extension}')
         except commands.ExtensionNotLoaded:
+            _log.info(f'extension {extension} is not loaded')
             raise AppCommandError(f'The extension was not loaded.')
         except Exception as e:
-            _log.error(e)
+            _log.error(f'error unloading extension {extension}')
             raise AppCommandError('The extension unload failed')
-        else:
-            embed = MiadEmbed(description=f"Unload : `{extension}`").success()
-            await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+
+        _log.info(f'unloaded extension {extension}')
+        embed = MiadEmbed(description=f"Unload : `{extension}`").success()
+        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('reload'))
     @app_commands.describe(extension=_T('extension name'))
@@ -91,17 +95,18 @@ class Developer(commands.Cog, name='developer'):
 
         try:
             await self.bot.reload_extension(f'{extension}')
-            _log.info(f'Reloading extension {extension}')
+            _log.info(f'reloading extension {extension}')
         except commands.ExtensionNotLoaded:
             raise AppCommandError(f'The extension was not loaded.')
         except commands.ExtensionNotFound:
             raise AppCommandError(f'The Extension Not Found')
         except Exception as e:
-            _log.error(e)
+            _log.error(f'error reloading extension {extension}')
             raise AppCommandError('The extension reload failed')
-        else:
-            embed = MiadEmbed(description=f"Reload : `{extension}`").success()
-            await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+
+        _log.info(f'reloaded extension {extension}')
+        embed = MiadEmbed(description=f"Reload : `{extension}`").success()
+        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @app_commands.command(name='_sync_tree')
     @app_commands.rename(guild_id=_T('guild_id'))

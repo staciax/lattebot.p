@@ -107,7 +107,7 @@ async def run_bot():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true', default=False)
-    parser.add_argument('--sync', action='store_true', default=False)
+    parser.add_argument('-sync', action='store_true', default=False)
     args = parser.parse_args()
     os.environ['DEBUG_MODE'] = str(args.debug)
     os.environ['SYNCTREE'] = str(args.sync)
