@@ -24,15 +24,15 @@ from core.i18n import _
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 from valorantx2 import RiotAuth
-from valorantx2.enums import Locale as ValorantLocale, RelationType
+from valorantx2.enums import GameModeURL, Locale as ValorantLocale, RelationType
 
 from . import embeds as e
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from valorantx2 import Client as ValorantClient
+    from valorantx2.models import RewardValorantAPI
 
-    from ..valorantx2 import Client as ValorantClient
-    from ..valorantx2.models import RewardValorantAPI
     from .embeds import Embed
 
 __all__ = (
@@ -814,3 +814,278 @@ class CollectionView(BaseSwitchView):
     async def spray(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         await interaction.response.defer()
         await self.spray_view.start_view()
+
+
+# match history
+
+
+# class SelectMatchHistory(ui.Select['CarrierView']):
+#     def __init__(self, carrier_view: CarrierView) -> None:
+#         super().__init__(placeholder=_("Select Match to see details"), max_values=1, min_values=1, row=1)
+#         self._source: List[valorantx.MatchDetails] = []
+#         # self.view_md = MatchDetailsViewX(self.view.interaction, self.view)
+
+#     def build_selects(self, match_details: List[valorantx.MatchDetails]) -> None:
+#         self._source = match_details
+#         for index, match in enumerate(match_details):
+#             user_player = match.get_player(self.view.riot_auth.puuid)
+
+#             enemy_team = match.get_enemy_team()
+#             me_team = match.get_me_team()
+
+#             players = sorted(match.players, key=lambda p: p.kills, reverse=True)
+
+#             left_team_score = me_team.rounds_won if me_team is not None else 0
+#             right_team_score = enemy_team.rounds_won if enemy_team is not None else 0
+#             if match.match_info.game_mode == valorantx.GameModeType.deathmatch:
+#                 if match.me.is_winner():
+#                     _2nd_place = (players[1]) if len(players) > 1 else None
+#                     _1st_place = match.me
+#                 else:
+#                     _2nd_place = match.me
+#                     _1st_place = (players[0]) if len(players) > 0 else None
+
+#                 left_team_score = (_1st_place.kills if match.me.is_winner() else _2nd_place.kills) if _1st_place else 0
+#                 right_team_score = (_2nd_place.kills if match.me.is_winner() else _1st_place.kills) if _2nd_place else 0
+
+#             self.add_option(
+#                 label='{won} - {lose}'.format(won=left_team_score, lose=right_team_score),
+#                 value=str(index),
+#                 description='{map} - {queue}'.format(map=match.map.display_name, queue=match.game_mode.display_name),
+#                 emoji=match.me.agent.emoji,  # type: ignore
+#             )
+
+#     def clear_options(self) -> None:
+#         self.options.clear()
+
+#     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
+#         assert self.view is not None
+#         value = self.values[0]
+
+#         # self.view.locale = interaction.locale
+#         # await interaction.response.defer()
+
+#         # if self.view_md.message is None:
+#         #     self.view_md.message = self.view.message
+#         # await self.view_md.start(self._source[int(value)])
+
+
+class CarrierPageSource(ListPageSource):
+    def __init__(self, puuid: str, data: List[valorantx.MatchDetails], per_page: int = 3):
+        super().__init__(data, per_page=per_page)
+        self.puuid = puuid
+
+    def default_page(self, match: valorantx.MatchDetails, locale: valorantx.Locale) -> discord.Embed:
+        me = match.get_player(self.puuid)
+        assert me is not None
+
+        tier = me.competitive_tier
+        game_mode_url = match.match_info._game_mode_url
+        agent = me.agent
+        game_mode = match.match_info.game_mode
+        match_map = match.match_info.map
+
+        enemy_team = None
+        me_team = None
+        for team in match.teams:
+            if team.id == me.team_id:
+                me_team = team
+            else:
+                enemy_team = team
+
+        assert enemy_team is not None
+        assert me_team is not None
+
+        left_team_score = me_team.rounds_won
+        right_team_score = enemy_team.rounds_won
+
+        result = _("VICTORY")
+
+        embed = discord.Embed(
+            # title=match.game_mode.emoji + ' ' + match.game_mode.display_name,
+            description="{tier}{kda} {kills}/{deaths}/{assists}".format(
+                tier=((tier.emoji + ' ') if match.match_info.queue_id == 'competitive' else ''),  # type: ignore
+                # tier='tier',
+                kda=chat.bold('KDA'),
+                kills=me.stats.kills,
+                deaths=me.stats.deaths,
+                assists=me.stats.assists,
+            ),
+            # color=ResultColor.win,
+            timestamp=match.started_at,
+        )
+
+        # if game_mode is not None:
+        #     embed.title = game_mode.emoji + ' ' + game_mode.display_name.from_locale(locale)  # type: ignore
+
+        if game_mode_url == GameModeURL.deathmatch.value:
+            players = match.players
+
+            if me.is_winner():
+                _2nd_place = (
+                    (sorted(players, key=lambda p: p.stats.kills, reverse=True)[1]) if len(players) > 1 else None
+                )
+                _1st_place = me
+            else:
+                _2nd_place = me
+                _1st_place = (
+                    (sorted(players, key=lambda p: p.stats.kills, reverse=True)[0]) if len(players) > 0 else None
+                )
+
+            left_team_score = (
+                (_1st_place.stats.kills if me.is_winner() else _2nd_place is not None and _2nd_place.stats.kills)
+                if _1st_place
+                else 0
+            )
+            right_team_score = (
+                (_2nd_place.stats.kills if me.is_winner() else _1st_place is not None and _1st_place.stats.kills)
+                if _2nd_place
+                else 0
+            )
+
+            if me.is_winner():
+                result = '1ST PLACE'
+            else:
+                players = sorted(match.players, key=lambda p: p.stats.kills, reverse=True)
+                for index, player in enumerate(players, start=1):
+                    player_before = players[index - 1]
+                    player_after = players[index] if len(players) > index else None
+                    if player == me:
+                        if index == 2:
+                            result = '2ND PLACE'
+                        elif index == 3:
+                            result = '3RD PLACE'
+                        else:
+                            result = '{}TH PLACE'.format(index)
+
+                        if player_before is not None or player_after is not None:
+                            if player_before.stats.kills == player.stats.kills:
+                                result += ' (TIED)'
+                            elif player_after is not None and player_after.stats.kills == player.stats.kills:
+                                result += ' (TIED)'
+
+        elif not me.is_winner():
+            # embed.colour = ResultColor.lose
+            result = _("DEFEAT")
+
+        blue_team = match.get_team('Blue')
+        red_team = match.get_team('Red')
+
+        if blue_team is not None and red_team is not None:
+            if blue_team.rounds_won == red_team.rounds_won:
+                # embed.colour = ResultColor.draw
+                result = 'DRAW'
+
+        embed.set_author(
+            name=f'{result} {left_team_score} - {right_team_score}',
+            icon_url=agent.display_icon if agent is not None else None,
+        )
+
+        if match_map is not None and match_map.splash is not None:
+            embed.set_thumbnail(url=match_map.splash)
+            if game_mode is not None:
+                if gamemode_name_override := getattr(match.match_info.game_mode, 'display_name_override', None):
+                    if callable(gamemode_name_override):
+                        gamemode_name_override(match.match_info.is_ranked())
+
+                embed.set_footer(
+                    text=f'{game_mode.display_name.from_locale(locale)} • {match_map.display_name.from_locale(locale)}',
+                    icon_url=game_mode.display_icon
+                    # icon_url=tier.large_icon if tier is not None and match.queue == valorantx.QueueType.competitive else None,
+                )
+        return embed
+
+    def format_page(self, menu: CarrierView, entries: List[valorantx.MatchDetails]) -> List[discord.Embed]:
+        embeds = []
+
+        # build pages
+        for match in entries:
+            embeds.append(self.default_page(match, menu.account_manager.locale))
+
+        # build select menu
+        # for child in menu.children:
+        #     if isinstance(child, SelectMatchHistory):
+        #         child.clear_options()
+        #         child.build_selects(entries)
+
+        # menu.current_embeds = embeds
+
+        return embeds
+
+
+class CarrierView(BaseSwitchView, LattePages):
+    def __init__(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        account_manager: AccountManager,
+        queue_id: Optional[str] = None,
+    ) -> None:
+        super().__init__(interaction, account_manager, 1)
+        self.queue_id: Optional[str] = queue_id
+
+    def fill_items(self) -> None:
+        super().fill_items()
+        self.remove_item(self.stop_pages)
+        self.remove_item(self.numbered_page)
+
+    # def __init__(self, interaction: Interaction, v_user: ValorantUser, client: ValorantClient) -> None:
+    #     super().__init__(interaction, v_user, client, row=2)
+    #     # self.mmr: Optional[valorantx.MMR] = None
+    #     self._queue: Optional[str] = None
+    #     self.re_build: bool = False
+    #     self.current_embeds: List[discord.Embed] = []
+    #     self.add_item(SelectMatchHistoryX(self))
+
+    # @staticmethod
+    # def tier_embed(mmr: Optional[valorantx.MMR] = None) -> Optional[discord.Embed]:
+    #     if mmr is None:
+    #         return None
+    #     competitive = mmr.get_latest_competitive_season()
+    #     if competitive is not None:
+    #         parent_season = competitive.season.parent
+    #         e = discord.Embed(colour=int(competitive.tier.background_color[:-2], 16), timestamp=datetime.datetime.now())
+    #         e.set_author(name=competitive.tier.display_name, icon_url=competitive.tier.large_icon)
+    #         e.set_footer(
+    #             text=str(competitive.ranked_rating)
+    #             + '/100'
+    #             + ' • '
+    #             + parent_season.display_name
+    #             + ' '
+    #             + competitive.season.display_name
+    #         )
+    #         return e
+    #     return None
+
+    # async def start_pages(self, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
+    #     await super().start_pages(content=content, ephemeral=ephemeral)
+
+    # async def start_view(self, riot_auth: RiotAuth, **kwargs: Any) -> None:
+    #     self._queue = kwargs.pop('queue', self._queue)
+    #     client = self.v_client.set_authorize(riot_auth)
+    #     match_history = await client.fetch_match_history(queue=self._queue)  # type: ignore
+    #     self.source = CarrierPageSourceX(data=match_history.get_match_details())
+    #     # self.mmr = await client.fetch_mmr(riot_auth)
+    #     # TODO: build tier embed
+    #     await self.start_pages()
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        await super().callback(interaction)
+
+        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
+        if riot_auth is None:
+            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
+            return
+
+        match_history = await self.valorant_client.fetch_match_history(
+            puuid=riot_auth.puuid,
+            queue=self.queue_id,
+            with_details=True,
+            riot_auth=riot_auth,
+        )
+        # mmr = await client.fetch_mmr(riot_auth)
+        self.source = CarrierPageSource(puuid=riot_auth.puuid, data=match_history.match_details)
+
+        await self.start()
+
+
+# match details

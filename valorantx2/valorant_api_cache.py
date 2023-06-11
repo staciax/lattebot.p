@@ -5,14 +5,13 @@ from typing import TYPE_CHECKING
 from valorantx.valorant_api_cache import CacheState as ValorantAPICacheState
 
 from .models.custom.agents import Agent
-
-# from .models.custom.competitive_tiers import CompetitiveTier
+from .models.custom.competitive_tiers import CompetitiveTier
 from .models.custom.content_tiers import ContentTier
 from .models.custom.currencies import Currency
 from .models.custom.gamemodes import GameMode
 
 if TYPE_CHECKING:
-    from valorantx.valorant_api.types import agents, content_tiers, currencies, gamemodes
+    from valorantx.valorant_api.types import agents, competitive_tiers, content_tiers, currencies, gamemodes
 
 # fmt: off
 __all__ = (
@@ -41,3 +40,8 @@ class Cache(ValorantAPICacheState):
         game_mode_id = data['uuid']
         self._game_modes[game_mode_id] = game_mode = GameMode(state=self, data=data)
         return game_mode
+
+    def store_competitive_tier(self, data: competitive_tiers.CompetitiveTier) -> CompetitiveTier:
+        competitive_tier_id = data['uuid']
+        self._competitive_tiers[competitive_tier_id] = competitive_tier = CompetitiveTier(state=self, data=data)
+        return competitive_tier

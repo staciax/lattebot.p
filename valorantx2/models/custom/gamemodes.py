@@ -20,17 +20,15 @@ __all__ = (
 
 
 class GameMode(ValorantAPIGameMode):
-    def __init__(self, state: Cache, data: GameModePayload, *, is_ranked: bool = False) -> None:
+    def __init__(self, state: Cache, data: GameModePayload) -> None:
         super().__init__(state=state, data=data)
-        self.__display_name_override(is_ranked)
 
     @property
     def emoji(self) -> str:
         # return get_game_mode_emoji(self.uuid)
         return get_game_mode_emoji(self.display_name.default)
 
-    def __display_name_override(self, is_ranked: bool) -> None:
-        # TODO: swiftplay ?
+    def display_name_override(self, is_ranked: bool) -> None:
         if self.uuid == '96bd3920-4f36-d026-2b28-c683eb0bcac5':
             if is_ranked:
                 self._display_name = {

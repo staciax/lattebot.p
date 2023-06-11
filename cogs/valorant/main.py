@@ -28,6 +28,7 @@ from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
 from .ui.views import (
     AccountManager,
+    CarrierView,
     CollectionView,
     FeaturedBundleView,
     GamePassView,
@@ -72,7 +73,6 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
 
     async def cog_unload(self) -> None:
         self.valorant_version_checker.cancel()
-        await self.valorant_client.close()
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
@@ -346,8 +346,17 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_long)
-    async def carrier(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
-        ...
+    async def carrier(self, interaction: discord.Interaction[LatteMaid], mode: Choice[str] | None = None) -> None:
+        await interaction.response.defer()
+
+        queue = mode.value if mode is not None else None
+
+        view = CarrierView(
+            interaction,
+            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            queue,
+        )
+        await view.callback(interaction)
 
     @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
     @app_commands.choices(

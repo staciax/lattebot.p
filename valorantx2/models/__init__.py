@@ -13,6 +13,8 @@ from valorantx.models import (
     Gun as Gun,
     GunsLoadout as GunsLoadout,
     Loadout as Loadout,
+    MatchDetails as MatchDetails,
+    MatchHistory as MatchHistory,
     MatchmakingRating as MatchmakingRating,
     PatchNote as PatchNote,
     PatchNotes as PatchNotes,

@@ -209,4 +209,4 @@ def get_game_mode_emoji(key: str) -> str:
     }
     if key in ['unrated', 'competitive', 'swiftplay']:
         return emojis['standard']
-    return emojis.get(key.replace(' ', '_').lower(), '')
+    return emojis.get(key.replace(' ', '_').lower(), emojis['standard'])

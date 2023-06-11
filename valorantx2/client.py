@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, TypeVar, Union
 
 import valorantx
 from async_lru import alru_cache
 from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
+from valorantx.models.match import MatchHistory
 from valorantx.models.seasons import Season
 from valorantx.models.store import StoreFront, Wallet
 from valorantx.models.user import ClientUser, User
@@ -214,3 +215,28 @@ class Client(valorantx.Client):
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_loudout()
+
+    @_authorize_required
+    async def fetch_match_history(
+        self,
+        puuid: Optional[str] = None,
+        queue: Optional[Union[str, valorantx.QueueType]] = None,
+        *,
+        start: int = 0,
+        end: int = 15,
+        with_details: bool = True,
+        riot_auth: Optional[RiotAuth] = None,
+    ) -> MatchHistory:
+        if isinstance(queue, valorantx.QueueType):
+            queue = queue.value
+
+        async with self._lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            return await super().fetch_match_history(
+                puuid=puuid,
+                queue=queue,
+                start=start,
+                end=end,
+                with_details=with_details,
+            )
