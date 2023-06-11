@@ -6,6 +6,7 @@ from valorantx.models import (
     BuddyLevelBundle as BuddyLevelBundle,
     Bundle as Bundle,
     BundleItemOffer as BundleItemOffer,
+    ContentTier as ContentTier,
     Contract as Contract,
     Contracts as Contracts,
     FeaturedBundle as FeaturedBundle,

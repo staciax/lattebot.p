@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC
 from typing import TYPE_CHECKING, List
@@ -12,13 +11,17 @@ from discord import app_commands
 from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
-from core.checks import cooldown_short, dynamic_cooldown
+import valorantx2 as valorantx
+from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import LatteMaidCog
 from core.errors import AppCommandError
 from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.useful import MiadEmbed as Embed
+from valorantx2.auth import RiotAuth
+from valorantx2.client import Client as ValorantClient
+from valorantx2.errors import RiotMultifactorError
 
-from . import valorantx2 as valorantx
+from .context_menu import ContextMenu
 from .events import Events
 from .notify import Notify
 from .tests.images import StoreImage
@@ -33,16 +36,15 @@ from .ui.views import (
     StoreFrontView,
     WalletView,
 )
-from .valorantx2 import Client as ValorantClient, utils as v_utils
-from .valorantx2.auth import RiotAuth
-from .valorantx2.errors import RiotAuthenticationError, RiotMultifactorError
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from valorantx2.client import Client as ValorantClient
 
 _log = logging.getLogger(__name__)
 
 
+# thanks for redbot
 class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
     """
     This allows the metaclass used for proper type detection to
@@ -52,38 +54,29 @@ class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
     pass
 
 
-class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
+class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        self.valorant_client: ValorantClient = ValorantClient(self.bot)
 
     @property
     def display_emoji(self) -> discord.Emoji | None:
         return self.bot.get_emoji(998169266044022875)
 
+    @property
+    def valorant_client(self) -> ValorantClient:
+        return self.bot.valorant_client
+
     async def cog_load(self) -> None:
         _log.info('Loading Valorant API Client...')
-        self.bot.loop.create_task(self.run())
         self.valorant_version_checker.start()
 
     async def cog_unload(self) -> None:
         self.valorant_version_checker.cancel()
         await self.valorant_client.close()
 
-    async def run(self) -> None:
-        try:
-            await asyncio.wait_for(self.valorant_client.authorize('ragluxs', '4869_lucky'), timeout=60)
-        except asyncio.TimeoutError:
-            _log.error('valorant client failed to initialize within 60 seconds.')
-        except RiotAuthenticationError as e:
-            await self.valorant_client._init()  # bypass the auth check
-            _log.warning(f'valorant client failed to authorized', exc_info=e)
-        else:
-            _log.info('valorant client is initialized.')
-
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
-        return await self.valorant_client.fetch_patch_notes(v_utils.locale_converter(locale))
+        return await self.valorant_client.fetch_patch_notes(valorantx.utils.locale_converter(locale))
 
     # app commands
 
@@ -352,30 +345,30 @@ class Valorant(Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     @app_commands.describe(mode=_T('The queue to show your carrier for'))
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
-    @dynamic_cooldown(cooldown_short)
+    @dynamic_cooldown(cooldown_long)
     async def carrier(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
         ...
 
-    # @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
-    # @app_commands.choices(
-    #     mode=[
-    #         Choice(name=_T('Unrated'), value='unrated'),
-    #         Choice(name=_T('Competitive'), value='competitive'),
-    #         # Choice(name=_T('SwiftPlay'), value='swiftplay'),
-    #         Choice(name=_T('Deathmatch'), value='deathmatch'),
-    #         Choice(name=_T('Spike Rush'), value='spikerush'),
-    #         Choice(name=_T('Escalation'), value='ggteam'),
-    #         Choice(name=_T('Replication'), value='onefa'),
-    #         Choice(name=_T('Snowball Fight'), value='snowball'),
-    #         Choice(name=_T('Custom'), value='custom'),
-    #     ]
-    # )
-    # @app_commands.describe(mode=_T('The queue to show your latest match for'))
-    # @app_commands.rename(mode=_T('mode'))
-    # @app_commands.guild_only()
-    # # @dynamic_cooldown(cooldown_short)
-    # async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
-    #     ...
+    @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
+    @app_commands.choices(
+        mode=[
+            Choice(name=_T('Unrated'), value='unrated'),
+            Choice(name=_T('Competitive'), value='competitive'),
+            Choice(name=_T('SwiftPlay'), value='swiftplay'),
+            Choice(name=_T('Deathmatch'), value='deathmatch'),
+            Choice(name=_T('Spike Rush'), value='spikerush'),
+            Choice(name=_T('Escalation'), value='ggteam'),
+            Choice(name=_T('Replication'), value='onefa'),
+            Choice(name=_T('Snowball Fight'), value='snowball'),
+            Choice(name=_T('Custom'), value='custom'),
+        ]
+    )
+    @app_commands.describe(mode=_T('The queue to show your latest match for'))
+    @app_commands.rename(mode=_T('mode'))
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_medium)
+    async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
+        ...
 
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     @app_commands.guild_only()

@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING
 # from discord.app_commands import locale_str as _T
 from discord.ext import commands, tasks
 
+from valorantx2.auth import RiotAuth
+
 from .abc import MixinMeta
-from .valorantx2.auth import RiotAuth
 
 if TYPE_CHECKING:
-    from .valorantx2.auth import RiotAuth
+    from valorantx2.auth import RiotAuth
 
 _log = logging.getLogger(__name__)
 

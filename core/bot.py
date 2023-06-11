@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-
-# import io
 import logging
 import os
 import traceback
@@ -16,6 +14,7 @@ from discord.ext import commands
 from discord.utils import MISSING
 from dotenv import load_dotenv
 
+import valorantx2 as valorantx
 from core.utils.enums import Emoji
 
 from .database import DatabaseConnection
@@ -24,10 +23,10 @@ from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
 
 if TYPE_CHECKING:
-    from cogs.about import About
-    from cogs.admin import Developer
-    from cogs.jsk import Jishaku
-    from cogs.valorant import Valorant
+    from cogs.about import About as AboutCog
+    from cogs.admin import Developer as DeveloperCog
+    from cogs.jsk import Jishaku as JishakuCog
+    from cogs.valorant import Valorant as ValorantCog
 
 load_dotenv()
 
@@ -41,14 +40,13 @@ description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059
 
 INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.about',
+    'cogs.admin',
     'cogs.errors',
+    # 'cogs.events',
+    'cogs.help',
     'cogs.jsk',
     'cogs.stats',
     'cogs.valorant',
-    'cogs.admin',
-    # 'cogs.events',
-    # 'cogs.help',
-    # 'cogs.role_connection',
     # 'cogs.ipc',
     # 'cogs.test',
 )
@@ -89,7 +87,6 @@ class LatteMaid(commands.AutoShardedBot):
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
         )
-        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore
 
         # config
         self._debug_mode: bool = True if os.getenv('DEBUG_MODE') == 'True' else False
@@ -131,6 +128,12 @@ class LatteMaid(commands.AutoShardedBot):
 
         # colour
         self.colors: Dict[str, List[discord.Colour]] = {}
+
+        # database
+        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore
+
+        # valorant
+        self.valorant_client: valorantx.Client = valorantx.Client(self)
 
     @property
     def owner(self) -> discord.User:
@@ -176,6 +179,17 @@ class LatteMaid(commands.AutoShardedBot):
         )
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
+    async def _run_valorant_client(self) -> None:
+        try:
+            await asyncio.wait_for(self.valorant_client.authorize('ragluxs', '4869_lucky'), timeout=60)
+        except asyncio.TimeoutError:
+            _log.error('valorant client failed to initialize within 60 seconds.')
+        except valorantx.RiotAuthenticationError as e:
+            await self.valorant_client._init()  # bypass the auth check
+            _log.warning(f'valorant client failed to authorized', exc_info=e)
+        else:
+            _log.info('valorant client is initialized.')
+
     async def setup_hook(self) -> None:
         # session
         if self.session is MISSING:
@@ -183,7 +197,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # i18n
         if self.translator is MISSING:
-            self.translator = Translator(self, './i18n')
+            self.translator = Translator(self)
             await self.tree.set_translator(self.translator)
 
         # bot info
@@ -192,6 +206,9 @@ class LatteMaid(commands.AutoShardedBot):
 
         # localizations
         self.translator.load_string_localize()
+
+        # valorant client
+        await self._run_valorant_client()
 
         # valorantx
         # self.valorant_client = valorantx.Client()
@@ -222,31 +239,35 @@ class LatteMaid(commands.AutoShardedBot):
                 except Exception as e:
                     _log.exception(f'Failed to sync guild {guild_id}.')
 
-        await Translator.get_i18n(
-            cogs=self.cogs,
-            excludes=['developer', 'jishaku'],  # exclude cogs
-            only_public=True,  # exclude @app_commands.guilds()
-            set_locale=[discord.Locale.american_english, discord.Locale.thai],  # locales to create
-        )
+        if os.environ.get('I18N') == 'True':
+            await self.translator.get_i18n(
+                excludes=['developer', 'jishaku'],  # exclude cogs
+                only_public=True,  # exclude @app_commands.guilds()
+                replace=True,
+                set_locale=[
+                    discord.Locale.american_english,
+                    discord.Locale.thai,
+                ],
+            )
 
         await self.fetch_app_commands()
 
     # cogs property
 
     @property
-    def about(self) -> Optional[About]:
+    def about(self) -> Optional[AboutCog]:
         return self.get_cog('about')  # type: ignore
 
     @property
-    def jsk(self) -> Optional[Jishaku]:
+    def jsk(self) -> Optional[JishakuCog]:
         return self.get_cog('jishaku')  # type: ignore
 
     @property
-    def developer(self) -> Optional[Developer]:
+    def developer(self) -> Optional[DeveloperCog]:
         return self.get_cog('developer')  # type: ignore
 
     @property
-    def valorant(self) -> Optional[Valorant]:
+    def valorant(self) -> Optional[ValorantCog]:
         return self.get_cog('valorant')  # type: ignore
 
     # bot event
@@ -346,6 +367,7 @@ class LatteMaid(commands.AutoShardedBot):
         await self.cogs_unload()
         await self.session.close()
         await self.db.close()
+        await self.valorant_client.close()
         await super().close()
 
     async def start(self) -> None:

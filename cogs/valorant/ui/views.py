@@ -17,15 +17,15 @@ from async_lru import alru_cache
 from discord import ButtonStyle, ui
 
 import core.utils.chat_formatting as chat
+import valorantx2 as valorantx
 from core.bot import LatteMaid
 from core.errors import AppCommandError
 from core.i18n import _
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
+from valorantx2 import RiotAuth
+from valorantx2.enums import Locale as ValorantLocale, RelationType
 
-from .. import valorantx2 as valorantx
-from ..valorantx2 import RiotAuth
-from ..valorantx2.enums import Locale as ValorantLocale, RelationType
 from . import embeds as e
 
 if TYPE_CHECKING:
@@ -176,17 +176,18 @@ class ButtonAccountSwitch(ui.Button['BaseSwitchView']):
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
 
-        # enable all buttons without self
-        self.disabled = True
-        for item in self.view.children:
-            if isinstance(item, self.__class__):
-                if item.custom_id != self.custom_id:
-                    item.disabled = False
+        async with self.view.lock:
+            # enable all buttons without self
+            self.disabled = True
+            for item in self.view.children:
+                if isinstance(item, self.__class__):
+                    if item.custom_id != self.custom_id:
+                        item.disabled = False
 
-        interaction.extras['puuid'] = self.custom_id
-        interaction.extras['label'] = self.label
+            interaction.extras['puuid'] = self.custom_id
+            interaction.extras['label'] = self.label
 
-        await self.view.callback(interaction)
+            await self.view.callback(interaction)
 
 
 class BaseSwitchView(BaseValorantView):
@@ -199,6 +200,7 @@ class BaseSwitchView(BaseValorantView):
         super().__init__(interaction, account_manager)
         self._ready: asyncio.Event = asyncio.Event()
         self.row: int = row
+        self.lock: asyncio.Lock = asyncio.Lock()
         asyncio.create_task(self._initialize())
 
     async def _initialize(self) -> None:

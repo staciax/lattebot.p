@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypedDict, Union
 
 import discord
 from discord import Locale, app_commands
@@ -54,10 +54,9 @@ class Translator(app_commands.Translator):
     _strings: Dict[discord.Locale, Dict[str, Any]] = {locale: {} for locale in discord.Locale}
     _user_locale: Dict[int, discord.Locale] = {}
 
-    def __init__(self, bot: LatteMaid, path: Optional[str] = None) -> None:
+    def __init__(self, bot: LatteMaid) -> None:
         super().__init__()
         self.bot: LatteMaid = bot
-        self._path: Optional[str] = path
         self.__latest_command: Optional[Union[Command, Group, ContextMenu]] = None
         self.__latest_binding: Optional[commands.Cog] = None
         self.__latest_parameter: Optional[Parameter] = None
@@ -125,18 +124,25 @@ class Translator(app_commands.Translator):
     # def _parse(self, key: str, translate: str):
     #     self._translations.update({key: translate})
 
-    def _get_path(self) -> str:
-        return self._path or os.path.join(os.getcwd(), 'i18n')
+    def _get_app_commands_path(self) -> str:
+        return os.path.join(os.getcwd(), 'locales/app_commands')
 
     @lru_cache(maxsize=31)
     def _localize_file(self, locale: Locale) -> Internationalization:
-        path = self._get_path()
+        path = self._get_app_commands_path()
         return self._load_file(path, locale)
 
-    def _localize_key(
-        self, binding: Optional[Union[commands.Cog, str]], tcl: TCL, localizable: Localizable
+    def _build_localize_keys(
+        self,
+        binding: Optional[Union[commands.Cog, str]],
+        tcl: TCL,
+        localizable: Localizable,
     ) -> List[str]:
-        keys = ['app_commands']
+        keys = []
+        if isinstance(localizable, ContextMenu):
+            keys.append('context_menus')
+        else:
+            keys.append('app_commands')
 
         if binding is not None:
             if isinstance(binding, commands.Cog):
@@ -144,18 +150,17 @@ class Translator(app_commands.Translator):
             else:
                 keys.append(binding.lower())
 
-        if tcl in [TCL.command_name, TCL.group_name]:
+        if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
             keys.extend([localizable.name, 'name'])
-
             self.__latest_command = localizable
             if binding is not None and isinstance(binding, commands.Cog):
                 self.__latest_binding = binding
 
-        elif tcl in [TCL.command_description, TCL.group_description]:
+        elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, (Command, Group)):
             keys.extend([localizable.name, 'description'])
 
-        elif tcl == TCL.parameter_name and (localizable, Parameter):
-            keys.extend([localizable.command.name, 'parameters', localizable.name, 'name'])
+        elif tcl == TCL.parameter_name and isinstance(localizable, Parameter):
+            keys.extend([localizable.command.name, 'parameters', localizable.name, 'display_name'])
             self.__latest_parameter = localizable
 
         elif tcl == TCL.parameter_description and isinstance(localizable, Parameter):
@@ -183,8 +188,7 @@ class Translator(app_commands.Translator):
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> Optional[str]:
         localizable: Localizable = context.data
         tcl: TCL = context.location
-
-        binding: Optional[Union[commands.Cog, str]] = None
+        binding: Optional[Union[commands.Cog, app_commands.Group, str]] = None
 
         if isinstance(localizable, Command):
             binding = localizable.binding
@@ -199,14 +203,13 @@ class Translator(app_commands.Translator):
         elif isinstance(localizable, Parameter):
             binding = localizable.command.binding
         elif isinstance(localizable, ContextMenu):
-            ...
+            if localizable.module is not None:
+                binding = localizable.module.removeprefix('cogs.')
         elif isinstance(localizable, Choice):
             ...
-        elif isinstance(localizable, str):
-            ...
 
-        localize_key = (
-            self._localize_key(
+        localize_keys = (
+            self._build_localize_keys(
                 binding,
                 tcl,
                 localizable,
@@ -229,29 +232,32 @@ class Translator(app_commands.Translator):
             return _string
 
         localize_file = self._localize_file(locale)
-        string_msg = find_value_by_list_of_keys(localize_file, localize_key)
+        string_msg = find_value_by_list_of_keys(localize_file, localize_keys)
 
         if tcl in [TCL.command_name, TCL.group_name]:
-            string_msg = string_msg.lower()
-            if not app_commands.commands.validate_name(string_msg):
-                _log.warning(f'Invalid name for {string_msg!r} in {locale!r} ({tcl})')
-                return None
+            if isinstance(localizable, (Command, Group)):
+                string_msg = string_msg.lower()
+                if not app_commands.commands.validate_name(string_msg):
+                    _log.warning(f'app_command invalid name for {string_msg!r} in {locale!r} ({tcl})')
+                    return None
+            elif isinstance(localizable, ContextMenu):
+                if not app_commands.commands.validate_context_menu_name(string_msg):
+                    _log.warning(f'context_menu invalid name for {string_msg!r} in {locale!r} ({tcl})')
+                    return None
 
-        return string_msg
+        return None
 
-    @classmethod
     async def get_i18n(
-        cls,
-        cogs: Mapping[str, commands.Cog],
+        self,
         excludes: Optional[List[str]] = None,
         only_public: bool = False,
-        replace_text: bool = False,
+        replace: bool = False,
         clear: bool = False,
         set_locale: Optional[List[Locale]] = None,
     ) -> None:
         _log.info('i18n.getting_text')
 
-        path = os.path.join(os.getcwd(), 'lattemaid/i18n')
+        path = self._get_app_commands_path()
 
         for locale in discord.Locale:
             if set_locale is not None:
@@ -259,20 +265,24 @@ class Translator(app_commands.Translator):
                     continue
 
             if not clear:
-                data = cls._load_file(path, locale)
+                data = self._load_file(path, locale)
             else:
                 data = {}
 
-            cog_payload = {}
+            data_app_commands = data.get('app_commands', {})
+            data_context_menus = data.get('context_menus', {})
 
-            for cog in cogs.values():
+            cog_app_commands = {}
+            cog_context_menus = {}
+
+            for cog in self.bot.cogs.values():
                 if excludes is not None:
                     excludes_lower = [x.lower() for x in excludes]
                     if cog.qualified_name.lower() in excludes_lower:
                         continue
 
-                data_app_commands = data.get('app_commands', {})
-                data_cog = data_app_commands.get(cog.qualified_name.lower(), {})
+                data_cog_app_commands = data_app_commands.get(cog.qualified_name.lower(), {})
+                data_cog_context_menus = data_context_menus.get(cog.qualified_name.lower(), {})
 
                 app_cmd_payload = {}
                 for app_cmd in cog.get_app_commands():
@@ -280,11 +290,11 @@ class Translator(app_commands.Translator):
                         if app_cmd._guild_ids is not None:
                             continue
 
-                    data_app_cmd = data_cog.get(app_cmd.name, {})
+                    data_app_cmd = data_cog_app_commands.get(app_cmd.name, {})
 
-                    command_name = app_cmd.name if replace_text else data_app_cmd.get('name', app_cmd.name)
+                    command_name = app_cmd.name if replace else data_app_cmd.get('name', app_cmd.name)
                     command_description = (
-                        app_cmd.description if replace_text else data_app_cmd.get('description', app_cmd.description)
+                        app_cmd.description if replace else data_app_cmd.get('description', app_cmd.description)
                     )
 
                     payload = {
@@ -292,44 +302,72 @@ class Translator(app_commands.Translator):
                         'description': command_description,
                     }
 
-                    if not isinstance(app_cmd, app_commands.Group):
-                        if len(app_cmd.parameters) > 0:
-                            payload_params = {}
-                            for param in app_cmd.parameters:
-                                param_name = (
-                                    param.name
-                                    if replace_text
-                                    else data_app_cmd.get('parameters', {}).get(param.name, {}).get('name', param.name)
-                                )
-                                param_description = (
-                                    param.description
-                                    if replace_text
-                                    else data_app_cmd.get('parameters', {})
-                                    .get(param.name, {})
-                                    .get('description', param.description)
-                                )
-                                params = {'name': param_name, 'description': param_description}
-                                if len(param.choices) > 0:
-                                    params['choices'] = {}
-                                    for choice in param.choices:
-                                        choice_name = (
-                                            choice.name
-                                            if replace_text
-                                            else data_app_cmd.get('parameters', {})
-                                            .get(param.name, {})
-                                            .get('choices', {})
-                                            .get(choice.name, {})
-                                            .get('name', choice.name)
-                                        )
-                                        params['choices'][choice.value] = choice_name
-                                payload_params[param.name] = params
-                            payload['options'] = payload_params
+                    if isinstance(app_cmd, app_commands.Group):
+                        continue
+                    # assert isinstance(app_cmd, app_commands.Command)
+                    if len(app_cmd.parameters) > 0:
+                        payload_params = {}
+                        for param in app_cmd.parameters:
+                            param_name = (
+                                param.display_name
+                                if replace
+                                else data_app_cmd.get('parameters', {})
+                                .get(param.name, {})
+                                .get('display_name', param.display_name)
+                            )
+                            param_description = (
+                                param.description
+                                if replace
+                                else data_app_cmd.get('parameters', {})
+                                .get(param.name, {})
+                                .get('description', param.description)
+                            )
+                            params = {'display_name': param_name, 'description': param_description}
+                            if len(param.choices) > 0:
+                                params['choices'] = {}
+                                for choice in param.choices:
+                                    choice_name = (
+                                        choice.name
+                                        if replace
+                                        else data_app_cmd.get('parameters', {})
+                                        .get(param.name, {})
+                                        .get('choices', {})
+                                        .get(choice.name, {})
+                                        .get('name', choice.name)
+                                    )
+                                    params['choices'][choice.value] = choice_name
+                            payload_params[param.name] = params
+                        payload['options'] = payload_params
                     app_cmd_payload[app_cmd.name] = payload
 
-                if len(app_cmd_payload) > 0:
-                    cog_payload[cog.qualified_name.lower()] = app_cmd_payload
+                # context_menus: List[app_commands.ContextMenu] = getattr(cog, '__cog_context_menus__', [])
+                # payload_context_menus = {}
+                # for ctx_menu in context_menus:
+                #     if ctx_menu.guild_only and only_public:
+                #         continue
+                #     ctx_menu_payload = {'name': ctx_menu.name, 'type': ctx_menu.type.name}
+                #     payload_context_menus[ctx_menu.name] = ctx_menu_payload
 
-            cls._dump_file(path, locale, dict(app_commands=cog_payload))
+                context_menu_payload = {}
+                for method_name in dir(cog):
+                    method = getattr(cog, method_name)
+                    if context_values := getattr(method, '__context_menu__', None):
+                        if menu := context_values.get('context_menu_class'):
+                            menu: app_commands.ContextMenu
+                            munu_name = (
+                                menu.name
+                                if replace
+                                else data_cog_context_menus.get(menu.name, {}).get('name', menu.name)
+                            )
+                            context_menu_payload[menu.name] = {'name': munu_name, 'type': menu.type.name}
+
+                if len(app_cmd_payload) > 0:
+                    cog_app_commands[cog.qualified_name.lower()] = app_cmd_payload
+
+                if len(context_menu_payload) > 0:
+                    cog_context_menus[cog.qualified_name.lower()] = context_menu_payload
+
+            self._dump_file(path, locale, dict(app_commands=cog_app_commands, context_menus=cog_context_menus))
 
         _log.info('i18n.got_text')
 

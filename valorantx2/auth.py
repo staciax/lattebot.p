@@ -115,12 +115,13 @@ class RiotAuth(RiotAuth_):
                         )
                     await asyncio.sleep(1)
                     continue
+                elif e.status == 400 and tries <= 2:
+                    continue
                 else:
                     raise e
             else:
                 if self.bot is not MISSING:
                     self.bot.dispatch('re_authorized_successfully', self)
-                # self.bot.dispatch('re_authorized_successfully', self)
                 _log.info(f'successfully re authorized {self.game_name}#{self.tag_line}({self.puuid})')
                 break
         else:

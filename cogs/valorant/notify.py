@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, time, timedelta
-from typing import TYPE_CHECKING, List, Literal
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -10,7 +10,7 @@ from discord import app_commands
 # i18n
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import dynamic_cooldown
-from discord.ext import commands, tasks
+from discord.ext import tasks
 
 from core.checks import cooldown_short
 

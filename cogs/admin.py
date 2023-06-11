@@ -21,12 +21,13 @@ _log = logging.getLogger(__file__)
 
 # fmt: off
 EXTENSIONS = Literal[
-    'cogs.developer',
+    'cogs.about',
+    'cogs.errors',
     'cogs.events',
     'cogs.help',
-    'cogs.about',
+    'cogs.jsk',
+    'cogs.stats',
     'cogs.valorant',
-    'cogs.role_connection',
 ]
 # fmt: on
 
@@ -52,6 +53,7 @@ class Developer(commands.Cog, name='developer'):
     @owner_only()
     async def extension_load(self, interaction: Interaction[LatteMaid], extension: Literal[EXTENSIONS]) -> None:
         _log.info(f'loading extension {extension}')
+
         try:
             await self.bot.load_extension(f'{extension}')
         except commands.ExtensionAlreadyLoaded:

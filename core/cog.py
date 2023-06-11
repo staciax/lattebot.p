@@ -38,7 +38,8 @@ def context_menu(
     def inner(func: Any) -> Any:
         nonlocal name
         func.__context_menu_guilds__ = guilds
-        name = func.__name__.title() if name is MISSING else name
+        if name is MISSING:
+            name = func.__name__
         func.__context_menu__ = dict(
             name=name,
             nsfw=nsfw,
@@ -51,6 +52,8 @@ def context_menu(
 
 
 class LatteMaidCog(commands.Cog):
+    __cog_context_menus__: List[app_commands.ContextMenu]
+
     async def _inject(
         self,
         bot: LatteMaid,
@@ -61,10 +64,16 @@ class LatteMaidCog(commands.Cog):
         await super()._inject(bot, override, guild, guilds)
         for method_name in dir(self):
             method = getattr(self, method_name)
-            if context_values := getattr(method, "__context_menu__", None):
+            if context_values := getattr(method, '__context_menu__', None):
                 menu = app_commands.ContextMenu(callback=method, **context_values)
-                context_values["context_menu_class"] = menu
+                if self.qualified_name.lower() in self.__module__.lower():
+                    menu.module = 'cogs.' + self.qualified_name.lower()
+                context_values['context_menu_class'] = menu
                 bot.tree.add_command(menu, guilds=method.__context_menu_guilds__)
+                try:
+                    self.__cog_context_menus__.append(menu)
+                except AttributeError:
+                    self.__cog_context_menus__ = [menu]
 
         return self
 
@@ -72,6 +81,10 @@ class LatteMaidCog(commands.Cog):
         await super()._eject(bot, guild_ids)
         for method_name in dir(self):
             method = getattr(self, method_name)
-            if context_values := getattr(method, "__context_menu__", None):
-                if menu := context_values.get("context_menu_class"):
+            if context_values := getattr(method, '__context_menu__', None):
+                if menu := context_values.get('context_menu_class'):
                     bot.tree.remove_command(menu.name, type=menu.type)
+                    try:
+                        self.__cog_context_menus__.remove(menu)
+                    except ValueError:
+                        pass

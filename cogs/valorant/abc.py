@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import valorantx2 as valorantx
-
     from core.bot import LatteMaid
 
 
@@ -14,7 +13,10 @@ class MixinMeta(ABC):
 
     if TYPE_CHECKING:
         bot: LatteMaid
-        valorant_client: valorantx.Client
+
+        @property
+        def valorant_client(self) -> valorantx.Client:
+            ...
 
     def __init__(self, *_args):
         pass
