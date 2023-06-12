@@ -73,6 +73,22 @@ class MiadEmbed(DiscordEmbed):
         self.colour = 0xFF6961
         return self
 
+    def warning(self) -> Self:
+        self.colour = 0xFDFD96
+        return self
+
+    def info(self) -> Self:
+        self.colour = 0x60DCC4
+        return self
+
+    def danger(self) -> Self:
+        self.colour = 0xFC5C5C
+        return self
+
+    def light(self) -> Self:
+        self.colour = 0xCBCCD6
+        return self
+
 
 def reading_recursive(root: str, /) -> Iterable[int]:
     for x in os.listdir(root):
@@ -89,6 +105,3 @@ def reading_recursive(root: str, /) -> Iterable[int]:
 
 def count_python(root: str) -> int:
     return sum(reading_recursive(root))
-
-
-# --

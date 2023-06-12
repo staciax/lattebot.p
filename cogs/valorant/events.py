@@ -101,3 +101,29 @@ class Events(MixinMeta):
             _log.info(f'valorant version checker loop has been cancelled')
         else:
             _log.info(f'valorant version checker loop has been stopped')
+
+    # cache control
+    # every 6:30 AM UTC+7
+
+    def do_cache_control(self) -> None:
+        self.valorant_client.fetch_featured_bundle.cache_clear()
+        self.valorant_client.fetch_storefront.cache_clear()
+        _log.info(f'valorant client cache cleared')
+
+    @tasks.loop(time=datetime.time(hour=6, minute=30, tzinfo=utc7))
+    async def valorant_cache_control(self) -> None:
+        self.do_cache_control()
+
+    @valorant_cache_control.before_loop
+    async def before_valorant_cache_control(self) -> None:
+        await self.bot.wait_until_ready()
+        await self.valorant_client.wait_until_ready()
+        _log.info(f'valorant cache control loop has been started')
+
+    @valorant_cache_control.after_loop
+    async def after_valorant_cache_control(self) -> None:
+        if self.valorant_cache_control.is_being_cancelled():
+            self.do_cache_control()
+            _log.info(f'valorant cache control loop has been cancelled')
+        else:
+            _log.info(f'valorant cache control loop has been stopped')

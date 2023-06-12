@@ -10,19 +10,21 @@ from valorantx.client import _authorize_required, _loop
 from valorantx.models.match import MatchHistory
 from valorantx.models.seasons import Season
 from valorantx.models.store import StoreFront, Wallet
-from valorantx.models.user import ClientUser, User
+from valorantx.models.user import ClientUser
 from valorantx.models.version import Version
 from valorantx.utils import MISSING
 
 from .auth import RiotAuth
 from .http import HTTPClient
 from .models import PartialUser, PatchNoteScraper
+from .models.custom.match import MatchDetails
 from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
     from typing_extensions import Self
 
     from core.bot import LatteMaid
+
 
 # fmt: off
 __all__ = (
@@ -54,8 +56,7 @@ class Client(valorantx.Client):
         # global lock
         self._lock: asyncio.Lock = asyncio.Lock()
         # client users
-        self._users: Dict[str, User] = {}
-        self._storefront: Dict[str, valorantx.StoreFront] = {}
+        # self._users: Dict[str, User] = {}
 
     # auth related
 
@@ -83,25 +84,16 @@ class Client(valorantx.Client):
     def act(self, value: Season) -> None:
         self._act = value
 
-    def store_storefront(self, puuid: Optional[str], storefront: StoreFront) -> StoreFront:
-        if puuid is None:
-            return storefront
-        if puuid not in self._storefront:
-            self._storefront[puuid] = storefront
-        return storefront
-
-    def get_storefront(self, puuid: Optional[str]) -> Optional[StoreFront]:
-        return self._storefront.get(puuid)  # type: ignore
-
     async def set_authorize(self, riot_auth: RiotAuth) -> Self:
         # set riot auth
         self.http.riot_auth = riot_auth
-        payload = dict(
-            puuid=riot_auth.puuid,
-            game_name=riot_auth.game_name,
-            tag_line=riot_auth.tag_line,
-            region=riot_auth.region,
-        )
+
+        # payload = dict(
+        #     puuid=riot_auth.puuid,
+        #     game_name=riot_auth.game_name,
+        #     tag_line=riot_auth.tag_line,
+        #     region=riot_auth.region, # type: ignore
+        # )
         # user = User(client=self, data=payload)
         # if user.puuid not in self._users:
         # self._users[user.puuid] = user
@@ -111,8 +103,8 @@ class Client(valorantx.Client):
         await self.http.re_build_headers()
         return self
 
-    def get_user(self, puuid: str) -> Optional[User]:
-        return self._users.get(puuid)
+    # def get_user(self, puuid: str) -> Optional[User]:
+    #     return self._users.get(puuid)
 
     # patch note
 
@@ -124,32 +116,13 @@ class Client(valorantx.Client):
     # henrikdev
 
     async def fetch_partial_account(self, name: str, tagline: str) -> Optional[PartialUser]:
-        """Fetches a partial user from the API.
-
-        Parameters
-        ----------
-        name: :class:`str`
-            The name of the account.
-        tagline: :class:`str`
-            The tagline of the account.
-
-        Returns
-        -------
-        Optional[:class:`PartialAccount`]
-            The partial account fetched from the API.
-        Raises
-        ------
-        HTTPException
-            An error occurred while fetching the account.
-        NotFound
-            The account was not found.
-        """
         data = await self.http.get_partial_account(name, tagline)
         if data is None or 'data' not in data:
             return None
         return PartialUser(state=self.valorant_api.cache, data=data['data'])
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
+    @_authorize_required
     async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
         # TODO: cache re-use
         # try:
@@ -162,28 +135,23 @@ class Client(valorantx.Client):
         data = await self.fetch_storefront()
         return data.bundles
 
+    @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
         async with self._lock:
-            puuid: Optional[str] = None
             if riot_auth is not None:
-                puuid = riot_auth.puuid
                 await self.set_authorize(riot_auth)
-            sf = await super().fetch_storefront()
-            return self.store_storefront(puuid, sf)
-            # sf = self.get_storefront(puuid)
-            # if sf is not None:
-            #     return sf
+            return await super().fetch_storefront()
 
-            # data = await self.http.get_store_storefront(puuid)
-            # sf = StoreFront(self.valorant_api.cache, data)
-            # return self.store_storefront(puuid, sf)
+    @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
+    @_authorize_required
+    async def fetch_match_details(self, match_id: str) -> MatchDetails:
+        # async with self._lock:
+        data = await self.http.get_match_details(match_id)
+        # TODO: save data to file or cache?
+        return MatchDetails(client=self, data=data)
 
-    # @_authorize_required
-    # async def fetch_match_details(self, match_id: str) -> Optional[MatchDetails]:
-    #     match_details = await self.http.get_match_details(match_id)
-    #     return MatchDetails(client=self, data=match_details)
-
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Contracts:
         async with self._lock:
@@ -191,6 +159,7 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             return await super().fetch_contracts()
 
+    @alru_cache(maxsize=512, ttl=60)  # ttl 1 minute
     @_authorize_required
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
         async with self._lock:
@@ -198,6 +167,7 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             return await super().fetch_wallet()
 
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_mmr(
         self,
@@ -209,6 +179,7 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             return await super().fetch_mmr(puuid=puuid)
 
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Loadout:
         async with self._lock:
@@ -216,6 +187,7 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             return await super().fetch_loudout()
 
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_match_history(
         self,

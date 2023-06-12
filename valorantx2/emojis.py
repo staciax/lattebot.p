@@ -210,3 +210,31 @@ def get_game_mode_emoji(key: str) -> str:
     if key in ['unrated', 'competitive', 'swiftplay']:
         return emojis['standard']
     return emojis.get(key.replace(' ', '_').lower(), emojis['standard'])
+
+
+# match round result emojis
+
+
+def get_round_result_emoji(key: str, is_win: bool) -> str:
+    emojis = {
+        'defuse_loss': '<:diffuse_loss:1042809400592715816>',
+        'defuse_win': '<:diffuse_win:1042809402526281778>',
+        'elimination_loss': '<:elimination_loss:1042809418661761105>',
+        'elimination_win': '<:elimination_win:1042809420549206026>',
+        'explosion_loss': '<:explosion_loss:1042809464274812988>',
+        'explosion_win': '<:explosion_win:1042809466137083996>',
+        'time_loss': '<:time_loss:1042809483270832138>',
+        'time_win': '<:time_win:1042809485128896582>',
+        'surrendered': '<:EarlySurrender_Flag:1042829113741819996>',
+        'detonate_loss': '<:explosion_loss:1042809464274812988>',
+        'detonate_win': '<:explosion_win:1042809466137083996>',
+    }
+    key = key.lower()
+    if key != 'surrendered':
+        return emojis['surrendered']
+
+    key += '_win' if is_win else '_loss'
+    if key not in emojis:
+        return emojis['time_win'] if is_win else emojis['time_loss']
+
+    return emojis.get(key, '')

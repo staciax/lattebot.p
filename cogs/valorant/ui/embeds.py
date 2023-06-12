@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import datetime
-
-# import datetime
 import random
 from typing import TYPE_CHECKING, List, Optional, Union
 
@@ -11,20 +9,15 @@ from discord.utils import format_dt
 import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.utils.useful import MiadEmbed as Embed
-from valorantx2 import RiotAuth
 from valorantx2.emojis import VALORANT_POINT_EMOJI
-from valorantx2.enums import Locale as ValorantLocale, MissionType, RelationType
-from valorantx2.models import (  # MatchmakingRating,
-    Agent,
-    BonusStore,
+from valorantx2.enums import GameModeURL, Locale as ValorantLocale, MissionType, RelationType, RoundResultCode
+from valorantx2.models import (
     Buddy,
     BuddyLevel,
     BuddyLevelBundle,
     Bundle,
     BundleItemOffer,
-    Contract,
     FeaturedBundle,
-    Loadout,
     PlayerCard,
     PlayerCardBundle,
     PlayerTitle,
@@ -35,21 +28,27 @@ from valorantx2.models import (  # MatchmakingRating,
     SkinLevelBonus,
     SkinLevelBundle,
     SkinLevelOffer,
-    SkinsPanelLayout,
     Spray,
     SprayBundle,
     SprayLevel,
-    Wallet,
 )
 
-if TYPE_CHECKING:
-    from valorantx2.models import RewardValorantAPI
+from . import utils
 
-BundleItem = Union[Skin, Buddy, Spray, PlayerCard, PlayerTitle]
-FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle, PlayerTitleBundle]
-SkinItem = Union[Skin, SkinLevel, SkinChroma]
-SprayItem = Union[Spray, SprayLevel]
-BuddyItem = Union[Buddy, BuddyLevel]
+if TYPE_CHECKING:
+    from valorantx2 import RiotAuth
+    from valorantx2.models import (
+        Agent,
+        BonusStore,
+        Contract,
+        Loadout,
+        MatchPlayer,
+        RewardValorantAPI,
+        SkinsPanelLayout,
+        Team,
+        Wallet,
+    )
+    from valorantx2.models.custom.match import MatchDetails
 
 __all__ = (
     'BundleEmbed',
@@ -61,9 +60,15 @@ __all__ = (
     'wallet_e',
 )
 
+BundleItem = Union[Skin, Buddy, Spray, PlayerCard, PlayerTitle]
+FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle, PlayerTitleBundle]
+SkinItem = Union[Skin, SkinLevel, SkinChroma]
+SprayItem = Union[Spray, SprayLevel]
+BuddyItem = Union[Buddy, BuddyLevel]
+
 
 def skin_e(
-    skin: Union[valorantx.Skin, valorantx.SkinLevel, valorantx.SkinChroma, SkinLevelOffer, SkinLevelBonus],
+    skin: Union[Skin, SkinLevel, SkinChroma, SkinLevelOffer, SkinLevelBonus],
     *,
     locale: ValorantLocale,
 ) -> Embed:
@@ -350,9 +355,7 @@ def spray_e(spray: Union[Spray, SprayLevel], *, locale: valorantx.Locale = valor
     return embed
 
 
-def player_card_e(
-    player_card: valorantx.PlayerCard, *, locale: valorantx.Locale = valorantx.Locale.american_english
-) -> Embed:
+def player_card_e(player_card: PlayerCard, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
     embed = Embed().purple()
     embed.set_author(
         name=player_card.display_name.from_locale(locale),
@@ -441,6 +444,9 @@ def spray_loadout_e(
     return embed
 
 
+# bundle embed
+
+
 class BundleEmbed:
     def __init__(
         self,
@@ -511,6 +517,9 @@ class BundleEmbed:
     #     self.item_embeds = self.build_items_embeds()
 
 
+# gamepass embed
+
+
 class GamePassEmbed:
     def __init__(self, contract: Contract, riot_auth: RiotAuth, *, locale: ValorantLocale) -> None:
         self.contract: Contract = contract
@@ -543,3 +552,496 @@ class GamePassEmbed:
                     else:
                         embed.set_thumbnail(url=item.display_icon)
         return embed
+
+
+# match history
+
+
+def match_history_select_e(
+    match: MatchDetails,
+    puuid: str,
+    *,
+    locale: valorantx.Locale = valorantx.Locale.american_english,
+) -> Embed:
+    me = match.get_player(puuid)
+    if me is None:
+        return Embed(description='You are not in this match.').warning()
+
+    agent = me.agent
+    game_mode = match.match_info.game_mode
+    match_map = match.match_info.map
+    tier = me.competitive_tier
+
+    left_team_score, right_team_score = utils.find_match_score_by_player(match, me)
+    result = utils.get_match_result_by_player(match, me)
+
+    embed = Embed(
+        # title=match.game_mode.emoji + ' ' + match.game_mode.display_name,
+        description="{kda} {kills}/{deaths}/{assists}".format(
+            # tier=((tier.emoji + ' ') if match.match_info.queue_id == 'competitive' else ''),
+            kda=chat.bold('KDA'),
+            kills=me.stats.kills,
+            deaths=me.stats.deaths,
+            assists=me.stats.assists,
+        ),
+        timestamp=match.started_at,
+    )
+
+    if me.is_winner() and not match.is_draw():
+        embed.info()
+    elif match.is_draw():
+        embed.light()
+    else:
+        embed.danger()
+
+    # elif not me.is_winner() and not match.is_draw():
+    #     embed.danger()
+
+    # if game_mode is not None:
+    #     embed.title = game_mode.emoji + ' ' + game_mode.display_name.from_locale(locale)
+
+    embed.set_author(
+        name=f'{result} {left_team_score} - {right_team_score}',
+        icon_url=agent.display_icon if agent is not None else None,
+    )
+
+    if match_map is not None and match_map.splash is not None and game_mode is not None:
+        embed.set_thumbnail(url=match_map.splash)
+
+        if gamemode_name_override := getattr(match.match_info.game_mode, 'display_name_override', None):
+            if callable(gamemode_name_override):
+                gamemode_name_override(match.match_info.is_ranked())
+
+        embed.set_footer(
+            text=f'{game_mode.display_name.from_locale(locale)} • {match_map.display_name.from_locale(locale)}',
+            icon_url=tier.large_icon
+            if tier is not None and match.match_info.queue_id == 'competitive'
+            else game_mode.display_icon,
+        )
+    return embed
+
+
+# match details embed
+
+
+def match_details_template_e(
+    match: MatchDetails,
+    puuid: str,
+    performance: bool = False,
+    *,
+    locale: valorantx.Locale = valorantx.Locale.american_english,
+) -> Embed:
+    player = match.get_player(puuid)
+    if player is None:
+        return Embed(description='you were not in this match').error()
+
+    match_map = match.match_info.map
+    gamemode = match.match_info.game_mode
+    left_team_score, right_team_score = utils.find_match_score_by_player(match, player)
+    result = utils.get_match_result_by_player(match, player)
+
+    embed = Embed(
+        title='{mode} {map} - {won}:{lose}'.format(
+            mode=gamemode.emoji if gamemode is not None else '',  # type: ignore
+            map=match_map.display_name if match_map is not None else match.match_info.map_id,
+            won=left_team_score,
+            lose=right_team_score,
+        ),
+        timestamp=match.started_at,
+    )
+
+    embed.set_author(
+        name='{author} - {page}'.format(
+            author=player.display_name,
+            page=(gamemode.display_name if gamemode is not None and not performance else 'Performance'),
+        ),
+        icon_url=player.agent.display_icon_small if player.agent is not None else None,
+    )
+
+    embed.set_footer(text=result)
+
+    if player.is_winner() and not match.is_draw():
+        embed.info()
+    elif match.is_draw():
+        embed.light()
+    else:
+        embed.danger()
+
+    return embed
+
+
+class MatchEmbed:
+    def __init__(self, match: MatchDetails, puuid: str):
+        self._match = match
+        self._puuid = puuid
+        self._desktops: List[Embed] = []
+        self._mobiles: List[Embed] = []
+        self.build()
+
+    def get_desktop(self) -> List[Embed]:
+        return self._desktops
+
+    def get_mobile(self) -> List[Embed]:
+        return self._mobiles
+
+    @property
+    def me(self) -> Optional[MatchPlayer]:
+        return self._match.get_player(puuid=self._puuid)
+
+    @property
+    def map(self) -> Optional[valorantx.Map]:
+        return self._match.match_info.map
+
+    @property
+    def gamemode(self) -> Optional[valorantx.GameMode]:
+        return self._match.match_info.game_mode
+
+    @property
+    def gamemode_url(self) -> str:
+        return self._match.match_info._game_mode_url
+
+    @property
+    def players(self) -> List[MatchPlayer]:
+        return self._match.players
+
+    def get_me_team(self) -> Optional[Team]:
+        if self.me is None:
+            return None
+        return self.me.team
+        # return self._match.get_me_team()
+
+    def get_enemy_team(self) -> Optional[Team]:
+        for team in self._match.teams:
+            if team != self.get_me_team():
+                return team
+        # return self._match.get_enemy_team()
+
+    def get_me_team_players(self) -> List[MatchPlayer]:
+        me_team = self.get_me_team()
+        if me_team is None:
+            return []
+        return sorted(me_team.members, key=lambda p: p.stats.acs, reverse=True)
+
+    def get_enemy_team_players(self) -> List[MatchPlayer]:
+        enemy_team = self.get_enemy_team()
+        if enemy_team is None:
+            return []
+        return sorted(enemy_team.members, key=lambda p: p.stats.acs, reverse=True)
+        # return sorted(self.get_enemy_team().get_players(), key=lambda p: p.acs, reverse=True)
+
+    def get_mvp_star(self, player: MatchPlayer) -> str:
+        if player == self._match.match_mvp:
+            return '★'
+        elif player == self._match.team_mvp:
+            return '☆'
+        return ''
+
+    def _tier_display(self, player: MatchPlayer) -> str:
+        tier = player.competitive_tier
+        return (
+            (' ' + tier.emoji + ' ')  # type: ignore
+            if self._match.match_info.queue_id == 'competitive' and tier is not None
+            else ''
+        )
+
+    def _player_display(self, player: MatchPlayer, is_bold: bool = True) -> str:
+        return (
+            player.agent.emoji  # type: ignore
+            + self._tier_display(player)
+            + ' '
+            + (chat.bold(player.display_name) if is_bold and player == self.me else player.display_name)
+        )
+
+    def _acs_display(self, player: MatchPlayer, star: bool = True) -> str:
+        acs = str(int(player.stats.acs))
+        if star:
+            acs += ' ' + self.get_mvp_star(player)
+        return acs
+
+    def _abilities_text(self, player: MatchPlayer) -> str:
+        abilities = player.stats.ability_casts
+        if abilities is None:
+            return ''
+
+        return '{c_emoji} {c_casts} {q_emoji} {q_casts} {e_emoji} {e_casts} {x_emoji} {x_casts}'.format(
+            c_emoji=abilities.c.emoji,  # type: ignore
+            c_casts=round(abilities.c_casts / player.stats.rounds_played, 1),
+            e_emoji=abilities.e.emoji,  # type: ignore
+            e_casts=round(abilities.e_casts / player.stats.rounds_played, 1),
+            q_emoji=abilities.q.emoji,  # type: ignore
+            q_casts=round(abilities.q_casts / player.stats.rounds_played, 1),
+            x_emoji=abilities.x.emoji,  # type: ignore
+            x_casts=round(abilities.x_casts / player.stats.rounds_played, 1),
+        )
+
+    # @lru_cache(maxsize=2)
+    def static_embed(self, performance: bool = False) -> Embed:
+        return match_details_template_e(self._match, self._puuid, performance)
+
+    # desktop section
+    def desktop_1(self) -> Embed:
+        e = self.static_embed()
+        if self.me is None:
+            return e
+
+        mt_players = self.get_me_team_players()
+        et_players = self.get_enemy_team_players()
+
+        if self.gamemode_url != GameModeURL.deathmatch.value:
+            # MY TEAM
+            e.add_field(
+                name='MY TEAM',
+                value='\n'.join([self._player_display(p) for p in mt_players]),
+            )
+            e.add_field(
+                name='ACS',
+                value="\n".join([self._acs_display(p) for p in mt_players]),
+            )
+            e.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in mt_players]))
+
+            # ENEMY TEAM
+            e.add_field(
+                name='ENEMY TEAM',
+                value='\n'.join([self._player_display(p, is_bold=False) for p in et_players]),
+            )
+            e.add_field(
+                name='ACS',
+                value="\n".join([self._acs_display(p) for p in et_players]),
+            )
+            e.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in et_players]))
+        else:
+            players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
+            e.add_field(
+                name='Players',
+                value='\n'.join([self._player_display(p) for p in players]),
+            )
+            e.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
+            e.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
+
+        timelines = []
+
+        for i, r in enumerate(self._match.round_results, start=1):
+            if i == 12:
+                timelines.append(' | ')
+
+            timelines.append(r.emoji_by_player(self.me))
+
+            if r.round_result_code == RoundResultCode.surrendered.value:
+                break
+
+        if self.gamemode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
+            if len(timelines) > 25:
+                e.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
+                e.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
+            else:
+                e.add_field(name='Timeline:', value=''.join(timelines), inline=False)
+
+        return e
+
+    def desktop_2(self) -> Embed:
+        e = self.static_embed()
+
+        mt_players = self.get_me_team_players()
+        et_players = self.get_enemy_team_players()
+
+        # MY TEAM
+        e.add_field(
+            name='MY TEAM',
+            value='\n'.join([self._player_display(p) for p in mt_players]),
+        )
+        e.add_field(name='FK', value="\n".join([str(p.stats.first_kills) for p in mt_players]))
+        e.add_field(
+            name='HS%',
+            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in mt_players]),
+        )
+
+        # ENEMY TEAM
+        e.add_field(
+            name='ENEMY TEAM',
+            value='\n'.join([self._player_display(p, is_bold=False) for p in et_players]),
+        )
+        e.add_field(name='FK', value='\n'.join([str(p.stats.first_kills) for p in et_players]))
+        e.add_field(
+            name='HS%',
+            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in et_players]),
+        )
+
+        return e
+
+    def desktop_3(self) -> Embed:
+        e = self.static_embed(performance=True)
+        if self.me is None:
+            return e
+
+        e.add_field(
+            name='KDA',
+            value='\n'.join(
+                [
+                    p.kda
+                    for p in sorted(
+                        self.me.get_opponents_stats(),
+                        key=lambda p: p.opponent.display_name.lower(),
+                    )
+                ]
+            ),
+        )
+        e.add_field(
+            name='Opponent',
+            value='\n'.join(
+                self._player_display(p.opponent)
+                for p in sorted(
+                    self.me.get_opponents_stats(),
+                    key=lambda p: p.opponent.display_name.lower(),
+                )
+            ),
+        )
+
+        text = self._abilities_text(self.me)
+        if text != '':
+            e.add_field(name='Abilities', value=text, inline=False)
+
+        return e
+
+    # mobile section
+    def mobile_1(self) -> Embed:
+        e = self.static_embed()
+        if self.me is None:
+            return e
+
+        if self.gamemode_url != GameModeURL.deathmatch.value:
+            # MY TEAM
+            e.add_field(name='\u200b', value=chat.bold('MY TEAM'), inline=False)
+            for player in self.get_me_team_players():
+                e.add_field(
+                    name=self._player_display(player),
+                    value=f'ACS: {self._acs_display(player)}\nKDA: {player.stats.kda}',
+                    inline=True,
+                )
+
+            # ENEMY TEAM
+            e.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
+            for player in self.get_enemy_team_players():
+                e.add_field(
+                    name=self._player_display(player),
+                    value=f'ACS: {self._acs_display(player)}\nKDA: {player.stats.kda}',
+                    inline=True,
+                )
+        else:
+            players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
+            for player in players:
+                e.add_field(
+                    name=self._player_display(player),
+                    value=f'SCORE: {player.stats.score}\nKDA: {player.stats.kda}',
+                    inline=True,
+                )
+
+        timelines = []
+
+        for i, r in enumerate(self._match.round_results, start=1):
+            # if r.result_code == valorantx.RoundResultCode.surrendered:
+            #     timelines.append('Surrendered')
+            #     break
+
+            if i == 12:
+                timelines.append(' | ')
+
+            timelines.append(r.emoji_by_player(self.me))
+
+        if self.gamemode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
+            # TODO: __contains__ is not implemented for GameModeType
+            if len(timelines) > 25:
+                e.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
+                e.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
+            else:
+                e.add_field(name='Timeline:', value=''.join(timelines), inline=False)
+
+        return e
+
+    def mobile_2(self) -> Embed:
+        e = self.static_embed()
+        if self.me is None:
+            return e
+
+        # MY TEAM
+        e.add_field(name='\u200b', value=chat.bold('MY TEAM'))
+        for player in self.get_me_team_players():
+            e.add_field(
+                name=self._player_display(player),
+                value=f'FK: {player.stats.first_kills}\nHS%: {round(player.stats.head_shot_percent, 1)}%',
+                inline=True,
+            )
+
+        # ENEMY TEAM
+        e.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
+        for player in self.get_enemy_team_players():
+            e.add_field(
+                name=self._player_display(player, is_bold=False),
+                value=f'FK: {player.stats.first_kills}\nHS%: {round(player.stats.head_shot_percent, 1)}%',
+                inline=True,
+            )
+
+        return e
+
+    def mobile_3(self) -> Embed:
+        e = self.static_embed(performance=True)
+        if self.me is None:
+            return e
+
+        e.add_field(
+            name='KDA Opponent',
+            value='\n'.join([(p.kda + ' ' + self._player_display(p.opponent)) for p in self.me.get_opponents_stats()]),
+        )
+
+        text = self._abilities_text(self.me)
+        if text != '':
+            e.add_field(name='Abilities', value=text, inline=False)
+
+        return e
+
+    # deathmatch match
+
+    def death_match_desktop(self) -> Embed:
+        if self.me is None:
+            return Embed(description='You are not in this match.').error()
+
+        e = Embed()
+
+        players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
+        e.set_author(
+            name=self.gamemode.display_name if self.gamemode is not None else None,
+            icon_url=self.me.agent.display_icon if self.me.agent is not None else None,
+        )
+        e.add_field(
+            name='Players',
+            value='\n'.join([self._player_display(p) for p in players]),
+        )
+        e.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
+        e.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
+        return e
+
+    def death_match_mobile(self) -> Embed:
+        if self.me is None:
+            return Embed(description='You are not in this match.').error()
+
+        e = Embed()
+
+        players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
+        e.set_author(
+            name=self.gamemode.display_name if self.gamemode is not None else None,
+            icon_url=self.me.agent.display_icon if self.me.agent is not None else None,
+        )
+        for player in players:
+            e.add_field(
+                name=self._player_display(player),
+                value=f'SCORE: {player.stats.score}\nKDA: {player.stats.kda}',
+                inline=True,
+            )
+        return e
+
+    def build(self) -> None:
+        if self.gamemode_url == GameModeURL.deathmatch.value:
+            self._desktops = [self.desktop_1(), self.desktop_3()]
+            self._mobiles = [self.mobile_1(), self.mobile_3()]
+        else:
+            self._desktops = [self.desktop_1(), self.desktop_2(), self.desktop_3()]
+            self._mobiles = [self.mobile_1(), self.mobile_2(), self.mobile_3()]
