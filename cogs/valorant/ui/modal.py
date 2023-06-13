@@ -7,7 +7,7 @@ import discord
 # from async_lru import alru_cache
 from discord import ui
 
-from core.i18n import _
+from core.translator import _
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

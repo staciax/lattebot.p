@@ -8,7 +8,7 @@ from discord.app_commands import AppCommandError
 from discord.ext import commands
 from valorantx.errors import BadRequest
 
-from core.i18n import _
+from core.translator import _
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

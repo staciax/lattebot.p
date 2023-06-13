@@ -11,7 +11,7 @@ from discord.app_commands.models import AppCommand, AppCommandGroup, Argument
 from discord.ext import commands
 
 from core.checks import cooldown_short
-from core.i18n import _
+from core.translator import _
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 from core.utils.useful import MiadEmbed as Embed

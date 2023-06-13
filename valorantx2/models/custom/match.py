@@ -23,11 +23,3 @@ class MatchDetails(ValorantXMatchDetails):
         self.round_results: List[RoundResult] = [
             RoundResult(self, round_result) for round_result in data['roundResults']
         ]
-
-    def is_draw(self) -> bool:
-        blue_team = self.get_team('Blue')
-        red_team = self.get_team('Red')
-        if blue_team is not None and red_team is not None:
-            if blue_team.rounds_won == red_team.rounds_won:
-                return True
-        return False

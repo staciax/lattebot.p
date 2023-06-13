@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Tuple
 
+from core.translator import _
 from valorantx2.enums import GameModeURL
 
 if TYPE_CHECKING:
@@ -10,10 +11,11 @@ if TYPE_CHECKING:
 
 
 def find_match_score_by_player(match: MatchDetails, player: MatchPlayer) -> Tuple[int, int]:
-    players = match.players
-    game_mode_url = match.match_info._game_mode_url
     left_team_score = 0
     right_team_score = 0
+
+    players = match.players
+    game_mode_url = match.match_info._game_mode_url
     for team in match.teams:
         if team.id == player.team_id:
             left_team_score = team.rounds_won
@@ -44,11 +46,11 @@ def find_match_score_by_player(match: MatchDetails, player: MatchPlayer) -> Tupl
 
 def get_match_result_by_player(match: MatchDetails, player: MatchPlayer) -> str:
     game_mode_url = match.match_info._game_mode_url
-    result = 'VICTORY'
+    result = _('VICTORY')
 
     if game_mode_url == GameModeURL.deathmatch.value:
         if player.is_winner():
-            result = '1ST PLACE'
+            result = _('1ST PLACE')
         else:
             players = sorted(match.players, key=lambda p: p.stats.kills, reverse=True)
             for i, p in enumerate(players, start=1):
@@ -56,22 +58,22 @@ def get_match_result_by_player(match: MatchDetails, player: MatchPlayer) -> str:
                 player_after = players[i] if len(players) > i else None
                 if p == player:
                     if i == 2:
-                        result = '2ND PLACE'
+                        result = _('2ND PLACE')
                     elif i == 3:
-                        result = '3RD PLACE'
+                        result = _('3RD PLACE')
                     else:
-                        result = f'{i}TH PLACE'
+                        result = _('{i}TH PLACE').format(i=i)
 
                     if player_before is not None or player_after is not None:
                         if player_before.stats.kills == p.stats.kills:
-                            result += ' (TIED)'
+                            result += _(' (TIED)')
                         elif player_after is not None and player_after.stats.kills == p.stats.kills:
-                            result += ' (TIED)'
+                            result += _(' (TIED)')
 
     elif not player.is_winner():
-        result = 'DEFEAT'
+        result = _('DEFEAT')
 
     if match.is_draw():
-        result = 'DRAW'
+        result = _('DRAW')
 
     return result

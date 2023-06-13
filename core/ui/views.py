@@ -10,7 +10,7 @@ from discord.app_commands import CheckFailure
 from discord.ext import commands
 
 from ..errors import CheckFailure, ComponentOnCooldown
-from ..i18n import _
+from ..translator import _
 
 # from .ui import interaction_error_handler
 

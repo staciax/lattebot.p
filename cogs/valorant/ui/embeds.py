@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import random
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from discord.utils import format_dt
 
@@ -36,7 +36,6 @@ from valorantx2.models import (
 from . import utils
 
 if TYPE_CHECKING:
-    from valorantx2 import RiotAuth
     from valorantx2.models import (
         Agent,
         BonusStore,
@@ -45,7 +44,6 @@ if TYPE_CHECKING:
         MatchPlayer,
         RewardValorantAPI,
         SkinsPanelLayout,
-        Team,
         Wallet,
     )
     from valorantx2.models.custom.match import MatchDetails
@@ -123,9 +121,9 @@ def skin_e_hide(
     return embed
 
 
-def nightmarket_front_e(bonus: BonusStore, riot_auth: RiotAuth, *, locale: ValorantLocale) -> Embed:
+def nightmarket_front_e(bonus: BonusStore, riot_id: str, *, locale: ValorantLocale) -> Embed:
     embed = Embed(
-        description=f'NightMarket for {chat.bold(riot_auth.display_name)}\n'
+        description=f'NightMarket for {chat.bold(riot_id)}\n'
         f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
     ).purple()
 
@@ -204,21 +202,28 @@ def bundle_item_e(
 
 
 def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:
-    # vp = wallet.valorant_points
-    # rad = wallet.radiant_points
-
-    # vp_name = vp.name_localizations.from_locale(str(locale))
-
     embed = Embed(title=f'{riot_id} Point:').purple()
 
-    # embed.add_field(
-    #     name=f'{(vp_name if vp_name != "VP" else "Valorant")}',
-    #     value=f'{vp.emoji} {wallet.valorant_points}',
-    # )
-    # embed.add_field(
-    #     name=f'{rad.name_localizations.from_locale(str(locale)).removesuffix(" Points")}',
-    #     value=f'{rad.emoji} {wallet.radiant_points}',
-    # )
+    vp_display_name = 'Valorant'
+    if vp := wallet.get_valorant_currency():
+        vp_display_name = vp.display_name.from_locale(locale)
+        if vp_display_name.lower() == 'vp':
+            vp_display_name = 'Valorant'
+        vp_display_name = vp.emoji + ' ' + vp_display_name  # type: ignore
+
+    rad_display_name = 'Radiant'
+    if rad := wallet.get_radiant_currency():
+        rad_display_name = rad.display_name.from_locale(locale)
+        rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Point', '')  # type: ignore
+
+    embed.add_field(
+        name=vp_display_name,
+        value=f'{wallet.valorant_points}',
+    )
+    embed.add_field(
+        name=rad_display_name,
+        value=f'{wallet.radiant_points}',
+    )
     return embed
 
 
@@ -378,9 +383,9 @@ def collection_front_e(
 
     embed = Embed()
     # e.description = '{vp_emoji} {wallet_vp} {rad_emoji} {wallet_rad}'.format(
-    #     vp_emoji=wallet.get_valorant().emoji,  # type: ignore
+    #     vp_emoji=wallet.get_valorant().emoji,
     #     wallet_vp=wallet.valorant_points,
-    #     rad_emoji=wallet.get_radiant().emoji,  # type: ignore
+    #     rad_emoji=wallet.get_radiant().emoji,
     #     wallet_rad=wallet.radiant_points,
     # )
 
@@ -521,9 +526,9 @@ class BundleEmbed:
 
 
 class GamePassEmbed:
-    def __init__(self, contract: Contract, riot_auth: RiotAuth, *, locale: ValorantLocale) -> None:
+    def __init__(self, contract: Contract, riot_id: str, *, locale: ValorantLocale) -> None:
         self.contract: Contract = contract
-        self.riot_auth: RiotAuth = riot_auth
+        self.riot_id: str = riot_id
         self.locale: ValorantLocale = locale
         self.title: str = ''  # TODO: localize
         if self.contract.content.relation_type is RelationType.agent:
@@ -536,7 +541,7 @@ class GamePassEmbed:
     # @cache ?
     def build_page_embed(self, page: int, reward: RewardValorantAPI, locale: Optional[ValorantLocale] = None) -> Embed:
         locale = locale or self.locale
-        embed = Embed(title=f'{self.title} for {self.riot_auth.display_name}')
+        embed = Embed(title=f'{self.title} for {self.riot_id}')
         embed.set_footer(text=f'TIER {page + 1} | {self.contract.display_name_localized(locale)}')
         item = reward.get_item()
         if item is not None:
@@ -623,142 +628,385 @@ def match_history_select_e(
 
 # match details embed
 
-
-def match_details_template_e(
-    match: MatchDetails,
-    puuid: str,
-    performance: bool = False,
-    *,
-    locale: valorantx.Locale = valorantx.Locale.american_english,
-) -> Embed:
-    player = match.get_player(puuid)
-    if player is None:
-        return Embed(description='you were not in this match').error()
-
-    match_map = match.match_info.map
-    gamemode = match.match_info.game_mode
-    left_team_score, right_team_score = utils.find_match_score_by_player(match, player)
-    result = utils.get_match_result_by_player(match, player)
-
-    embed = Embed(
-        title='{mode} {map} - {won}:{lose}'.format(
-            mode=gamemode.emoji if gamemode is not None else '',  # type: ignore
-            map=match_map.display_name if match_map is not None else match.match_info.map_id,
-            won=left_team_score,
-            lose=right_team_score,
-        ),
-        timestamp=match.started_at,
-    )
-
-    embed.set_author(
-        name='{author} - {page}'.format(
-            author=player.display_name,
-            page=(gamemode.display_name if gamemode is not None and not performance else 'Performance'),
-        ),
-        icon_url=player.agent.display_icon_small if player.agent is not None else None,
-    )
-
-    embed.set_footer(text=result)
-
-    if player.is_winner() and not match.is_draw():
-        embed.info()
-    elif match.is_draw():
-        embed.light()
-    else:
-        embed.danger()
-
-    return embed
+# below is so fk ugly code but i don't have any idea to make it better :(
+# but it works so i don't care
+# if only desktop version, i can make it better but both desktop and mobile version is so fk ugly code
 
 
-class MatchEmbed:
-    def __init__(self, match: MatchDetails, puuid: str):
-        self._match = match
-        self._puuid = puuid
-        self._desktops: List[Embed] = []
-        self._mobiles: List[Embed] = []
-        self.build()
+class MatchDetailsEmbed:
+    def __init__(self, match: MatchDetails):
+        self.match = match
 
-    def get_desktop(self) -> List[Embed]:
-        return self._desktops
+    def __template_e(
+        self,
+        player: MatchPlayer,
+        performance: bool = False,
+        *,
+        locale: valorantx.Locale = valorantx.Locale.american_english,
+    ) -> Embed:
+        match = self.match
+        match_map = match.match_info.map
+        gamemode = match.match_info.game_mode
+        left_team_score, right_team_score = utils.find_match_score_by_player(match, player)
+        result = utils.get_match_result_by_player(match, player)
 
-    def get_mobile(self) -> List[Embed]:
-        return self._mobiles
-
-    @property
-    def me(self) -> Optional[MatchPlayer]:
-        return self._match.get_player(puuid=self._puuid)
-
-    @property
-    def map(self) -> Optional[valorantx.Map]:
-        return self._match.match_info.map
-
-    @property
-    def gamemode(self) -> Optional[valorantx.GameMode]:
-        return self._match.match_info.game_mode
-
-    @property
-    def gamemode_url(self) -> str:
-        return self._match.match_info._game_mode_url
-
-    @property
-    def players(self) -> List[MatchPlayer]:
-        return self._match.players
-
-    def get_me_team(self) -> Optional[Team]:
-        if self.me is None:
-            return None
-        return self.me.team
-        # return self._match.get_me_team()
-
-    def get_enemy_team(self) -> Optional[Team]:
-        for team in self._match.teams:
-            if team != self.get_me_team():
-                return team
-        # return self._match.get_enemy_team()
-
-    def get_me_team_players(self) -> List[MatchPlayer]:
-        me_team = self.get_me_team()
-        if me_team is None:
-            return []
-        return sorted(me_team.members, key=lambda p: p.stats.acs, reverse=True)
-
-    def get_enemy_team_players(self) -> List[MatchPlayer]:
-        enemy_team = self.get_enemy_team()
-        if enemy_team is None:
-            return []
-        return sorted(enemy_team.members, key=lambda p: p.stats.acs, reverse=True)
-        # return sorted(self.get_enemy_team().get_players(), key=lambda p: p.acs, reverse=True)
-
-    def get_mvp_star(self, player: MatchPlayer) -> str:
-        if player == self._match.match_mvp:
-            return '★'
-        elif player == self._match.team_mvp:
-            return '☆'
-        return ''
-
-    def _tier_display(self, player: MatchPlayer) -> str:
-        tier = player.competitive_tier
-        return (
-            (' ' + tier.emoji + ' ')  # type: ignore
-            if self._match.match_info.queue_id == 'competitive' and tier is not None
-            else ''
+        embed = Embed(
+            title='{mode} {map} - {won}:{lose}'.format(
+                mode=gamemode.emoji if gamemode is not None else '',  # type: ignore
+                map=match_map.display_name.from_locale(locale) if match_map is not None else match.match_info.map_id,
+                won=left_team_score,
+                lose=right_team_score,
+            ),
+            timestamp=match.started_at,
         )
 
-    def _player_display(self, player: MatchPlayer, is_bold: bool = True) -> str:
-        return (
-            player.agent.emoji  # type: ignore
-            + self._tier_display(player)
+        embed.set_author(
+            name='{author} - {page}'.format(
+                author=player.display_name,
+                page=(
+                    gamemode.display_name.from_locale(locale)
+                    if gamemode is not None and not performance
+                    else 'Performance'
+                ),
+            ),
+            icon_url=player.agent.display_icon_small if player.agent is not None else None,
+        )
+
+        embed.set_footer(text=result)
+
+        if player.is_winner() and not match.is_draw():
+            embed.info()
+        elif match.is_draw():
+            embed.light()
+        else:
+            embed.danger()
+
+        return embed
+
+    # desktop
+
+    def __build_page_1_d(
+        self,
+        match: MatchDetails,
+        player: MatchPlayer,
+        *,
+        locale: valorantx.Locale,
+    ) -> Embed:
+        embed = self.__template_e(player, locale=locale)
+        members = match.get_members(player)
+        opponents = match.get_opponents(player)
+        if match.match_info._game_mode_url != GameModeURL.deathmatch.value:
+            # MY TEAM
+            myteam = '\n'.join([self.__display_player(player, p) for p in members])
+
+            # page 1
+            embed.add_field(
+                name='MY TEAM',
+                value=myteam,
+            )
+            embed.add_field(
+                name='ACS',
+                value="\n".join([self.__display_acs(p) for p in members]),
+            )
+            embed.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in members]))
+
+            # ENEMY TEAM
+            enemyteam = '\n'.join([self.__display_player(player, p, bold=False) for p in opponents])
+
+            # page 1
+            embed.add_field(
+                name='ENEMY TEAM',
+                value=enemyteam,
+            )
+            embed.add_field(
+                name='ACS',
+                value="\n".join([self.__display_acs(p) for p in opponents]),
+            )
+            embed.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in opponents]))
+
+            # page 2
+
+        else:
+            players = sorted(self.match.players, key=lambda p: p.stats.score, reverse=True)
+            embed.add_field(
+                name='Players',
+                value='\n'.join([self.__display_player(player, p) for p in players]),
+            )
+            embed.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
+            embed.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
+
+        timelines = []
+
+        for i, r in enumerate(self.match.round_results, start=1):
+            if i == 12:
+                timelines.append(' | ')
+
+            timelines.append(r.emoji_by_player(player))
+
+            if r.round_result_code == RoundResultCode.surrendered.value:
+                break
+
+        if match.match_info._game_mode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
+            if len(timelines) > 25:
+                embed.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
+                embed.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
+            else:
+                embed.add_field(name='Timeline:', value=''.join(timelines), inline=False)
+
+        return embed
+
+    def __build_page_2_d(
+        self,
+        match: MatchDetails,
+        player: MatchPlayer,
+        *,
+        locale: valorantx.Locale,
+    ) -> Embed:
+        embed = self.__template_e(player, locale=locale)
+        members = match.get_members(player)
+        opponents = match.get_opponents(player)
+
+        # MY TEAM
+        embed.add_field(
+            name='MY TEAM',
+            value='\n'.join([self.__display_player(player, p) for p in members]),
+        )
+        embed.add_field(name='FK', value="\n".join([str(p.stats.first_kills) for p in members]))
+        embed.add_field(
+            name='HS%',
+            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in members]),
+        )
+
+        # ENEMY TEAM
+        embed.add_field(
+            name='ENEMY TEAM',
+            value='\n'.join([self.__display_player(player, p, bold=False) for p in opponents]),
+        )
+        embed.add_field(name='FK', value='\n'.join([str(p.stats.first_kills) for p in opponents]))
+        embed.add_field(
+            name='HS%',
+            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in opponents]),
+        )
+
+        return embed
+
+    def __build_page_3_d(
+        self,
+        player: MatchPlayer,
+        *,
+        locale: valorantx.Locale,
+    ) -> Embed:
+        embed = self.__template_e(player, performance=True, locale=locale)
+        embed.add_field(
+            name='KDA',
+            value='\n'.join(
+                [
+                    p.kda
+                    for p in sorted(
+                        player.get_opponents_stats(),
+                        key=lambda p: p.opponent.display_name.lower(),
+                    )
+                ]
+            ),
+        )
+        embed.add_field(
+            name='Opponent',
+            value='\n'.join(
+                self.__display_player(player, p.opponent)
+                for p in sorted(
+                    player.get_opponents_stats(),
+                    key=lambda p: p.opponent.display_name.lower(),
+                )
+            ),
+        )
+
+        text = self.__display_abilities(player)
+        if text != '':
+            embed.add_field(name='Abilities', value=text, inline=False)
+
+        return embed
+
+    # def __build_death_match_d(
+    #     self,
+    #     match: MatchDetails,
+    #     player: MatchPlayer,
+    #     *,
+    #     locale: valorantx.Locale,
+    # ) -> Embed:
+    #     embed = Embed()
+
+    #     players = sorted(match.players, key=lambda p: p.stats.score, reverse=True)
+    #     embed.set_author(
+    #         name=match.match_info.game_mode.display_name.from_locale(locale)
+    #         if match.match_info.game_mode is not None
+    #         else None,
+    #         icon_url=player.agent.display_icon if player.agent is not None else None,
+    #     )
+    #     embed.add_field(
+    #         name='Players',
+    #         value='\n'.join([self.__display_player(player, p) for p in players]),
+    #     )
+    #     embed.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
+    #     embed.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
+    #     return embed
+
+    # mobile
+
+    def __build_page_1_m(self, match: MatchDetails, player: MatchPlayer, *, locale: valorantx.Locale) -> Embed:
+        embed = self.__template_e(player, locale=locale)
+
+        members = match.get_members(player)
+        opponents = match.get_opponents(player)
+
+        if match.match_info._game_mode_url != GameModeURL.deathmatch.value:
+            # MY TEAM
+            embed.add_field(name='\u200b', value=chat.bold('MY TEAM'), inline=False)
+            for p in members:
+                embed.add_field(
+                    name=self.__display_player(player, p),
+                    value=f'ACS: {self.__display_acs(p)}\nKDA: {p.stats.kda}',
+                    inline=True,
+                )
+
+            # ENEMY TEAM
+            embed.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
+            for p in opponents:
+                embed.add_field(
+                    name=self.__display_player(player, p),
+                    value=f'ACS: {self.__display_acs(p)}\nKDA: {p.stats.kda}',
+                    inline=True,
+                )
+        else:
+            players = sorted(match.players, key=lambda p: p.stats.score, reverse=True)
+            for p in players:
+                embed.add_field(
+                    name=self.__display_player(player, p),
+                    value=f'SCORE: {p.stats.score}\nKDA: {p.stats.kda}',
+                    inline=True,
+                )
+
+        timelines = []
+
+        for i, r in enumerate(match.round_results, start=1):
+            # if r.result_code == valorantx.RoundResultCode.surrendered:
+            #     timelines.append('Surrendered')
+            #     break
+
+            if i == 12:
+                timelines.append(' | ')
+
+            timelines.append(r.emoji_by_player(player))
+
+        if match.match_info._game_mode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
+            # TODO: __contains__ is not implemented for GameModeType
+            if len(timelines) > 25:
+                embed.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
+                embed.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
+            else:
+                embed.add_field(name='Timeline:', value=''.join(timelines), inline=False)
+
+        return embed
+
+    def __build_page_2_m(self, match: MatchDetails, player: MatchPlayer, *, locale: valorantx.Locale) -> Embed:
+        embed = self.__template_e(player, locale=locale)
+
+        members = match.get_members(player)
+        opponents = match.get_opponents(player)
+
+        # MY TEAM
+        embed.add_field(name='\u200b', value=chat.bold('MY TEAM'))
+        for p in members:
+            embed.add_field(
+                name=self.__display_player(player, p),
+                value=f'FK: {p.stats.first_kills}\nHS%: {round(p.stats.head_shot_percent, 1)}%',
+                inline=True,
+            )
+
+        # ENEMY TEAM
+        embed.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
+        for p in opponents:
+            embed.add_field(
+                name=self.__display_player(player, p, bold=False),
+                value=f'FK: {p.stats.first_kills}\nHS%: {round(p.stats.head_shot_percent, 1)}%',
+                inline=True,
+            )
+
+        return embed
+
+    def __build_page_3_m(self, player: MatchPlayer, *, locale: valorantx.Locale) -> Embed:
+        embed = self.__template_e(player, performance=True, locale=locale)
+        embed.add_field(
+            name='KDA Opponent',
+            value='\n'.join(
+                [(p.kda + ' ' + self.__display_player(player, p.opponent)) for p in player.get_opponents_stats()]
+            ),
+        )
+
+        text = self.__display_abilities(player)
+        if text != '':
+            embed.add_field(name='Abilities', value=text, inline=False)
+
+        return embed
+
+    # def __build_death_match_m(
+    #     self,
+    #     match: MatchDetails,
+    #     player: MatchPlayer,
+    #     *,
+    #     locale: valorantx.Locale,
+    # ) -> Embed:
+    #     embed = Embed()
+
+    #     players = sorted(match.players, key=lambda p: p.stats.score, reverse=True)
+    #     embed.set_author(
+    #         name=match.match_info.game_mode.display_name.from_locale(locale)
+    #         if match.match_info.game_mode is not None
+    #         else None,
+    #         icon_url=player.agent.display_icon if player.agent is not None else None,
+    #     )
+    #     for p in players:
+    #         embed.add_field(
+    #             name=self.__display_player(player, p),
+    #             value=f'SCORE: {p.stats.score}\nKDA: {p.stats.kda}',
+    #             inline=True,
+    #         )
+
+    #     return embed
+
+    # display
+
+    def __display_player(self, player: MatchPlayer, other_player: MatchPlayer, *, bold: bool = True) -> str:
+        def display_tier(player: MatchPlayer) -> str:
+            tier = player.competitive_tier
+            return (
+                (' ' + tier.emoji + ' ')  # type: ignore
+                if self.match.match_info.queue_id == 'competitive' and tier is not None
+                else ''
+            )
+
+        text = (
+            other_player.agent.emoji  # type: ignore
+            + display_tier(player)
             + ' '
-            + (chat.bold(player.display_name) if is_bold and player == self.me else player.display_name)
+            + (chat.bold(other_player.display_name) if bold and other_player == player else other_player.display_name)
         )
 
-    def _acs_display(self, player: MatchPlayer, star: bool = True) -> str:
+        return text
+
+    def __display_acs(self, player: MatchPlayer, star: bool = True) -> str:
+        def display_mvp(player: MatchPlayer) -> str:
+            if player == self.match.match_mvp:
+                return '★'
+            elif player == self.match.team_mvp:
+                return '☆'
+            return ''
+
         acs = str(int(player.stats.acs))
         if star:
-            acs += ' ' + self.get_mvp_star(player)
+            acs += ' ' + display_mvp(player)
         return acs
 
-    def _abilities_text(self, player: MatchPlayer) -> str:
+    def __display_abilities(self, player: MatchPlayer) -> str:
         abilities = player.stats.ability_casts
         if abilities is None:
             return ''
@@ -774,274 +1022,37 @@ class MatchEmbed:
             x_casts=round(abilities.x_casts / player.stats.rounds_played, 1),
         )
 
-    # @lru_cache(maxsize=2)
-    def static_embed(self, performance: bool = False) -> Embed:
-        return match_details_template_e(self._match, self._puuid, performance)
+    # build
 
-    # desktop section
-    def desktop_1(self) -> Embed:
-        e = self.static_embed()
-        if self.me is None:
-            return e
+    def build(
+        self,
+        puuid: str,
+        *,
+        locale: valorantx.Locale = valorantx.Locale.american_english,
+    ) -> Tuple[List[Embed], List[Embed]]:
+        player = self.match.get_player(puuid)
+        if player is None:
+            raise ValueError(f'player {puuid} was not in this match')
 
-        mt_players = self.get_me_team_players()
-        et_players = self.get_enemy_team_players()
+        # desktop
 
-        if self.gamemode_url != GameModeURL.deathmatch.value:
-            # MY TEAM
-            e.add_field(
-                name='MY TEAM',
-                value='\n'.join([self._player_display(p) for p in mt_players]),
-            )
-            e.add_field(
-                name='ACS',
-                value="\n".join([self._acs_display(p) for p in mt_players]),
-            )
-            e.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in mt_players]))
+        desktops = [
+            self.__build_page_1_d(self.match, player, locale=locale),
+            # self.__build_page_2_d(self.match, player, locale=locale),
+            self.__build_page_3_d(player, locale=locale),
+        ]
 
-            # ENEMY TEAM
-            e.add_field(
-                name='ENEMY TEAM',
-                value='\n'.join([self._player_display(p, is_bold=False) for p in et_players]),
-            )
-            e.add_field(
-                name='ACS',
-                value="\n".join([self._acs_display(p) for p in et_players]),
-            )
-            e.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in et_players]))
-        else:
-            players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
-            e.add_field(
-                name='Players',
-                value='\n'.join([self._player_display(p) for p in players]),
-            )
-            e.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
-            e.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
+        # mobile
 
-        timelines = []
+        mobiles = [
+            self.__build_page_1_m(self.match, player, locale=locale),
+            # self.__build_page_2_m(self.match, player, locale=locale),
+            self.__build_page_3_m(player, locale=locale),
+        ]
 
-        for i, r in enumerate(self._match.round_results, start=1):
-            if i == 12:
-                timelines.append(' | ')
+        # performance
+        if self.match.match_info._game_mode_url != GameModeURL.deathmatch.value:
+            desktops.insert(1, self.__build_page_2_d(self.match, player, locale=locale))
+            mobiles.insert(1, self.__build_page_2_m(self.match, player, locale=locale))
 
-            timelines.append(r.emoji_by_player(self.me))
-
-            if r.round_result_code == RoundResultCode.surrendered.value:
-                break
-
-        if self.gamemode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
-            if len(timelines) > 25:
-                e.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
-                e.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
-            else:
-                e.add_field(name='Timeline:', value=''.join(timelines), inline=False)
-
-        return e
-
-    def desktop_2(self) -> Embed:
-        e = self.static_embed()
-
-        mt_players = self.get_me_team_players()
-        et_players = self.get_enemy_team_players()
-
-        # MY TEAM
-        e.add_field(
-            name='MY TEAM',
-            value='\n'.join([self._player_display(p) for p in mt_players]),
-        )
-        e.add_field(name='FK', value="\n".join([str(p.stats.first_kills) for p in mt_players]))
-        e.add_field(
-            name='HS%',
-            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in mt_players]),
-        )
-
-        # ENEMY TEAM
-        e.add_field(
-            name='ENEMY TEAM',
-            value='\n'.join([self._player_display(p, is_bold=False) for p in et_players]),
-        )
-        e.add_field(name='FK', value='\n'.join([str(p.stats.first_kills) for p in et_players]))
-        e.add_field(
-            name='HS%',
-            value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in et_players]),
-        )
-
-        return e
-
-    def desktop_3(self) -> Embed:
-        e = self.static_embed(performance=True)
-        if self.me is None:
-            return e
-
-        e.add_field(
-            name='KDA',
-            value='\n'.join(
-                [
-                    p.kda
-                    for p in sorted(
-                        self.me.get_opponents_stats(),
-                        key=lambda p: p.opponent.display_name.lower(),
-                    )
-                ]
-            ),
-        )
-        e.add_field(
-            name='Opponent',
-            value='\n'.join(
-                self._player_display(p.opponent)
-                for p in sorted(
-                    self.me.get_opponents_stats(),
-                    key=lambda p: p.opponent.display_name.lower(),
-                )
-            ),
-        )
-
-        text = self._abilities_text(self.me)
-        if text != '':
-            e.add_field(name='Abilities', value=text, inline=False)
-
-        return e
-
-    # mobile section
-    def mobile_1(self) -> Embed:
-        e = self.static_embed()
-        if self.me is None:
-            return e
-
-        if self.gamemode_url != GameModeURL.deathmatch.value:
-            # MY TEAM
-            e.add_field(name='\u200b', value=chat.bold('MY TEAM'), inline=False)
-            for player in self.get_me_team_players():
-                e.add_field(
-                    name=self._player_display(player),
-                    value=f'ACS: {self._acs_display(player)}\nKDA: {player.stats.kda}',
-                    inline=True,
-                )
-
-            # ENEMY TEAM
-            e.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
-            for player in self.get_enemy_team_players():
-                e.add_field(
-                    name=self._player_display(player),
-                    value=f'ACS: {self._acs_display(player)}\nKDA: {player.stats.kda}',
-                    inline=True,
-                )
-        else:
-            players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
-            for player in players:
-                e.add_field(
-                    name=self._player_display(player),
-                    value=f'SCORE: {player.stats.score}\nKDA: {player.stats.kda}',
-                    inline=True,
-                )
-
-        timelines = []
-
-        for i, r in enumerate(self._match.round_results, start=1):
-            # if r.result_code == valorantx.RoundResultCode.surrendered:
-            #     timelines.append('Surrendered')
-            #     break
-
-            if i == 12:
-                timelines.append(' | ')
-
-            timelines.append(r.emoji_by_player(self.me))
-
-        if self.gamemode_url not in [GameModeURL.escalation.value, GameModeURL.deathmatch.value]:
-            # TODO: __contains__ is not implemented for GameModeType
-            if len(timelines) > 25:
-                e.add_field(name='Timeline:', value=''.join(timelines[:25]), inline=False)
-                e.add_field(name='Overtime:', value=''.join(timelines[25:]), inline=False)
-            else:
-                e.add_field(name='Timeline:', value=''.join(timelines), inline=False)
-
-        return e
-
-    def mobile_2(self) -> Embed:
-        e = self.static_embed()
-        if self.me is None:
-            return e
-
-        # MY TEAM
-        e.add_field(name='\u200b', value=chat.bold('MY TEAM'))
-        for player in self.get_me_team_players():
-            e.add_field(
-                name=self._player_display(player),
-                value=f'FK: {player.stats.first_kills}\nHS%: {round(player.stats.head_shot_percent, 1)}%',
-                inline=True,
-            )
-
-        # ENEMY TEAM
-        e.add_field(name='\u200b', value=chat.bold('ENEMY TEAM'), inline=False)
-        for player in self.get_enemy_team_players():
-            e.add_field(
-                name=self._player_display(player, is_bold=False),
-                value=f'FK: {player.stats.first_kills}\nHS%: {round(player.stats.head_shot_percent, 1)}%',
-                inline=True,
-            )
-
-        return e
-
-    def mobile_3(self) -> Embed:
-        e = self.static_embed(performance=True)
-        if self.me is None:
-            return e
-
-        e.add_field(
-            name='KDA Opponent',
-            value='\n'.join([(p.kda + ' ' + self._player_display(p.opponent)) for p in self.me.get_opponents_stats()]),
-        )
-
-        text = self._abilities_text(self.me)
-        if text != '':
-            e.add_field(name='Abilities', value=text, inline=False)
-
-        return e
-
-    # deathmatch match
-
-    def death_match_desktop(self) -> Embed:
-        if self.me is None:
-            return Embed(description='You are not in this match.').error()
-
-        e = Embed()
-
-        players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
-        e.set_author(
-            name=self.gamemode.display_name if self.gamemode is not None else None,
-            icon_url=self.me.agent.display_icon if self.me.agent is not None else None,
-        )
-        e.add_field(
-            name='Players',
-            value='\n'.join([self._player_display(p) for p in players]),
-        )
-        e.add_field(name='SCORE', value='\n'.join([f'{p.stats.score}' for p in players]))
-        e.add_field(name='KDA', value='\n'.join([f'{p.stats.kda}' for p in players]))
-        return e
-
-    def death_match_mobile(self) -> Embed:
-        if self.me is None:
-            return Embed(description='You are not in this match.').error()
-
-        e = Embed()
-
-        players = sorted(self._match.players, key=lambda p: p.stats.score, reverse=True)
-        e.set_author(
-            name=self.gamemode.display_name if self.gamemode is not None else None,
-            icon_url=self.me.agent.display_icon if self.me.agent is not None else None,
-        )
-        for player in players:
-            e.add_field(
-                name=self._player_display(player),
-                value=f'SCORE: {player.stats.score}\nKDA: {player.stats.kda}',
-                inline=True,
-            )
-        return e
-
-    def build(self) -> None:
-        if self.gamemode_url == GameModeURL.deathmatch.value:
-            self._desktops = [self.desktop_1(), self.desktop_3()]
-            self._mobiles = [self.mobile_1(), self.mobile_3()]
-        else:
-            self._desktops = [self.desktop_1(), self.desktop_2(), self.desktop_3()]
-            self._mobiles = [self.mobile_1(), self.mobile_2(), self.mobile_3()]
+        return desktops, mobiles

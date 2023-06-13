@@ -230,7 +230,7 @@ def get_round_result_emoji(key: str, is_win: bool) -> str:
         'detonate_win': '<:explosion_win:1042809466137083996>',
     }
     key = key.lower()
-    if key != 'surrendered':
+    if key == 'surrendered':
         return emojis['surrendered']
 
     key += '_win' if is_win else '_loss'

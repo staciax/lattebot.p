@@ -10,7 +10,7 @@ from discord import app_commands
 if TYPE_CHECKING:
     from .bot import LatteMaid
 
-_log = logging.getLogger('lattemaid.' + __name__)
+_log = logging.getLogger(__file__)
 
 _ = ...
 

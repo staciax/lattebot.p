@@ -18,7 +18,8 @@ import valorantx2 as valorantx
 from core.utils.enums import Emoji
 
 from .database import DatabaseConnection
-from .i18n import Translator, _
+from .i18n import I18n, _
+from .translator import Translator
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
 
 load_dotenv()
 
-_log = logging.getLogger('latte_maid')
+_log = logging.getLogger(__file__)
 
 # jishaku
 os.environ['JISHAKU_NO_UNDERSCORE'] = 'True'
@@ -118,6 +119,7 @@ class LatteMaid(commands.AutoShardedBot):
         # self.encryption: Encryption = Encryption(config.cryptography)
 
         # i18n
+        self.i18n: I18n = I18n(self)
         self.translator: Translator = MISSING
 
         # http session

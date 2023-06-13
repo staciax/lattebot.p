@@ -23,3 +23,5 @@ for file in os.listdir('locales'):
                         validate_context_menu_name(ctx_menu['name'])
                     except ValueError:
                         print(f'Invalid name: {ctx_menu["name"]!r} in {cog_name} for {file}')
+
+print('No errors found')
