@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 load_dotenv()
 
-_log = logging.getLogger(__file__)
+_log = logging.getLogger(__name__)
 
 # jishaku
 os.environ['JISHAKU_NO_UNDERSCORE'] = 'True'
@@ -60,19 +60,15 @@ class LatteMaid(commands.AutoShardedBot):
     db: DatabaseConnection
     bot_app_info: discord.AppInfo
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        debug_mode: bool = False,
+        tree_sync_at_startup: bool = False,
+    ) -> None:
         # intents
-        intents = discord.Intents.default()
-        intents.auto_moderation = False
-        intents.emojis = False
-        intents.guild_scheduled_events = False
-        intents.integrations = False
-        intents.invites = False
-        intents.moderation = False
-        intents.reactions = True
-        intents.typing = False
-        intents.voice_states = False
-        intents.webhooks = False
+        intents = discord.Intents.none()  # set all intents to False
+        intents.guilds = True
+        # intents.dm_messages = True # wait for implementation modmail?
 
         # allowed_mentions
         allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
@@ -90,7 +86,8 @@ class LatteMaid(commands.AutoShardedBot):
         )
 
         # config
-        self._debug_mode: bool = True if os.getenv('DEBUG_MODE') == 'True' else False
+        self._debug_mode: bool = debug_mode
+        self._tree_sync_at_startup: bool = tree_sync_at_startup
         self._version: str = '1.0.0a'
 
         # assets
@@ -132,7 +129,7 @@ class LatteMaid(commands.AutoShardedBot):
         self.colors: Dict[str, List[discord.Colour]] = {}
 
         # database
-        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore
+        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore TODO: debug mode check and change
 
         # valorant
         self.valorant_client: valorantx.Client = valorantx.Client(self)
@@ -166,6 +163,24 @@ class LatteMaid(commands.AutoShardedBot):
     #     return hook
 
     # bot extension setup
+
+    async def tree_sync(self, guild_only: bool = False) -> None:
+        # tree sync application commands
+        if not guild_only:
+            await self.tree.sync()
+        sync_guilds = [
+            self.support_guild_id,
+            # 1042503061454729289,  # EMOJI ABILITY 2
+            # 1042502960921452734,  # EMOJI ABILITY 1
+            # 1043965050630705182,  # EMOJI TIER
+            # 1042501718958669965,  # EMOJI AGENT
+            # 1042809126624964651,  # EMOJI MATCH
+        ]
+        for guild_id in sync_guilds:
+            try:
+                await self.tree.sync(guild=discord.Object(id=guild_id))
+            except Exception as e:
+                _log.exception(f'Failed to sync guild {guild_id}.')
 
     async def cogs_load(self) -> None:
         """Load cogs."""
@@ -219,38 +234,25 @@ class LatteMaid(commands.AutoShardedBot):
         # load cogs
         await self.cogs_load()
 
+        # tree sync
+        if self._tree_sync_at_startup:
+            await self.tree_sync()
+
         # tree translator app commands
         # tree_app_commands = self.tree.get_commands()
         # for command in tree_app_commands:
         #     await command.get_translated_payload(self.translator)
 
-        # tree sync application commands
-        if os.environ.get('SYNCTREE') == 'True':
-            await self.tree.sync()
-            sync_guilds = [
-                self.support_guild_id,
-                # 1042503061454729289,  # EMOJI ABILITY 2
-                # 1042502960921452734,  # EMOJI ABILITY 1
-                # 1043965050630705182,  # EMOJI TIER
-                # 1042501718958669965,  # EMOJI AGENT
-                # 1042809126624964651,  # EMOJI MATCH
-            ]
-            for guild_id in sync_guilds:
-                try:
-                    await self.tree.sync(guild=discord.Object(id=guild_id))
-                except Exception as e:
-                    _log.exception(f'Failed to sync guild {guild_id}.')
-
-        if os.environ.get('I18N') == 'True':
-            await self.translator.get_i18n(
-                excludes=['developer', 'jishaku'],  # exclude cogs
-                only_public=True,  # exclude @app_commands.guilds()
-                replace=True,
-                set_locale=[
-                    discord.Locale.american_english,
-                    discord.Locale.thai,
-                ],
-            )
+        # if os.environ.get('I18N') == 'True':
+        #     await self.translator.get_i18n(
+        #         excludes=['developer', 'jishaku'],  # exclude cogs
+        #         only_public=True,  # exclude @app_commands.guilds()
+        #         replace=True,
+        #         set_locale=[
+        #             discord.Locale.american_english,
+        #             discord.Locale.thai,
+        #         ],
+        #     )
 
         await self.fetch_app_commands()
 

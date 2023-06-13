@@ -156,7 +156,7 @@ class ListPageSource(PageSource[T]):
         """:class:`bool`: Whether pagination is required."""
         return len(self.entries) > self.per_page
 
-    def get_max_pages(self) -> Optional[int]:
+    def get_max_pages(self) -> int:
         """:class:`int`: The maximum number of pages required to paginate this sequence."""
         return self._max_pages
 

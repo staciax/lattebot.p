@@ -119,7 +119,6 @@ class I18n:
         *,
         custom_id: Optional[str] = None,
     ) -> str:
-        print(untranslate)
         locale = locale or cls.__current_locale__
         key = custom_id or untranslate
         return cls.__strings__[locale].get(key, untranslate)

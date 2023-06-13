@@ -16,6 +16,29 @@ except ImportError:
 else:
     uvloop.install()
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    '-p',
+    '--prod',
+    action='store_true',
+    help='run in production mode.',
+)
+parser.add_argument(
+    '-s',
+    '--sync',
+    # choices=('all', 'guild'),
+    action='store_true',
+    help='sync application commands to discord.',
+)
+# parser.add_argument(
+#     '-i',
+#     '--i18n',
+#     action='store_true',
+#     help='replace i18n strings.',
+# )
+args = parser.parse_args()
+
+
 # inspired by robodanny - Danny (Rapptz)
 
 
@@ -48,9 +71,6 @@ def setup_logging():
         logging.getLogger('valorantx2.valorant_api').setLevel(logging.INFO)
         logging.getLogger('valorantx2.valorant_api.http').setLevel(logging.WARNING)
 
-        # cogs valorant
-        logging.getLogger('lattemaid.valorant').setLevel(logging.WARNING)
-
         # sqlalchemy
         # logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
 
@@ -62,7 +82,7 @@ def setup_logging():
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)
         log.addHandler(handler)
-        if os.getenv('DEBUG_MODE') == 'True':
+        if not args.prod:
             handler = logging.StreamHandler()
             if isinstance(handler, logging.StreamHandler) and utils.stream_supports_colour(handler.stream):
                 fmt = utils._ColourFormatter()
@@ -78,9 +98,9 @@ def setup_logging():
 
 
 @contextlib.contextmanager
-def setup_webhook(bot: LatteMaid):
+def setup_webhook():
     # inspired by ayane-bot - Buco7854(github)
-    if bot.is_debug_mode():
+    if args.prod:
         yield
     url = os.getenv('WEBHOOK_STATUS_URI')
     # token = os.getenv('DISCORD_TOKEN')
@@ -94,23 +114,17 @@ def setup_webhook(bot: LatteMaid):
 
 
 def main():
-    with setup_logging():
+    with setup_logging(), setup_webhook():
         asyncio.run(run_bot())
 
 
 async def run_bot():
-    async with LatteMaid() as bot:
-        with setup_webhook(bot):
-            await bot.start()
+    async with LatteMaid(
+        debug_mode=args.prod,
+        tree_sync_at_startup=args.sync,
+    ) as bot:
+        await bot.start()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true', default=False)
-    parser.add_argument('-sync', action='store_true', default=False)
-    parser.add_argument('-i18n', action='store_true', default=False)
-    args = parser.parse_args()
-    os.environ['DEBUG_MODE'] = str(args.debug)
-    os.environ['SYNCTREE'] = str(args.sync)
-    os.environ['I18N'] = str(args.i18n)
     main()

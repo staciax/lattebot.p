@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, List, Optional
 import discord
 from discord import app_commands
 
+from .i18n import _
+
 if TYPE_CHECKING:
     from .bot import LatteMaid
 
-_log = logging.getLogger(__file__)
-
-_ = ...
+_log = logging.getLogger(__name__)
 
 
 class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
@@ -21,23 +21,23 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             return True
 
         user_id = interaction.user.id
-        # guild_id = interaction.guild.id if interaction.guild is not None else None
+        guild_id = interaction.guild.id if interaction.guild is not None else None
 
         # TODO: spam check
 
-        # if user_id in self.client.db.blacklist:
-        #     await interaction.response.send_message(
-        #         _('You are blacklisted from using this bot.'),
-        #         ephemeral=True,
-        #     )
-        #     return False
+        if user_id in self.client.db.blacklist:
+            await interaction.response.send_message(
+                _('You are blacklisted from using this bot.'),
+                ephemeral=True,
+            )
+            return False
 
-        # if guild_id is not None and guild_id in self.client.db.blacklist:
-        #     await interaction.response.send_message(
-        #         _('This guild is blacklisted from using this bot.'),
-        #         ephemeral=True,
-        #     )
-        #     return False
+        if guild_id is not None and guild_id in self.client.db.blacklist:
+            await interaction.response.send_message(
+                _('This guild is blacklisted from using this bot.'),
+                ephemeral=True,
+            )
+            return False
 
         # if interaction.client.is_maintenance():
         #     if interaction.type is discord.InteractionType.application_command:
@@ -57,12 +57,14 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         #             )
         #     return False
 
-        if interaction.type is discord.InteractionType.application_command:
+        # if interaction.type is discord.InteractionType.application_command:
+        if isinstance(interaction.command, app_commands.Command):
             user_db = await self.client.db.get_user(user_id)
-            if user_db is not None and user_db not in self.client.db.users:
-                self.client.loop.create_task(self.client.db.create_user(id=user_id, locale=interaction.locale.value))
-            elif user_db is not None and user_db.locale != interaction.locale.value:
+            if user_db is not None and user_db.locale != interaction.locale.value:
                 self.client.loop.create_task(self.client.db.update_user(id=user_id, locale=interaction.locale.value))
+            else:
+                self.client.loop.create_task(self.client.db.create_user(id=user_id, locale=interaction.locale.value))
+
         return True
 
     async def sync(self, *, guild: Optional[discord.abc.Snowflake] = None) -> List[app_commands.AppCommand]:

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     Localizable = Union[Command, Group, ContextMenu, Parameter, Choice]
 
-_log = logging.getLogger(__file__)
+_log = logging.getLogger(__name__)
 
 
 class OptionsLocale(TypedDict, total=False):
@@ -386,7 +386,6 @@ class Translator(app_commands.Translator):
         *,
         custom_id: Optional[str] = None,
     ) -> str:
-        print(untranslate)
         locale = locale or cls._current_locale
         key = custom_id or untranslate
         return cls._strings[locale].get(key, untranslate)

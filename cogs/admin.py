@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, List, Literal, Optional
 
 import discord
 from discord import Interaction, app_commands
@@ -9,9 +9,12 @@ from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
 
+from core.bot import LatteMaid
 from core.checks import owner_only
 from core.errors import AppCommandError
 from core.utils.chat_formatting import bold, inline
+from core.utils.database.models.blacklist import BlackList
+from core.utils.pages import LattePages, ListPageSource
 from core.utils.useful import MiadEmbed
 
 if TYPE_CHECKING:
@@ -30,6 +33,30 @@ EXTENSIONS = Literal[
     'cogs.valorant',
 ]
 # fmt: on
+
+
+class BlackListPageSource(ListPageSource):
+    def __init__(self, entries: List[BlackList], per_page: int = 12):
+        super().__init__(entries, per_page)
+
+    async def format_page(self, menu: BlackListPages, entries: List[BlackList]) -> MiadEmbed:
+        pages = []
+        for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
+            pages.append(f'{index + 1}. {entry.id}')
+
+        maximum = self.get_max_pages()
+        if maximum > 1:
+            footer = f'Page {menu.current_page + 1}/{maximum} ({len(self.entries)} entries)'
+            menu.embed.set_footer(text=footer)
+
+        menu.embed.description = '\n'.join(pages)
+        return menu.embed
+
+
+class BlackListPages(LattePages):
+    def __init__(self, source: BlackListPageSource, *, interaction: Interaction[LatteMaid]):
+        super().__init__(source, interaction=interaction)
+        self.embed: MiadEmbed = MiadEmbed(title='Blacklist').dark()
 
 
 class Developer(commands.Cog, name='developer'):
@@ -59,7 +86,7 @@ class Developer(commands.Cog, name='developer'):
         except commands.ExtensionAlreadyLoaded:
             raise AppCommandError(f"The extension is already loaded.")
         except Exception as e:
-            _log.error(f'error loading extension {extension}')
+            _log.error(f'error loading extension {extension}', exc_info=e)
             raise AppCommandError('The extension load failed')
 
         _log.info(f'loaded extension {extension}')
@@ -80,7 +107,7 @@ class Developer(commands.Cog, name='developer'):
             _log.info(f'extension {extension} is not loaded')
             raise AppCommandError(f'The extension was not loaded.')
         except Exception as e:
-            _log.error(f'error unloading extension {extension}')
+            _log.error(f'error unloading extension {extension}', exc_info=e)
             raise AppCommandError('The extension unload failed')
 
         _log.info(f'unloaded extension {extension}')
@@ -103,10 +130,10 @@ class Developer(commands.Cog, name='developer'):
         except commands.ExtensionNotFound:
             raise AppCommandError(f'The Extension Not Found')
         except Exception as e:
-            _log.error(f'error reloading extension {extension}')
+            _log.error(f'error reloading extension {extension}', exc_info=e)
             raise AppCommandError('The extension reload failed')
-
         _log.info(f'reloaded extension {extension}')
+
         embed = MiadEmbed(description=f"Reload : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
@@ -216,15 +243,24 @@ class Developer(commands.Cog, name='developer'):
         embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
 
         if object_id not in self.bot.db.blacklist:
-            embed.description = f"{bold(object_id)} is not blacklisted."
+            embed.description = f'{bold(object_id)} is not blacklisted.'
             embed.success()
 
         await interaction.followup.send(embed=embed, silent=True)
 
-    # @blacklist.command(name=_T('list'), description=_T('Lists all blacklisted users'))
-    # @owner_only()
-    # async def blacklist_list(self, interaction: Interaction[LatteMaid]):
-    #     await interaction.response.defer(ephemeral=True)
+    @blacklist.command(name=_T('list'), description=_T('Lists all blacklisted users'))
+    @owner_only()
+    async def blacklist_list(self, interaction: Interaction[LatteMaid]):
+        await interaction.response.defer(ephemeral=True)
+
+        blacklists = []
+        async for blacklist in self.bot.db.get_blacklists():
+            blacklists.append(blacklist)
+
+        source = BlackListPageSource(blacklists)
+        pages = BlackListPages(source=source, interaction=interaction)
+
+        await pages.start()
 
 
 async def setup(bot: LatteMaid) -> None:
