@@ -76,7 +76,7 @@ class DatabaseConnection:
 
     # user
 
-    async def create_user(self, *, id: int, locale: str = 'en_US') -> User:
+    async def create_user(self, *, id: int, locale: str = 'en-US') -> User:
         async with self._async_session() as session:
             exist_user = await User.read_by_id(session, id)
             if exist_user:

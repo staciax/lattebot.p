@@ -181,7 +181,9 @@ def bundle_item_e(
     else:
         assert isinstance(item, FeaturedBundleItem)
         if isinstance(item, BundleItemOffer) and (item.discounted_cost != item.cost) and (item.discounted_cost != 0):
-            embed.description += f'{chat.bold(str(item.discounted_cost))} {chat.strikethrough(str(item.cost))}'
+            embed.description += chat.bold(str(item.discounted_cost)) + ' '
+            if item.discounted_cost != item.cost:
+                embed.description += chat.strikethrough(str(item.cost))
         else:
             embed.description += str(item.cost)
 
@@ -475,7 +477,9 @@ class BundleEmbed:
                 bundle=chat.bold(self.bundle.display_name_localized(self.locale) + ' Collection'),
                 emoji=VALORANT_POINT_EMOJI,
                 price=chat.bold(str(self.bundle.discounted_cost)),
-                strikethrough=chat.strikethrough(str(self.bundle.cost)),
+                strikethrough=chat.strikethrough(str(self.bundle.cost))
+                if self.bundle.discounted_cost != self.bundle.cost
+                else '',
                 expires=chat.italics(
                     '(Expires {expires})'.format(
                         expires=format_dt(

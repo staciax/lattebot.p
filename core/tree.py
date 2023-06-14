@@ -60,10 +60,10 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         # if interaction.type is discord.InteractionType.application_command:
         if isinstance(interaction.command, app_commands.Command):
             user_db = await self.client.db.get_user(user_id)
-            if user_db is not None and user_db.locale != interaction.locale.value:
-                self.client.loop.create_task(self.client.db.update_user(id=user_id, locale=interaction.locale.value))
-            else:
+            if user_db is None:
                 self.client.loop.create_task(self.client.db.create_user(id=user_id, locale=interaction.locale.value))
+            elif user_db.locale != interaction.locale.value:
+                self.client.loop.create_task(self.client.db.update_user(id=user_id, locale=interaction.locale.value))
 
         return True
 

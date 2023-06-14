@@ -2,8 +2,11 @@
 asyncpg==0.27.0
 sqlalchemy>=2.0.16
 
+# encryption
+cryptography>=41.0.*
+
 # discord
-discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git
+discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
 jishaku @ git+https://github.com/Gorialis/jishaku.git
 
 # environment
@@ -19,8 +22,6 @@ pygit2==1.12.*
 
 # speedups
 uvloop; sys_platform != 'win32'
-
-# ---  cogs/valorant
 
 # web scraping
 beautifulsoup4==4.12.*

@@ -58,7 +58,7 @@ class DatabaseConnection(_DatabaseConnection):
     def _store_user(self, user: User) -> None:
         self._users[user.id] = user
 
-    async def create_user(self, *, id: int, locale: Any = 'en_US') -> User:
+    async def create_user(self, *, id: int, locale: Any = 'en-US') -> User:
         user = await super().create_user(id=id, locale=str(locale))
         if user is not None and user.id not in self._users:
             self._store_user(user)
@@ -72,7 +72,7 @@ class DatabaseConnection(_DatabaseConnection):
             self._store_user(user)
         return user
 
-    async def get_or_create_user(self, *, id: int, locale: Any = 'en_US') -> User:
+    async def get_or_create_user(self, *, id: int, locale: Any = 'en-US') -> User:
         user = await self.get_user(id)
         if user is None:
             user = await self.create_user(id=id, locale=locale)

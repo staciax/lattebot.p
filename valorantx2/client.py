@@ -38,8 +38,8 @@ Response = Coroutine[Any, Any, T]
 
 # valorantx Client customized for lattemaid
 class Client(valorantx.Client):
-    def __init__(self, bot: Optional[LatteMaid] = None) -> None:
-        self.bot: Optional[LatteMaid] = bot
+    def __init__(self, bot: LatteMaid = MISSING) -> None:
+        self.bot: LatteMaid = bot
         self.locale: Locale = valorantx.Locale.english
         self.loop: asyncio.AbstractEventLoop = _loop
         self.http: HTTPClient = HTTPClient(self.loop)
@@ -124,16 +124,18 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
-        # TODO: cache re-use
-        # try:
-        #     v_user = await self.fetch_user(id=self.bot.owner_id)  # super user
-        # except NoAccountsLinked:
-        #     riot_acc = RiotAuth(self.bot.owner_id, self.bot.support_guild_id, bot=self.bot)
-        #     await riot_acc.authorize(username=self.bot.riot_username, password=self.bot.riot_password)
-        # else:
-        #     riot_acc = v_user.get_account()
-        data = await self.fetch_storefront()
-        return data.bundles
+        # cache re-use
+        for cache in self.fetch_storefront._LRUCacheWrapper__cache.values():  # type: ignore
+            if not cache.fut.done():
+                continue
+            if cache.fut._exception is not None:
+                continue
+            sf = cache.fut.result()
+            if isinstance(sf, StoreFront):
+                return sf.bundles
+
+        storefront = await self.fetch_storefront()
+        return storefront.bundles
 
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required

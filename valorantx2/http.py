@@ -26,9 +26,6 @@ __all__ = (
 
 
 class HTTPClient(ValorantXHTTPClient):
-    if TYPE_CHECKING:
-        riot_auth: RiotAuth
-
     def __init__(self, loop: AbstractEventLoop) -> None:
         super().__init__(loop, region=Region.AsiaPacific)  # default is AsiaPacific
         self.riot_auth: RiotAuth = RiotAuth()

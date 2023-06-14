@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import aiohttp
 import discord
@@ -15,19 +15,22 @@ import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import LatteMaidCog
 from core.errors import AppCommandError
+from core.i18n import _
 from core.utils.database.errors import RiotAccountAlreadyExists
+from core.utils.database.models import User
 from core.utils.useful import MiadEmbed as Embed
 from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
 from valorantx2.errors import RiotMultifactorError
+from valorantx2.utils import locale_converter
 
+from .account_manager import AccountManager
 from .context_menu import ContextMenu
 from .events import Events
 from .notify import Notify
 from .tests.images import StoreImage
 from .ui.modal import RiotMultiFactorModal
 from .ui.views import (
-    AccountManager,
     CarrierView,
     CollectionView,
     FeaturedBundleView,
@@ -76,7 +79,30 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
     async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
-        return await self.valorant_client.fetch_patch_notes(valorantx.utils.locale_converter(locale))
+        return await self.valorant_client.fetch_patch_notes(locale_converter.to_valorant(locale))
+
+    # user
+
+    async def get_user(self, id: int, /) -> Optional[User]:
+        user = await self.bot.db.get_user(id=id)
+
+        if user is None:
+            _log.info(f'User {id} not found in database.')
+            return None
+
+        if len(user.riot_accounts) == 0:
+            raise AppCommandError(_('You have not linked any Riot accounts.'))
+
+        return user
+
+    async def create_user(self, user_id: int, /, locale: discord.Locale) -> User:
+        return await self.bot.db.create_user(id=user_id, locale=locale)
+
+    async def get_or_create_user(self, user_id: int, /, locale: discord.Locale) -> User:
+        user = await self.bot.db.get_user(id=user_id)
+        if user is None:
+            user = await self.create_user(user_id, locale)
+        return user
 
     # app commands
 
@@ -104,7 +130,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         # TODO: website login ?
         # TODO: TOS, privacy policy
 
-        user = await self.bot.db.get_or_create_user(id=interaction.user.id, locale=interaction.locale)
+        user = await self.get_or_create_user(interaction.user.id, locale=interaction.locale)
 
         if len(user.riot_accounts) >= 5:
             raise AppCommandError('You can only link up to 5 accounts.')
@@ -239,16 +265,18 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
-        view = StoreFrontView(interaction, AccountManager(self.bot, interaction.user.id, self.valorant_client))
+        view = StoreFrontView(interaction, AccountManager(user, self.bot))
         await view.callback(interaction)
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
-        view = NightMarketView(interaction, AccountManager(self.bot, interaction.user.id, self.valorant_client), hide)
+        view = NightMarketView(interaction, AccountManager(user, self.bot), hide)
         await view.callback(interaction)
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
@@ -263,10 +291,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer(ephemeral=private)
         wallet = WalletView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
         )
         await wallet.callback(interaction)
 
@@ -274,10 +303,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
             valorantx.RelationType.season,
         )
         await view.callback(interaction)
@@ -286,10 +316,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
             valorantx.RelationType.event,
         )
         await view.callback(interaction)
@@ -298,10 +329,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
         view = MissionView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
         )
         await view.callback(interaction)
 
@@ -309,10 +341,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
         view = CollectionView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
         )
         await view.callback(interaction)
 
@@ -320,10 +353,11 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
             valorantx.RelationType.agent,
         )
         await view.callback(interaction)
@@ -347,13 +381,14 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_long)
     async def carrier(self, interaction: discord.Interaction[LatteMaid], mode: Choice[str] | None = None) -> None:
-        await interaction.response.defer()
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
 
+        await interaction.response.defer()
         queue = mode.value if mode is not None else None
 
         view = CarrierView(
             interaction,
-            AccountManager(self.bot, interaction.user.id, self.valorant_client),
+            AccountManager(user, self.bot),
             queue,
         )
         await view.callback(interaction)

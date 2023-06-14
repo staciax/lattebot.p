@@ -107,9 +107,7 @@ class RiotAuth(RiotAuth_):
                 if e.status == 403 and tries <= 1:  # 403 Forbidden
                     if self.bot is not MISSING:
                         # self.bot.dispatch('re_authorize_forbidden', RiotAuth.RIOT_CLIENT_USER_AGENT)
-                        if self.bot.valorant is None:
-                            continue
-                        version = await self.bot.valorant.valorant_client.valorant_api.fetch_version()
+                        version = await self.bot.valorant_client.valorant_api.fetch_version()
                         RiotAuth.RIOT_CLIENT_USER_AGENT = (
                             f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
                         )

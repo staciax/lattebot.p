@@ -20,7 +20,7 @@ from core.utils.useful import MiadEmbed
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
-_log = logging.getLogger(__file__)
+_log = logging.getLogger(__name__)
 
 # fmt: off
 EXTENSIONS = Literal[

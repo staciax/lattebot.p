@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
-import time
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 import discord
@@ -12,27 +10,35 @@ from discord import ui
 from discord.enums import ButtonStyle
 
 import core.utils.chat_formatting as chat
-import valorantx2 as valorantx
 from core.errors import AppCommandError
 from core.translator import _
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 from core.utils.useful import MiadEmbed as Embed
-from valorantx2.auth import RiotAuth
 from valorantx2.enums import Locale as ValorantLocale, RelationType
 from valorantx2.utils import locale_converter
 
+from ..account_manager import AccountManager
 from . import embeds as e, utils
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from valorantx2.auth import RiotAuth
     from valorantx2.client import Client as ValorantClient
-    from valorantx2.models import RewardValorantAPI
+    from valorantx2.models import (
+        Contract,
+        FeaturedBundle,
+        Gun,
+        GunsLoadout,
+        Loadout,
+        MatchmakingRating,
+        RewardValorantAPI,
+        SpraysLoadout,
+    )
     from valorantx2.models.custom.match import MatchDetails
 
 
 __all__ = (
-    'AccountManager',
     'CollectionView',
     'CarrierView',
     'FeaturedBundleView',
@@ -47,60 +53,6 @@ __all__ = (
 ViewT = TypeVar('ViewT', bound='BaseView')
 
 _log = logging.getLogger(__name__)
-
-
-class AccountManager:
-    def __init__(self, bot: LatteMaid, user_id: int, valorant_client: ValorantClient) -> None:
-        self._bot: LatteMaid = bot
-        self.user_id: int = user_id
-        self.valorant_client: ValorantClient = valorant_client
-        self.first_account: Optional[RiotAuth] = None
-        self._riot_accounts: Dict[str, RiotAuth] = {}
-        self._hide_display_name: bool = False
-        self._ready: asyncio.Event = asyncio.Event()
-
-    async def init(self) -> None:
-        assert self.valorant_client.bot is not None
-        user = await self._bot.db.get_user(self.user_id)
-
-        assert user is not None
-
-        # if user is None:
-        #     _log.info(f'User {self.user_id!r} not found in database. creating new user.')
-        #     user = await self._bot.db.create_user(
-        #         id=self.user_id, locale=discord.Locale.american_english.value
-        #     )  # TODO: change to user's locale
-
-        for index, riot_account in enumerate(sorted(user.riot_accounts, key=lambda x: x.created_at)):
-            riot_auth = RiotAuth.from_db(riot_account)
-            riot_auth.bot = self._bot
-            if time.time() > riot_auth.expires_at:
-                with contextlib.suppress(Exception):
-                    await riot_auth.reauthorize()
-            self._riot_accounts[riot_auth.puuid] = riot_auth
-            if index == 0:
-                self.first_account = riot_auth
-        self._ready.set()
-
-    @property
-    def hide_display_name(self) -> bool:
-        return self._hide_display_name
-
-    @property
-    def riot_accounts(self) -> List[RiotAuth]:
-        return list(self._riot_accounts.values())
-
-    async def wait_until_ready(self) -> None:
-        await self._ready.wait()
-
-    async def fetch_storefront(self, riot_auth: RiotAuth) -> valorantx.StoreFront:
-        return await self.valorant_client.fetch_storefront(riot_auth)
-
-    def is_ready(self) -> bool:
-        return self._ready.is_set()
-
-    def get_riot_account(self, puuid: Optional[str]) -> Optional[RiotAuth]:
-        return self._riot_accounts.get(puuid)  # type: ignore
 
 
 class BaseValorantView(ViewAuthor):
@@ -188,7 +140,7 @@ class BaseSwitchView(BaseValorantView):
         asyncio.create_task(self._initialize())
 
     async def _initialize(self) -> None:
-        await self.account_manager.init()
+        await self.account_manager.wait_until_ready()
         self._build_buttons()
         self._ready.set()
 
@@ -246,7 +198,7 @@ class StoreFrontView(BaseSwitchView):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
             return
 
-        storefront = await self.account_manager.fetch_storefront(riot_auth)
+        storefront = await self.valorant_client.fetch_storefront(riot_auth)
 
         embeds = e.store_e(
             storefront.skins_panel_layout,
@@ -350,7 +302,7 @@ class NightMarketView(BaseSwitchView):
             _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
             return
 
-        storefront = await self.account_manager.fetch_storefront(riot_auth)
+        storefront = await self.valorant_client.fetch_storefront(riot_auth)
 
         if storefront.bonus_store is None:
             raise AppCommandError(f"{chat.bold('Nightmarket')} is not available.")
@@ -431,13 +383,13 @@ class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
 
 
 class FeaturedBundleView(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], valorant_client: ValorantClient):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], valorant_client: ValorantClient) -> None:
         super().__init__(interaction)
-        self.valorant_client = valorant_client
+        self.valorant_client = valorant_client  # interaction.client.valorant_client
         self.selected: bool = False
-        self.bundles: Dict[str, valorantx.FeaturedBundle] = {}
+        self.bundles: Dict[str, FeaturedBundle] = {}
 
-    def build_buttons(self, bundles: List[valorantx.FeaturedBundle]) -> None:
+    def build_buttons(self, bundles: List[FeaturedBundle]) -> None:
         for index, bundle in enumerate(bundles, start=1):
             self.add_item(
                 FeaturedBundleButton(
@@ -471,8 +423,8 @@ class FeaturedBundleView(ViewAuthor):
 
 
 class FeaturedBundlePageSource(ListPageSource['Embed']):
-    def __init__(self, bundle: valorantx.FeaturedBundle, locale: discord.Locale) -> None:
-        self.bundle: valorantx.FeaturedBundle = bundle
+    def __init__(self, bundle: FeaturedBundle, locale: discord.Locale) -> None:
+        self.bundle: FeaturedBundle = bundle
         self.locale: discord.Locale = locale
         self.bundle_embed = e.BundleEmbed(bundle, locale=locale_converter.to_valorant(locale))
         self.embed: Embed = self.bundle_embed.build_banner_embed()
@@ -535,7 +487,7 @@ class FeaturedBundlePageView(LattePages):
 
 
 class GamePassPageSource(ListPageSource['RewardValorantAPI']):
-    def __init__(self, contract: valorantx.Contract, riot_id: str, locale: ValorantLocale) -> None:
+    def __init__(self, contract: Contract, riot_id: str, locale: ValorantLocale) -> None:
         self.embed = e.GamePassEmbed(contract, riot_id, locale=locale)
         super().__init__(contract.content.get_all_rewards(), per_page=1)
 
@@ -602,8 +554,8 @@ class MissionView(BaseSwitchView):
 
 
 class SkinCollectionSource(ListPageSource):
-    def __init__(self, gun_loadout: valorantx.GunsLoadout):
-        def gun_priority(gun: valorantx.Gun) -> int:
+    def __init__(self, gun_loadout: GunsLoadout):
+        def gun_priority(gun: Gun) -> int:
             # page 1
             name = gun.display_name.default.lower()
 
@@ -659,7 +611,7 @@ class SkinCollectionSource(ListPageSource):
     async def format_page(
         self,
         view: SkinCollectionView,
-        entries: List[valorantx.Gun],
+        entries: List[Gun],
     ) -> List[discord.Embed]:
         return [
             e.skin_loadout_e(skin, locale=locale_converter.to_valorant(view.collection_view.locale)) for skin in entries
@@ -715,7 +667,7 @@ class SprayCollectionView(ViewAuthor):
         self.embeds: List[Embed] = []
 
     # @alru_cache(maxsize=5)
-    async def build_embeds(self, spray_loadout: valorantx.SpraysLoadout) -> List[Embed]:
+    async def build_embeds(self, spray_loadout: SpraysLoadout) -> List[Embed]:
         embeds = []
         for slot, spray in enumerate(spray_loadout.to_list(), start=1):
             if spray is None:
@@ -755,15 +707,15 @@ class SprayCollectionView(ViewAuthor):
 class CollectionView(BaseSwitchView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager, row=1)
-        self.loadout: Optional[valorantx.Loadout] = None
-        self.mmr: Optional[valorantx.MatchmakingRating] = None
+        self.loadout: Optional[Loadout] = None
+        self.mmr: Optional[MatchmakingRating] = None
         self.embed: Optional[Embed] = None
         # other views
         self.skin_view = SkinCollectionView(self)
         self.spray_view = SprayCollectionView(self)
 
     @alru_cache(maxsize=5)
-    async def fetch_loudout(self, riot_auth: RiotAuth) -> valorantx.Loadout:
+    async def fetch_loudout(self, riot_auth: RiotAuth) -> Loadout:
         loadout = await self.valorant_client.fetch_loudout(riot_auth)
         return loadout
 
@@ -1000,13 +952,13 @@ class CarrierView(BaseSwitchView, LattePages):
 
 
 class MatchDetailsPageSource(ListPageSource):
-    def __init__(self, match_details: MatchDetails, puuid: str, locale: valorantx.Locale) -> None:
+    def __init__(self, match_details: MatchDetails, puuid: str, locale: ValorantLocale) -> None:
         self.puuid = puuid
         self.locale = locale
         self.match_embed = e.MatchDetailsEmbed(match_details)
         super().__init__(self.build_entries(locale), per_page=1)
 
-    def build_entries(self, locale: valorantx.Locale) -> List[Tuple[Embed, Embed]]:
+    def build_entries(self, locale: ValorantLocale) -> List[Tuple[Embed, Embed]]:
         entries = []
         try:
             desktops, mobiles = self.match_embed.build(self.puuid, locale=locale)
@@ -1043,7 +995,7 @@ class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
         super().__init__(interaction, *args, **kwargs)
         # self.source = source
         self.other_view: Optional[ViewT] = other_view
-        self.valorant_locale: valorantx.Locale = locale_converter.to_valorant(interaction.locale)
+        self.valorant_locale: ValorantLocale = locale_converter.to_valorant(interaction.locale)
         if self.other_view is None:
             self.remove_item(self.back_to_home)
 
