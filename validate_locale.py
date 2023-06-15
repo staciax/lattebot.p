@@ -28,4 +28,4 @@ for file in os.listdir('locales'):
                     except ValueError:
                         print(f'Invalid name: {ctx_menu["name"]!r} in {cog_name} for {file}')
 
-print('No errors found')
+print('process finished')

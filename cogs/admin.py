@@ -12,10 +12,10 @@ from discord.ext import commands
 from core.bot import LatteMaid
 from core.checks import owner_only
 from core.errors import AppCommandError
+from core.ui.embed import MiadEmbed
 from core.utils.chat_formatting import bold, inline
 from core.utils.database.models.blacklist import BlackList
 from core.utils.pages import LattePages, ListPageSource
-from core.utils.useful import MiadEmbed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

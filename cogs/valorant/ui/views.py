@@ -12,9 +12,10 @@ from discord.enums import ButtonStyle
 import core.utils.chat_formatting as chat
 from core.errors import AppCommandError
 from core.translator import _
+from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
-from core.utils.useful import MiadEmbed as Embed
+from valorantx2.auth import RiotAuth
 from valorantx2.enums import Locale as ValorantLocale, RelationType
 from valorantx2.utils import locale_converter
 
@@ -144,6 +145,25 @@ class BaseSwitchView(BaseValorantView):
         self._build_buttons()
         self._ready.set()
 
+    async def format_page(self, riot_auth: RiotAuth) -> Any:
+        ...
+
+    async def _get_kwargs_by_puuid(self, puuid: Optional[str]) -> Dict[str, Any]:
+        riot_auth = self.get_riot_auth(puuid)
+        if riot_auth is None:
+            return {}
+        value = await self.format_page(riot_auth)
+        if isinstance(value, dict):
+            return value
+        elif isinstance(value, str):
+            return {'content': value, 'embed': None}
+        elif isinstance(value, discord.Embed):
+            return {'embed': value, 'content': None}
+        elif isinstance(value, list) and all(isinstance(v, discord.Embed) for v in value):
+            return {'embeds': value, 'content': None}
+        else:
+            return {}
+
     @property
     def valorant_client(self) -> ValorantClient:
         return self.account_manager.valorant_client
@@ -184,29 +204,30 @@ class BaseSwitchView(BaseValorantView):
             await interaction.response.defer()
         await self.wait_until_ready()
 
+        kwargs = await self._get_kwargs_by_puuid(interaction.extras.get('puuid'))
+
+        if self.message is not None:
+            await self.message.edit(**kwargs, view=self)
+            return
+
+        if interaction.response.is_done():
+            self.message = await interaction.followup.send(**kwargs, view=self)
+        else:
+            self.message = await interaction.response.send_message(**kwargs, view=self)
+
 
 class StoreFrontView(BaseSwitchView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
-
-        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
-
-        if riot_auth is None:
-            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
-            return
-
+    async def format_page(self, riot_auth: RiotAuth) -> List[Embed]:
         storefront = await self.valorant_client.fetch_storefront(riot_auth)
-
         embeds = e.store_e(
             storefront.skins_panel_layout,
             riot_id=riot_auth.display_name,
-            locale=locale_converter.to_valorant(interaction.locale),
+            locale=locale_converter.to_valorant(self.locale),
         )
-
-        await self.send(embeds=embeds)
+        return embeds
 
 
 class NightMarketView(BaseSwitchView):
@@ -220,6 +241,69 @@ class NightMarketView(BaseSwitchView):
         self.embeds: Optional[List[Embed]] = None
         self.current_opened: Dict[str, int] = {}
         self.current_author_puuid: Optional[str] = None
+
+    async def format_page(self, riot_auth: RiotAuth) -> List[Embed]:
+        storefront = await self.valorant_client.fetch_storefront(riot_auth)
+
+        if storefront.bonus_store is None:
+            raise AppCommandError(f"{chat.bold('Nightmarket')} is not available.")
+
+        self.front_embed = e.nightmarket_front_e(
+            storefront.bonus_store, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale)
+        )
+        self.embeds = embeds = [
+            e.skin_e(skin, locale=locale_converter.to_valorant(self.locale)) for skin in storefront.bonus_store.skins
+        ]
+
+        if self.hide:
+            self.remove_buttons()
+
+            current_opened = 0
+            if riot_auth.puuid not in self.current_opened:
+                self.current_opened[riot_auth.puuid] = current_opened
+            else:
+                current_opened = self.current_opened[riot_auth.puuid]
+            self.current_author_puuid = riot_auth.puuid
+
+            try:
+                self.__button_is_removed
+            except AttributeError:
+                self.__button_is_removed = False
+
+            if self.__button_is_removed and current_opened < len(self.embeds):
+                self.add_buttons()
+
+            self.prompt_embeds = [
+                e.skin_e_hide(skin, locale=locale_converter.to_valorant(self.locale))
+                for skin in storefront.bonus_store.skins
+            ]
+            embeds2 = []
+            embeds2.extend(self.embeds[:current_opened])
+            embeds2.extend(self.prompt_embeds[current_opened:])
+            embeds2.insert(0, self.front_embed)
+            return embeds2
+        else:
+            self.remove_buttons()
+
+        return embeds
+
+    async def on_timeout(self) -> None:
+        # if self.embeds is None:
+        #     return
+        self.remove_buttons()
+        # embeds = [self.front_embed, *self.embeds]
+        # await self.safe_edit_message(self.message, embeds=embeds, view=self)
+        await super().on_timeout()
+
+    def remove_buttons(self) -> None:
+        self.remove_item(self.open_button)
+        self.remove_item(self.open_all_button)
+        self.__button_is_removed = True
+
+    def add_buttons(self) -> None:
+        self.add_item(self.open_button)
+        self.add_item(self.open_all_button)
+        self.__button_is_removed = False
 
     @ui.button(label="Open Once", style=discord.ButtonStyle.primary)
     async def open_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
@@ -275,94 +359,15 @@ class NightMarketView(BaseSwitchView):
         except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
             pass
 
-    def remove_buttons(self) -> None:
-        self.remove_item(self.open_button)
-        self.remove_item(self.open_all_button)
-        self.__button_is_removed = True
-
-    def add_buttons(self) -> None:
-        self.add_item(self.open_button)
-        self.add_item(self.open_all_button)
-        self.__button_is_removed = False
-
-    async def on_timeout(self) -> None:
-        # if self.embeds is None:
-        #     return
-        self.remove_buttons()
-        # embeds = [self.front_embed, *self.embeds]
-        # await self.safe_edit_message(self.message, embeds=embeds, view=self)
-        await super().on_timeout()
-
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
-
-        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
-
-        if riot_auth is None:
-            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
-            return
-
-        storefront = await self.valorant_client.fetch_storefront(riot_auth)
-
-        if storefront.bonus_store is None:
-            raise AppCommandError(f"{chat.bold('Nightmarket')} is not available.")
-
-        self.front_embed = e.nightmarket_front_e(
-            storefront.bonus_store, riot_auth.display_name, locale=locale_converter.to_valorant(interaction.locale)
-        )
-        self.embeds = embeds = [
-            e.skin_e(skin, locale=locale_converter.to_valorant(interaction.locale))
-            for skin in storefront.bonus_store.skins
-        ]
-
-        if self.hide:
-            self.remove_buttons()
-
-            current_opened = 0
-            if riot_auth.puuid not in self.current_opened:
-                self.current_opened[riot_auth.puuid] = current_opened
-            else:
-                current_opened = self.current_opened[riot_auth.puuid]
-            self.current_author_puuid = riot_auth.puuid
-
-            try:
-                self.__button_is_removed
-            except AttributeError:
-                self.__button_is_removed = False
-
-            if self.__button_is_removed and current_opened < len(self.embeds):
-                self.add_buttons()
-
-            self.prompt_embeds = [
-                e.skin_e_hide(skin, locale=locale_converter.to_valorant(interaction.locale))
-                for skin in storefront.bonus_store.skins
-            ]
-            embeds2 = []
-            embeds2.extend(self.embeds[:current_opened])
-            embeds2.extend(self.prompt_embeds[current_opened:])
-            embeds2.insert(0, self.front_embed)
-            await self.send(embeds=embeds2)
-            return
-
-        await self.send(embeds=embeds)
-
 
 class WalletView(BaseSwitchView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
-
-        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
-
-        if riot_auth is None:
-            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get storefront without account')
-            return
-
+    async def format_page(self, riot_auth: RiotAuth) -> Embed:
         wallet = await self.valorant_client.fetch_wallet(riot_auth)
-        embed = e.wallet_e(wallet, riot_auth.display_name, locale=locale_converter.to_valorant(interaction.locale))
-        await self.send(embed=embed)
+        embed = e.wallet_e(wallet, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale))
+        return embed
 
 
 class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
@@ -536,18 +541,10 @@ class MissionView(BaseSwitchView):
         super().__init__(interaction, account_manager)
         # self.row = 1
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
-
-        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
-        if riot_auth is None:
-            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
-            return
-
+    async def format_page(self, riot_auth: RiotAuth) -> Embed:
         contracts = await self.valorant_client.fetch_contracts(riot_auth)
-
-        embed = e.mission_e(contracts, riot_auth.display_name, locale=locale_converter.to_valorant(interaction.locale))
-        await self.send(embed=embed)
+        embed = e.mission_e(contracts, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale))
+        return embed
 
 
 # collection
@@ -714,6 +711,18 @@ class CollectionView(BaseSwitchView):
         self.skin_view = SkinCollectionView(self)
         self.spray_view = SprayCollectionView(self)
 
+    async def format_page(self, riot_auth: RiotAuth) -> Embed:
+        self.loadout = loadout = await self.fetch_loudout(riot_auth)
+        # self.mmr = mmr = await self.fetch_mmr(riot_auth)
+
+        self.embed = embed = e.collection_front_e(
+            loadout,
+            # mmr,
+            riot_auth.display_name,
+            locale=locale_converter.to_valorant(self.locale),
+        )
+        return embed
+
     @alru_cache(maxsize=5)
     async def fetch_loudout(self, riot_auth: RiotAuth) -> Loadout:
         loadout = await self.valorant_client.fetch_loudout(riot_auth)
@@ -723,25 +732,6 @@ class CollectionView(BaseSwitchView):
     # async def fetch_mmr(self, riot_auth: RiotAuth) -> valorantx.MatchmakingRating:
     #     mmr = await self.valorant_client.fetch_mmr(riot_auth=riot_auth)
     #     return mmr
-
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
-
-        riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
-        if riot_auth is None:
-            _log.error(f'user {interaction.user}({interaction.user.id}) tried to get gamepass without account')
-            return
-
-        self.loadout = loadout = await self.fetch_loudout(riot_auth)
-        # self.mmr = mmr = await self.fetch_mmr(riot_auth)
-
-        self.embed = embed = e.collection_front_e(
-            loadout,
-            # mmr,
-            riot_auth.display_name,
-            locale=locale_converter.to_valorant(interaction.locale),
-        )
-        await self.send(embed=embed)
 
     async def on_timeout(self) -> None:
         await self.fetch_loudout.cache_close()
@@ -929,7 +919,9 @@ class CarrierView(BaseSwitchView, LattePages):
     #     await self.start_pages()
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await super().callback(interaction)
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+        await self.wait_until_ready()
 
         riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
         if riot_auth is None:

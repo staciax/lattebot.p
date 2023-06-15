@@ -12,8 +12,6 @@ __all__ = (
 class DatabaseBaseError(Exception):
     """Base class for all database errors."""
 
-    pass
-
 
 class UserAlreadyExists(DatabaseBaseError):
     """Raised when a user already exists in the database."""

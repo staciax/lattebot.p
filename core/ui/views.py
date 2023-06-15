@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import discord
 from discord import Interaction, ui
@@ -76,7 +76,7 @@ class BaseView(ui.View):
         """
         pass
 
-    def disable_all_items(self, *, exclusions: Optional[List[ui.Item]] = None) -> Self:
+    def disable_all_items(self, *, exclusions: List[Union[ui.Button, ui.Select]] = []) -> Self:
         """
         Disables all items in the view.
 
@@ -86,11 +86,11 @@ class BaseView(ui.View):
             A list of items in `self.children` to not disable from the view.
         """
         for child in self.children:
-            if exclusions is not None or child not in exclusions:
+            if isinstance(child, (ui.Button, ui.Select)) and child in exclusions:
                 child.disabled = True
         return self
 
-    def enable_all_items(self, *, exclusions: Optional[List[ui.Item]] = None) -> Self:
+    def enable_all_items(self, *, exclusions: List[Union[ui.Button, ui.Select]] = []) -> Self:
         """
         Enables all items in the view.
 
@@ -100,31 +100,35 @@ class BaseView(ui.View):
             A list of items in `self.children` to not enable from the view.
         """
         for child in self.children:
-            if exclusions is not None or child not in exclusions:
+            if isinstance(child, (ui.Button, ui.Select)) and child in exclusions:
                 child.disabled = False
         return self
 
     # --- end of code from pycord ---
 
-    def disable_items(self, cls: Optional[Type[ui.Item]] = None) -> Self:
-        for item in self.children:
-            if cls is not None:
-                if isinstance(item, cls):
-                    item.disabled = True
+    def disable_items(self) -> Self:
+        for child in self.children:
+            if isinstance(child, (ui.Button, ui.Select)):
+                child.disabled = True
         return self
 
-    def remove_item_by_type(self, *, cls: Optional[Type[ui.Item]] = None) -> Self:
+    def remove_item_by_type(self, cls_: Any) -> Self:
         for item in self.children:
-            if cls is not None:
-                if isinstance(item, cls):
-                    self.remove_item(item)
+            if isinstance(item, Any):
+                self.remove_item(item)
         return self
 
     def disable_buttons(self) -> Self:
-        return self.disable_items(ui.Button)
+        for child in self.children:
+            if isinstance(child, ui.Button):
+                child.disabled = True
+        return self
 
     def disable_selects(self) -> Self:
-        return self.disable_items(ui.Select)
+        for child in self.children:
+            if isinstance(child, ui.Select):
+                child.disabled = True
+        return self
 
     def add_items(self, *items: ui.Item) -> Self:
         for item in items:

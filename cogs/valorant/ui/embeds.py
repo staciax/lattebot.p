@@ -8,7 +8,7 @@ from discord.utils import format_dt
 
 import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
-from core.utils.useful import MiadEmbed as Embed
+from core.ui.embed import MiadEmbed as Embed
 from valorantx2.emojis import VALORANT_POINT_EMOJI
 from valorantx2.enums import GameModeURL, Locale as ValorantLocale, MissionType, RelationType, RoundResultCode
 from valorantx2.models import (

@@ -6,7 +6,7 @@ import discord
 from discord.app_commands import AppCommandError as DiscordAppCommandError
 
 if TYPE_CHECKING:
-    from discord.ui import View
+    from discord.ui import Modal, View
 
 
 class LatteMaidError(DiscordAppCommandError):
@@ -16,6 +16,7 @@ class LatteMaidError(DiscordAppCommandError):
         self,
         message: Optional[str] = None,
         view: Optional[View] = None,
+        modal: Optional[Modal] = None,
         ephemeral: bool = True,
         delete_after: Optional[float] = None,
         *args: Any,
@@ -24,6 +25,7 @@ class LatteMaidError(DiscordAppCommandError):
         super().__init__(message, *args)
         self.message: Optional[str] = message
         self.view: Optional[View] = view
+        self.modal: Optional[Modal] = modal
         self.ephemeral: bool = ephemeral
         self.delete_after: Optional[float] = delete_after
         self.extras: Dict[Any, Any] = kwargs

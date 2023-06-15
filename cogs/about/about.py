@@ -19,7 +19,8 @@ from discord.ext import commands
 from discord.utils import format_dt
 
 from core.checks import cooldown_short
-from core.utils.useful import MiadEmbed, count_python
+from core.ui.embed import MiadEmbed
+from core.utils.useful import count_python
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -90,7 +91,7 @@ class About(commands.Cog, name='about'):
 
         e = self.bot.emoji
 
-        core_dev = await self.bot.dev or self.bot.owner
+        core_dev = self.bot.owner
         guild_count = len(self.bot.guilds)
         channel_count = len(list(self.bot.get_all_channels()))
         member_count = sum(guild.member_count for guild in self.bot.guilds if guild.member_count is not None)

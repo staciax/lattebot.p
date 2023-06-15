@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
 
 import discord
 from discord import Locale
@@ -41,8 +41,8 @@ class I18n:
     # async def unload(self) -> None:
     #     _log.info('unloaded')
 
-    # def __call__(self, untranslated: str) -> locale_str:
-    #     return locale_str(untranslated)
+    def __call__(self, untranslated: str) -> str:
+        return untranslated
 
     @staticmethod
     def _load_file(path: str, locale: Locale) -> Internationalization:
@@ -115,13 +115,17 @@ class I18n:
     def get_string(
         cls,
         untranslate: str,
-        locale: Optional[discord.Locale] = None,
+        locale: Optional[Union[discord.Locale, str]] = None,
         *,
         custom_id: Optional[str] = None,
     ) -> str:
         locale = locale or cls.__current_locale__
         key = custom_id or untranslate
+
+        if isinstance(locale, str):
+            locale = discord.Locale(locale)
+
         return cls.__strings__[locale].get(key, untranslate)
 
 
-_: Callable[[str], str] = I18n.get_string
+_ = I18n.get_string

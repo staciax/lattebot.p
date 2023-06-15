@@ -12,9 +12,9 @@ from discord.ext import commands
 
 from core.checks import cooldown_short
 from core.translator import _
+from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
-from core.utils.useful import MiadEmbed as Embed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -68,15 +68,16 @@ class CogButton(ui.Button['HelpCommand']):
     ) -> List[Union[AppCommand, AppCommandGroup]]:
         assert self.view is not None
         app_command_list = []
-        for c_app in cog_app_commands:
-            for f_app in self.view.interaction.client.get_app_commands():
-                if isinstance(f_app, app_commands.AppCommand):
-                    if c_app.qualified_name.lower() == f_app.name.lower():
-                        if [option for option in f_app.options if isinstance(option, Argument)] or (
-                            not len(f_app.options)
+        for cog_app in cog_app_commands:
+            for app_cmd in self.view.bot.get_app_commands():
+                if isinstance(app_cmd, AppCommand):
+                    if cog_app.qualified_name.lower() == app_cmd.name.lower():
+                        if [option for option in app_cmd.options if isinstance(option, Argument)] or (
+                            not len(app_cmd.options)
                         ):
-                            app_command_list.append(f_app)
-                        for option in f_app.options:
+                            app_command_list.append(app_cmd)
+
+                        for option in app_cmd.options:
                             if isinstance(option, AppCommandGroup):
                                 app_command_list.append(option)
 

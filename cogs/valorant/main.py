@@ -16,9 +16,9 @@ from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_
 from core.cog import LatteMaidCog
 from core.errors import AppCommandError
 from core.i18n import _
+from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.database.models import User
-from core.utils.useful import MiadEmbed as Embed
 from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
 from valorantx2.errors import RiotMultifactorError
@@ -90,8 +90,8 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
             _log.info(f'User {id} not found in database.')
             return None
 
-        if len(user.riot_accounts) == 0:
-            raise AppCommandError(_('You have not linked any Riot accounts.'))
+        # if len(user.riot_accounts) == 0:
+        #     raise AppCommandError(_('You have not linked any riot accounts.', user.locale))
 
         return user
 
@@ -99,7 +99,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         user = await self.get_user(id)
         if user is None:
             await self.bot.db.create_user(id, locale=locale)
-            raise AppCommandError(_('You have not linked any Riot accounts.'))
+            raise AppCommandError(_('You have not linked any riot accounts.', locale))
 
         return user
 
@@ -129,7 +129,9 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         # TODO: website login ?
         # TODO: TOS, privacy policy
 
-        user = await self.get_or_create_user(interaction.user.id, locale=interaction.locale)
+        user = await self.get_user(interaction.user.id)
+        if user is None:
+            user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
 
         if len(user.riot_accounts) >= 5:
             raise AppCommandError('You can only link up to 5 accounts.')

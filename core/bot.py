@@ -140,15 +140,14 @@ class LatteMaid(commands.AutoShardedBot):
         return self.bot_app_info.owner
 
     @property
-    async def dev(self) -> Optional[discord.User]:
-        """Returns discord.User of the owner"""
-        return await self.fetch_user(self.owner_id)  # type: ignore
-
-    @property
     def support_guild(self) -> Optional[discord.Guild]:
         if self.support_guild_id is None:
             raise ValueError('Support guild ID is not set.')
         return self.get_guild(self.support_guild_id)
+
+    @discord.utils.cached_property
+    def traceback_log(self) -> Optional[discord.TextChannel]:
+        return self.get_channel(1102897424235761724)  # type: ignore
 
     def is_maintenance(self) -> bool:
         return self._is_maintenance
