@@ -99,7 +99,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         user = await self.get_user(id)
         if user is None:
             await self.bot.db.create_user(id, locale=locale)
-            raise AppCommandError(_('You have not linked any riot accounts.', locale))
+            raise AppCommandError(_('You have not linked any riot accounts.', 0, locale))
 
         return user
 

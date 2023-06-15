@@ -11,7 +11,7 @@ from discord.enums import ButtonStyle
 
 import core.utils.chat_formatting as chat
 from core.errors import AppCommandError
-from core.translator import _
+from core.i18n import _
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
@@ -73,7 +73,7 @@ class BaseValorantView(ViewAuthor):
             try:
                 self.message = await self.interaction.original_response()
             except (discord.errors.HTTPException, discord.errors.ClientException, discord.errors.NotFound) as e:
-                _log.warning("failed to get original response", exc_info=e)
+                _log.warning('failed to get original response', exc_info=e)
                 return
 
         self.disable_buttons()
@@ -86,7 +86,7 @@ class BaseValorantView(ViewAuthor):
         try:
             msg = await message.edit(**kwargs)
         except (discord.errors.HTTPException, discord.errors.Forbidden) as e:
-            _log.warning("failed to edit message", exc_info=e)
+            _log.warning('failed to edit message', exc_info=e)
             return None
         else:
             return msg
@@ -99,7 +99,7 @@ class BaseValorantView(ViewAuthor):
             await self.safe_edit_message(self.message, **kwargs, view=self)
 
 
-class ButtonAccountSwitch(ui.Button['BaseSwitchView']):
+class ButtonAccountSwitch(ui.Button['BaseSwitchAccountView']):
     def __init__(
         self,
         *,
@@ -127,7 +127,7 @@ class ButtonAccountSwitch(ui.Button['BaseSwitchView']):
             await self.view.callback(interaction)
 
 
-class BaseSwitchView(BaseValorantView):
+class BaseSwitchAccountView(BaseValorantView):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -174,7 +174,7 @@ class BaseSwitchView(BaseValorantView):
                 self.row += 1
             self.add_item(
                 ButtonAccountSwitch(
-                    label="Account #" + str(index) if self.account_manager.hide_display_name else acc.display_name,
+                    label='Account #' + str(index) if self.account_manager.hide_display_name else acc.display_name,
                     disabled=(index == 1),
                     custom_id=acc.puuid,
                     row=self.row,
@@ -216,7 +216,7 @@ class BaseSwitchView(BaseValorantView):
             self.message = await interaction.response.send_message(**kwargs, view=self)
 
 
-class StoreFrontView(BaseSwitchView):
+class StoreFrontView(BaseSwitchAccountView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
@@ -230,7 +230,7 @@ class StoreFrontView(BaseSwitchView):
         return embeds
 
 
-class NightMarketView(BaseSwitchView):
+class NightMarketView(BaseSwitchAccountView):
     def __init__(
         self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager, hide: bool
     ) -> None:
@@ -246,7 +246,7 @@ class NightMarketView(BaseSwitchView):
         storefront = await self.valorant_client.fetch_storefront(riot_auth)
 
         if storefront.bonus_store is None:
-            raise AppCommandError(f"{chat.bold('Nightmarket')} is not available.")
+            raise AppCommandError(f'{chat.bold("Nightmarket")} is not available.')
 
         self.front_embed = e.nightmarket_front_e(
             storefront.bonus_store, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale)
@@ -305,7 +305,7 @@ class NightMarketView(BaseSwitchView):
         self.add_item(self.open_all_button)
         self.__button_is_removed = False
 
-    @ui.button(label="Open Once", style=discord.ButtonStyle.primary)
+    @ui.button(label='Open Once', style=discord.ButtonStyle.primary)
     async def open_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         await interaction.response.defer()
         assert self.message is not None
@@ -337,7 +337,7 @@ class NightMarketView(BaseSwitchView):
             assert self.current_author_puuid in self.current_opened
             self.current_opened[self.current_author_puuid] = current_opened
 
-    @ui.button(label="Open All", style=discord.ButtonStyle.primary)
+    @ui.button(label='Open All', style=discord.ButtonStyle.primary)
     async def open_all_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         await interaction.response.defer()
         assert self.message is not None
@@ -360,7 +360,7 @@ class NightMarketView(BaseSwitchView):
             pass
 
 
-class WalletView(BaseSwitchView):
+class WalletView(BaseSwitchAccountView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
@@ -501,7 +501,7 @@ class GamePassPageSource(ListPageSource['RewardValorantAPI']):
         return self.embed.build_page_embed(menu.current_page, reward, locale=locale_converter.to_valorant(menu.locale))
 
 
-class GamePassView(BaseSwitchView, LattePages):
+class GamePassView(BaseSwitchAccountView, LattePages):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -536,7 +536,7 @@ class GamePassView(BaseSwitchView, LattePages):
         await self.start(page_number=contract.current_level)
 
 
-class MissionView(BaseSwitchView):
+class MissionView(BaseSwitchAccountView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
         # self.row = 1
@@ -624,6 +624,7 @@ class SkinCollectionView(ViewAuthor, LattePages):
         super().__init__(collection_view.interaction, timeout=600.0)
         self.collection_view = collection_view
         self.compact = True
+        self.back.label = _('Back', 0, self.locale)
 
     def fill_items(self) -> None:
         super().fill_items()
@@ -662,6 +663,7 @@ class SprayCollectionView(ViewAuthor):
         super().__init__(collection_view.interaction, timeout=600)
         self.collection_view = collection_view
         self.embeds: List[Embed] = []
+        self.back.label = _('Back', 0, self.locale)
 
     # @alru_cache(maxsize=5)
     async def build_embeds(self, spray_loadout: SpraysLoadout) -> List[Embed]:
@@ -701,7 +703,7 @@ class SprayCollectionView(ViewAuthor):
         await self.collection_view.message.edit(embeds=self.embeds, view=self)
 
 
-class CollectionView(BaseSwitchView):
+class CollectionView(BaseSwitchAccountView):
     def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager, row=1)
         self.loadout: Optional[Loadout] = None
@@ -710,6 +712,9 @@ class CollectionView(BaseSwitchView):
         # other views
         self.skin_view = SkinCollectionView(self)
         self.spray_view = SprayCollectionView(self)
+
+        self.skin_button.label = _('Skins', 0, self.locale)
+        self.spray_button.label = _('Sprays', 0, self.locale)
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         self.loadout = loadout = await self.fetch_loudout(riot_auth)
@@ -738,13 +743,13 @@ class CollectionView(BaseSwitchView):
         # await self.fetch_mmr.cache_close()
         return await super().on_timeout()
 
-    @ui.button(label=_('Skin'), style=ButtonStyle.blurple)
-    async def skin(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+    @ui.button(label=_('Skins'), style=ButtonStyle.blurple)
+    async def skin_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         await interaction.response.defer()
         await self.skin_view.start_view()
 
-    @ui.button(label=_('Spray'), style=ButtonStyle.blurple)
-    async def spray(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
+    @ui.button(label=_('Sprays'), style=ButtonStyle.blurple)
+    async def spray_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         await interaction.response.defer()
         await self.spray_view.start_view()
 
@@ -754,7 +759,10 @@ class CollectionView(BaseSwitchView):
 
 class SelectMatchHistory(ui.Select['CarrierView']):
     def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        super().__init__(placeholder=_("Select Match to see details"), max_values=1, min_values=1, row=1)
+        super().__init__(
+            placeholder=_('Select Match to see details', 0, interaction.locale), max_values=1, min_values=1, row=1
+        )
+        self.interaction = interaction
         self._source: Dict[str, MatchDetails] = {}
         self.puuid: str = ''
         self.match_details_view = MatchDetailsView(interaction, self.view)
@@ -800,7 +808,7 @@ class SelectMatchHistory(ui.Select['CarrierView']):
 
     def add_dummy(self) -> None:
         self.clear()
-        self.add_option(label=_('No Match History'), value='0', emoji='📭')
+        self.add_option(label=_('No Match History', 0, self.interaction.locale), value='0', emoji='📭')
         self.disabled = True
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
@@ -846,7 +854,7 @@ class CarrierPageSource(ListPageSource):
             # no match history
             if len(entries) == 0:
                 child.add_dummy()
-                return Embed(description=_('No Match History')).warning()
+                return Embed(description=_('No Match History', 0, menu.locale)).warning()
             # build pages
             for match in entries:
                 embeds.append(
@@ -862,7 +870,7 @@ class CarrierPageSource(ListPageSource):
         return embeds
 
 
-class CarrierView(BaseSwitchView, LattePages):
+class CarrierView(BaseSwitchAccountView, LattePages):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -981,18 +989,14 @@ class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
         # source: MatchDetailsPageSource,
         interaction: discord.Interaction[LatteMaid],
         other_view: Optional[ViewT] = None,
-        *args: Any,
-        **kwargs: Any,
     ) -> None:
-        super().__init__(interaction, *args, **kwargs)
+        super().__init__(interaction)
         # self.source = source
         self.other_view: Optional[ViewT] = other_view
         self.valorant_locale: ValorantLocale = locale_converter.to_valorant(interaction.locale)
         if self.other_view is None:
             self.remove_item(self.back_to_home)
-
-    def is_on_mobile(self) -> bool:
-        return self.__view_on_mobile__
+        self.back_to_home.label = _('Back to Home', 0, self.locale)
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
         if await super().interaction_check(interaction):
@@ -1000,13 +1004,16 @@ class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
             return True
         return False
 
+    def is_on_mobile(self) -> bool:
+        return self.__view_on_mobile__
+
     @ui.button(emoji='🖥️', style=ButtonStyle.green, custom_id='mobile', row=0)
     async def toggle_ui(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         button.emoji = '🖥️' if self.is_on_mobile() else '📱'
         self.__view_on_mobile__ = not self.is_on_mobile()
         await self.show_checked_page(interaction, 0)
 
-    @ui.button(label=_("Home"), style=ButtonStyle.green, custom_id='home_button')
+    @ui.button(label=_('Home'), style=ButtonStyle.green, custom_id='home_button')
     async def back_to_home(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         await interaction.response.defer()
 

@@ -25,9 +25,8 @@ _translators: List[I18n] = []
 
 class I18n:
     # _localize_file = lru_cache(maxsize=1)(lambda self, locale: self._load_file(locale))
-    __current_locale__: discord.Locale = discord.Locale.american_english
-    __translations__: Dict[str, Any] = {str(locale): {} for locale in Locale}
-    __strings__: Dict[discord.Locale, Dict[str, Any]] = {locale: {} for locale in discord.Locale}
+    # __translations__: Dict[str, Any] = {str(locale): {} for locale in Locale}
+    __strings__: Dict[discord.Locale, Dict[int, str]] = {locale: {} for locale in discord.Locale}
     __user_locale__: Dict[int, discord.Locale] = {}
 
     def __init__(self, bot: LatteMaid) -> None:
@@ -66,7 +65,7 @@ class I18n:
         except FileNotFoundError:
             _log.warning(f'File {fp!r} not found')
 
-    def set_locale(self, interaction: discord.Interaction) -> None:
+    def set_user_locale(self, interaction: discord.Interaction[LatteMaid]) -> None:
         I18n.__user_locale__[interaction.user.id] = interaction.locale
 
     # def load_translations(self):
@@ -109,23 +108,29 @@ class I18n:
             data = self._load_file(os.path.join(os.getcwd(), os.path.join('locale', 'string')), locale)
             strings = data.get('strings', {})
             for k, v in strings.items():
-                I18n.__strings__[locale][k] = v
+                I18n.__strings__[locale][int(k)] = v
 
     @classmethod
     def get_string(
         cls,
         untranslate: str,
+        custom_id: Optional[int] = None,
         locale: Optional[Union[discord.Locale, str]] = None,
-        *,
-        custom_id: Optional[str] = None,
     ) -> str:
-        locale = locale or cls.__current_locale__
-        key = custom_id or untranslate
+        if custom_id is None and locale is None:
+            return untranslate
+
+        # TODO: something to update in file
+
+        locale = locale or discord.Locale.american_english
 
         if isinstance(locale, str):
             locale = discord.Locale(locale)
 
-        return cls.__strings__[locale].get(key, untranslate)
+        locale_strings = I18n.__strings__.get(locale)
+        if locale_strings is not None:
+            return locale_strings.get(custom_id, untranslate)  # type: ignore
+        return untranslate
 
 
 _ = I18n.get_string

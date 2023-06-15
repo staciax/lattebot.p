@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import contextlib
+# import contextlib
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
@@ -75,7 +75,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         #     return False
 
         # if interaction.type is discord.InteractionType.application_command:
-        if isinstance(interaction.command, app_commands.Command):
+        if isinstance(interaction.command, app_commands.Command):  # TODO: context menu support
             user_db = await self.client.db.get_user(user_id)
             if user_db is None:
                 self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
