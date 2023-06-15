@@ -12,10 +12,8 @@ if DATABASE_URI_TEST is None:
     raise EnvironmentError('DATABASE_URI_TEST is not set')
 
 
-db = DatabaseConnection(DATABASE_URI_TEST)
-
-
 async def main():
+    db = DatabaseConnection(DATABASE_URI_TEST)
     await db.initialize(drop_table=True)
 
 

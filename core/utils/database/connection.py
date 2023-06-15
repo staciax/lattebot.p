@@ -43,12 +43,11 @@ class DatabaseConnection:
     def is_closed(self) -> bool:
         return self._is_closed
 
-    async def initialize(self, drop_table: bool = True) -> None:
+    async def initialize(self, drop_table: bool = False) -> None:
         self._async_engine = create_async_engine(self.__uri, echo=self._echo)
         self._async_session = async_sessionmaker(self._async_engine, expire_on_commit=False, autoflush=False)
         await self._create_tables(drop=drop_table)
         self._ready.set()
-        del self.__uri  # delete uri to prevent accidental use
         self._log.info('database connection initialized')
 
     async def _create_tables(self, drop: bool = False) -> None:
@@ -76,7 +75,7 @@ class DatabaseConnection:
 
     # user
 
-    async def create_user(self, *, id: int, locale: str = 'en-US') -> User:
+    async def create_user(self, id: int, *, locale: str = 'en-US') -> User:
         async with self._async_session() as session:
             exist_user = await User.read_by_id(session, id)
             if exist_user:
@@ -86,7 +85,7 @@ class DatabaseConnection:
             self._log.info(f'created user with id {id!r}')
             return user
 
-    async def get_user(self, id: int) -> Optional[User]:
+    async def get_user(self, id: int, /) -> Optional[User]:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             return user
@@ -96,7 +95,7 @@ class DatabaseConnection:
             async for user in User.read_all(session):
                 yield user
 
-    async def update_user(self, id: int, locale: str) -> bool:
+    async def update_user(self, id: int, *, locale: str) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
@@ -112,7 +111,7 @@ class DatabaseConnection:
                 self._log.info(f'updated user with id {id!r} to locale {locale!r}')
                 return True
 
-    async def delete_user(self, id: int) -> bool:
+    async def delete_user(self, id: int, /) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
@@ -130,7 +129,7 @@ class DatabaseConnection:
 
     # blacklist
 
-    async def create_blacklist(self, *, id: int, reason: Optional[str] = None) -> BlackList:
+    async def create_blacklist(self, id: int, *, reason: Optional[str] = None) -> BlackList:
         async with self._async_session() as session:
             exist_blacklist = await BlackList.read_by_id(session, id)
             if exist_blacklist:
@@ -140,7 +139,7 @@ class DatabaseConnection:
             self._log.info(f'created blacklist with id {id!r}')
             return blacklist
 
-    async def get_blacklist(self, id: int) -> Optional[BlackList]:
+    async def get_blacklist(self, id: int, /) -> Optional[BlackList]:
         async with self._async_session() as session:
             stmt = select(BlackList).where(BlackList.id == id)
             result = await session.execute(stmt)
@@ -151,7 +150,7 @@ class DatabaseConnection:
             async for blacklist in BlackList.read_all(session):
                 yield blacklist
 
-    async def delete_blacklist(self, id: int) -> None:
+    async def delete_blacklist(self, id: int, /) -> None:
         async with self._async_session() as session:
             blacklist = await BlackList.read_by_id(session, id)
             if not blacklist:
@@ -242,9 +241,9 @@ class DatabaseConnection:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             return riot_account
 
-    async def get_riot_accounts_by_puuid_and_owner_id(self, owner_id: int) -> AsyncIterator[RiotAccount]:
+    async def get_riot_accounts_by_puuid_and_owner_id(self, id: int, /) -> AsyncIterator[RiotAccount]:
         async with self._async_session() as session:
-            async for riot_account in RiotAccount.read_all_by_owner_id(session, owner_id):
+            async for riot_account in RiotAccount.read_all_by_owner_id(session, id):
                 yield riot_account
 
     async def get_riot_accounts(self) -> AsyncIterator[RiotAccount]:

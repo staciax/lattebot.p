@@ -84,7 +84,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     # user
 
     async def get_user(self, id: int, /) -> Optional[User]:
-        user = await self.bot.db.get_user(id=id)
+        user = await self.bot.db.get_user(id)
 
         if user is None:
             _log.info(f'User {id} not found in database.')
@@ -95,13 +95,12 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
 
         return user
 
-    async def create_user(self, user_id: int, /, locale: discord.Locale) -> User:
-        return await self.bot.db.create_user(id=user_id, locale=locale)
-
-    async def get_or_create_user(self, user_id: int, /, locale: discord.Locale) -> User:
-        user = await self.bot.db.get_user(id=user_id)
+    async def get_or_create_user(self, id: int, /, locale: discord.Locale) -> User:
+        user = await self.get_user(id)
         if user is None:
-            user = await self.create_user(user_id, locale)
+            await self.bot.db.create_user(id, locale=locale)
+            raise AppCommandError(_('You have not linked any Riot accounts.'))
+
         return user
 
     # app commands
@@ -191,6 +190,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         # TODO: encrypt token before saving
         try:
             await self.bot.db.create_riot_account(
+                interaction.user.id,
                 puuid=riot_auth.puuid,
                 game_name=riot_auth.game_name,
                 tag_line=riot_auth.tag_line,
@@ -202,7 +202,6 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
                 access_token=riot_auth.access_token,  # type: ignore
                 entitlements_token=riot_auth.entitlements_token,  # type: ignore
                 ssid=riot_auth.get_ssid(),
-                owner_id=interaction.user.id,
             )
         except RiotAccountAlreadyExists:
             raise AppCommandError('You already have this account linked.')
@@ -230,7 +229,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
             await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
             _log.info(f'{interaction.user} logged out all accounts')
         else:
-            puuid, riot_id = puuid.split(':')
+            puuid, riot_id = puuid.split(';')
             e.description = f'Successfully logged out account {chat.bold(riot_id)}'
             await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
             _log.info(f'{interaction.user}({interaction.user.id}) logged out account {riot_id}({puuid})')
@@ -244,7 +243,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     async def logout_autocomplete(
         self, interaction: discord.Interaction[LatteMaid], current: str
     ) -> List[app_commands.Choice[str]]:
-        user = await self.bot.db.get_user(id=interaction.user.id)
+        user = await self.bot.db.get_user(interaction.user.id)
         if user is None:
             return []
 
@@ -254,7 +253,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         return [
             app_commands.Choice(
                 name=f'{account.game_name}#{account.tag_line}',
-                value=account.puuid + ':' + f'{account.game_name}#{account.tag_line}',
+                value=account.puuid + ';' + f'{account.game_name}#{account.tag_line}',
             )
             for account in user.riot_accounts
         ]
@@ -412,7 +411,9 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_medium)
     async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
-        ...
+        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+
+        await interaction.response.defer()
 
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     @app_commands.guild_only()

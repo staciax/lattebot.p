@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, AsyncIterator, List, Optional
 
-from sqlalchemy import String, select
+from sqlalchemy import String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,7 +30,7 @@ class User(Base):
     blacklist: Mapped[Optional[BlackList]] = relationship(
         'BlackList',
         back_populates='maybe_user',
-        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan', 
         lazy='joined',
     )
     app_command_uses: Mapped[List[AppCommand]] = relationship(
@@ -87,5 +87,7 @@ class User(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, user: Self) -> None:
-        await session.delete(user)
+        stmt = delete(cls).where(cls.id == user.id)
+        # await session.delete(user)
+        await session.execute(stmt)
         await session.flush()

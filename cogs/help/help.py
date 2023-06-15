@@ -69,8 +69,8 @@ class CogButton(ui.Button['HelpCommand']):
         assert self.view is not None
         app_command_list = []
         for c_app in cog_app_commands:
-            for f_app in self.view.interaction.client.app_commands:
-                if f_app.type == discord.AppCommandType.chat_input:
+            for f_app in self.view.interaction.client.get_app_commands():
+                if isinstance(f_app, app_commands.AppCommand):
                     if c_app.qualified_name.lower() == f_app.name.lower():
                         if [option for option in f_app.options if isinstance(option, Argument)] or (
                             not len(f_app.options)

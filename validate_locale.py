@@ -16,6 +16,10 @@ for file in os.listdir('locales'):
                     except ValueError:
                         print(f'Invalid name: {app_cmd["name"]!r} in {cog_name} for {file}')
 
+                    if app_cmd['description'] != '...':
+                        if len(app_cmd['description']) < 1 or len(app_cmd['description']) > 100:
+                            print(f'Invalid description: {app_cmd["description"]!r} in {cog_name} for {file}')
+
             # context menus
             for cog_name, cog_data in data['context_menus'].items():
                 for ctx_menu in cog_data.values():

@@ -58,13 +58,13 @@ class DatabaseConnection(_DatabaseConnection):
     def _store_user(self, user: User) -> None:
         self._users[user.id] = user
 
-    async def create_user(self, *, id: int, locale: Any = 'en-US') -> User:
-        user = await super().create_user(id=id, locale=str(locale))
+    async def create_user(self, id: int, *, locale: Any = 'en-US') -> User:
+        user = await super().create_user(id, locale=str(locale))
         if user is not None and user.id not in self._users:
             self._store_user(user)
         return user
 
-    async def get_user(self, id: int) -> Optional[User]:
+    async def get_user(self, id: int, /) -> Optional[User]:
         if id in self._users:
             return self._users[id]
         user = await super().get_user(id)
@@ -72,10 +72,10 @@ class DatabaseConnection(_DatabaseConnection):
             self._store_user(user)
         return user
 
-    async def get_or_create_user(self, *, id: int, locale: Any = 'en-US') -> User:
+    async def get_or_create_user(self, id: int, /, locale: Any = 'en-US') -> User:
         user = await self.get_user(id)
         if user is None:
-            user = await self.create_user(id=id, locale=locale)
+            user = await self.create_user(id, locale=locale)
         return user
 
     async def get_users(self) -> AsyncIterator[User]:
@@ -85,7 +85,7 @@ class DatabaseConnection(_DatabaseConnection):
             yield user
 
     async def update_user(self, id: int, locale: str) -> None:
-        await super().update_user(id, locale)
+        await super().update_user(id, locale=locale)
         if id in self._users:
             self._users[id].locale = locale
 
@@ -106,13 +106,13 @@ class DatabaseConnection(_DatabaseConnection):
         self._blacklist[blacklist.id] = blacklist
         self._log.info('stored blacklist %d in cache', blacklist.id)
 
-    async def create_blacklist(self, *, id: int) -> BlackList:
+    async def create_blacklist(self, id: int, /) -> BlackList:
         blacklist = await super().create_blacklist(id=id)
         if blacklist is not None and blacklist.id not in self._blacklist:
             self._store_blacklist(blacklist)
         return blacklist
 
-    async def get_blacklist(self, id: int) -> Optional[BlackList]:
+    async def get_blacklist(self, id: int, /) -> Optional[BlackList]:
         if id in self._blacklist:
             return self._blacklist[id]
         blacklist = await super().get_blacklist(id)
@@ -139,6 +139,8 @@ class DatabaseConnection(_DatabaseConnection):
 
     async def create_riot_account(
         self,
+        owner_id: int,
+        /,
         *,
         puuid: str,
         game_name: Optional[str],
@@ -151,7 +153,6 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        owner_id: int,
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
             puuid=puuid,
@@ -187,9 +188,6 @@ class DatabaseConnection(_DatabaseConnection):
             self._users.pop(owner_id)
         except KeyError:
             pass
-        else:
-            # refresh user from database
-            self.loop.create_task(self.get_user(owner_id))
 
     async def delete_all_riot_accounts(self, owner_id: int) -> None:
         await super().delete_all_riot_accounts(owner_id)
@@ -199,9 +197,6 @@ class DatabaseConnection(_DatabaseConnection):
             self._users.pop(owner_id)
         except KeyError:
             pass
-        else:
-            # refresh user from database
-            self.loop.create_task(self.get_user(owner_id))
 
     async def update_riot_account(
         self,

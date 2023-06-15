@@ -327,8 +327,7 @@ class LatteMaid(commands.AutoShardedBot):
     def get_app_command(self, name: str) -> Optional[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return self._app_commands.get(name)
 
-    @property
-    def app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
+    def get_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
 
     # colors

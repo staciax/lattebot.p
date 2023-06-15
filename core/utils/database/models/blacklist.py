@@ -26,9 +26,12 @@ class BlackList(Base):
     reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
     maybe_user: Mapped[Optional[User]] = relationship(
         'User',
-        back_populates='blacklist',
+        back_populates='blacklist', 
         lazy='joined',
     )
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} id={self.id} reason={self.reason!r}>'
 
     @property
     def object_id(self) -> int:

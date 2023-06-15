@@ -146,6 +146,7 @@ class RiotAccount(Base):
     @classmethod
     async def delete(cls, session: AsyncSession, riot_account: Self) -> None:
         await session.delete(riot_account)
+        # stmt = delete(cls).where(cls.id == riot_account.id)
         await session.flush()
 
     @classmethod

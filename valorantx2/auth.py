@@ -26,6 +26,8 @@ _log = logging.getLogger(__name__)
 
 
 class RiotAuth(RiotAuth_):
+    RIOT_CLIENT_USER_AGENT = 'RiotClient/66.0.2.5148951.1064 %s (Windows;10;;Professional, x64)'
+
     def __init__(self) -> None:
         super().__init__()
         self.owner_id: Optional[int] = None

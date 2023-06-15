@@ -14,15 +14,15 @@ class LatteMaidError(DiscordAppCommandError):
 
     def __init__(
         self,
-        error: Optional[str],
+        message: Optional[str] = None,
         view: Optional[View] = None,
         ephemeral: bool = True,
         delete_after: Optional[float] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        super().__init__(error, *args)
-        self.original: Optional[str] = error
+        super().__init__(message, *args)
+        self.message: Optional[str] = message
         self.view: Optional[View] = view
         self.ephemeral: bool = ephemeral
         self.delete_after: Optional[float] = delete_after

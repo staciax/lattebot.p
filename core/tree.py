@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# import datetime
+import contextlib
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
@@ -21,22 +21,39 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             return True
 
         user_id = interaction.user.id
-        guild_id = interaction.guild.id if interaction.guild is not None else None
+        guild = interaction.guild
 
         # TODO: spam check
 
-        if user_id in self.client.db.blacklist:
+        if user_id in self.client.db._blacklist:
+            _log.info('blacklisted user tried to use bot %s', user_id)
+
             await interaction.response.send_message(
                 _('You are blacklisted from using this bot.'),
                 ephemeral=True,
             )
+
+            # remove user from database
+            if user := await self.client.db.get_user(user_id):
+                self.client.loop.create_task(self.client.db.delete_user(user.id))
+
             return False
 
-        if guild_id is not None and guild_id in self.client.db.blacklist:
+        if guild is not None and guild.id in self.client.db._blacklist:
+            _log.info('guild %s is blacklisted', guild.id)
+
             await interaction.response.send_message(
                 _('This guild is blacklisted from using this bot.'),
                 ephemeral=True,
             )
+
+            try:
+                await guild.leave()
+            except discord.HTTPException:
+                _log.exception('failed to leave guild %s', guild.id)
+            else:
+                _log.info('left guild %s', guild.id)
+
             return False
 
         # if interaction.client.is_maintenance():
@@ -61,9 +78,9 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         if isinstance(interaction.command, app_commands.Command):
             user_db = await self.client.db.get_user(user_id)
             if user_db is None:
-                self.client.loop.create_task(self.client.db.create_user(id=user_id, locale=interaction.locale.value))
+                self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
             elif user_db.locale != interaction.locale.value:
-                self.client.loop.create_task(self.client.db.update_user(id=user_id, locale=interaction.locale.value))
+                self.client.loop.create_task(self.client.db.update_user(user_id, locale=interaction.locale.value))
 
         return True
 
