@@ -56,7 +56,7 @@ class DatabaseConnection:
             if drop:
                 await engine.run_sync(Base.metadata.drop_all)
             await engine.run_sync(Base.metadata.create_all)
-        self._log.info('tables created !')
+        self._log.info('tables created')
 
     async def close(self) -> None:
         self._is_closed = True
@@ -79,7 +79,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             exist_user = await User.read_by_id(session, id)
             if exist_user:
-                raise UserAlreadyExists(f"user with id {id!r} already exists")
+                raise UserAlreadyExists(id)
             user = await User.create(session=session, id=id, locale=locale)
             await session.commit()
             self._log.info(f'created user with id {id!r}')
@@ -99,7 +99,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
-                raise UserDoesNotExist(f"user with id {id!r} does not exist")
+                raise UserDoesNotExist(id)
             try:
                 await user.update(session, locale)
             except SQLAlchemyError as e:
@@ -115,7 +115,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
-                raise UserDoesNotExist(f"user with id {id!r} does not exist")
+                raise UserDoesNotExist(id)
             try:
                 await User.delete(session, user)
             except SQLAlchemyError as e:
@@ -133,7 +133,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             exist_blacklist = await BlackList.read_by_id(session, id)
             if exist_blacklist:
-                raise BlacklistAlreadyExists(f"blacklist with id {id!r} already exists")
+                raise BlacklistAlreadyExists(id)
             blacklist = await BlackList.create(session=session, id=id, reason=reason)
             await session.commit()
             self._log.info(f'created blacklist with id {id!r}')
@@ -154,7 +154,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             blacklist = await BlackList.read_by_id(session, id)
             if not blacklist:
-                raise BlacklistDoesNotExist(f"blacklist with id {id!r} does not exist")
+                raise BlacklistDoesNotExist(id)
             await BlackList.delete(session, blacklist)
             await session.commit()
             self._log.info(f'deleted blacklist with id {id!r}')
@@ -215,7 +215,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             exist_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if exist_account:
-                raise RiotAccountAlreadyExists(f"riot account with id {puuid!r} already exists")
+                raise RiotAccountAlreadyExists(puuid, owner_id)
             riot_account = await RiotAccount.create(
                 session=session,
                 puuid=puuid,
@@ -270,7 +270,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
-                raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
+                raise RiotAccountDoesNotExist(puuid, owner_id)
             try:
                 await riot_account.update(
                     session=session,
@@ -298,7 +298,7 @@ class DatabaseConnection:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
-                raise RiotAccountDoesNotExist(f"riot account with puuid {puuid!r} does not exist")
+                raise RiotAccountDoesNotExist(puuid, owner_id)
 
             try:
                 await RiotAccount.delete(session, riot_account)

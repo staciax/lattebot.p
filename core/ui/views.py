@@ -6,8 +6,11 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import discord
 from discord import Interaction, ui
-from discord.app_commands import CheckFailure
+
+# from discord.app_commands import CheckFailure
 from discord.ext import commands
+
+from core.bot import LatteMaid
 
 from ..errors import CheckFailure, ComponentOnCooldown
 from ..translator import _
@@ -43,7 +46,15 @@ class BaseView(ui.View):
     def reset_timeout(self) -> None:
         self.timeout = self.timeout
 
-    async def _scheduled_task(self, item: discord.ui.Item, interaction: Interaction):
+    async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
+        """A callback that is called before the callback is called."""
+        pass
+
+    async def after_callback(self, interaction: Interaction[LatteMaid]) -> None:
+        """A callback that is called after the callback is called."""
+        pass
+
+    async def _scheduled_task(self, item: discord.ui.Item, interaction: Interaction[LatteMaid]):
         try:
             item._refresh_state(interaction, interaction.data)  # type: ignore
 
@@ -54,7 +65,9 @@ class BaseView(ui.View):
             if self.timeout:
                 self.__timeout_expiry = time.monotonic() + self.timeout
 
+            await self.before_callback(interaction)
             await item.callback(interaction)
+            await self.after_callback(interaction)
         except Exception as e:
             return await self.on_error(interaction, e, item)
 
@@ -156,51 +169,35 @@ class ViewAuthor(BaseView):
         self.cooldown = commands.CooldownMapping.from_cooldown(3.0, 10.0, key)
         self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
 
+    async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
+        self.locale = interaction.locale
+
     async def interaction_check(self, interaction: Interaction[LatteMaid]) -> bool:
         """Only allowing the context author to interact with the view"""
-
-        if interaction.command is None and self.interaction is not None:
-            interaction.extras['command'] = self.interaction.command
 
         user = interaction.user
 
         if await self.bot.is_owner(user):
             return True
 
-        if isinstance(user, discord.Member) and user.guild_permissions.administrator:
-            return True
+        # if isinstance(user, discord.Member) and user.guild_permissions.administrator:
+        #     return True
 
         if user != self.author:
             return False
 
-        self.locale = interaction.locale
-
-        bucket = self.cooldown.get_bucket(interaction)
-        if bucket is not None:
+        if bucket := self.cooldown.get_bucket(interaction):
             if bucket.update_rate_limit():
-                raise ComponentOnCooldown(bucket, interaction)
+                raise ComponentOnCooldown(bucket, bucket.get_retry_after())
 
         return True
 
     async def on_check_failure(self, interaction: Interaction[LatteMaid]) -> None:
         """Handles the error when the check fails"""
-
-        bucket = self.cooldown_user.get_bucket(interaction)
-        if bucket is not None:
-            if bucket.update_rate_limit():
-                raise ComponentOnCooldown(bucket, interaction)
-
-        if interaction.command is not None:
-            app_cmd_name = interaction.command.qualified_name
-            app_cmd = self.bot.get_app_command(app_cmd_name)
-            app_cmd_text = f'{app_cmd.mention}' if app_cmd is not None else f'/`{app_cmd_name}`'
-            content = _("Only {author} can use this. If you want to use it, use {app_cmd}").format(
-                author=self.author.mention, app_cmd=app_cmd_text
-            )
-        else:
-            content = _("Only `{author}` can use this.").format(author=self.author.mention)
-
-        raise CheckFailure(content)
+        app_command = interaction.command or self.interaction.command
+        if app_command is not None:
+            app_command = self.bot.get_app_command(app_command.qualified_name) or app_command
+        raise CheckFailure(app_command, self.author)
 
     @property
     def author(self) -> Union[discord.Member, discord.User]:

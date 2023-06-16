@@ -29,7 +29,7 @@ class NumberedPageModal(discord.ui.Modal, title='Go to page'):
         self.stop()
 
 
-class PageSource(Generic[T]):
+class PageSource:
 
     """An interface representing a menu page's data source for the actual menu page.
     Subclasses must implement the backing resource along with the following methods:
@@ -130,7 +130,7 @@ class PageSource(Generic[T]):
         raise NotImplementedError
 
 
-class ListPageSource(PageSource[T]):
+class ListPageSource(PageSource, Generic[T]):
     """A data source for a sequence of items.
     This page source does not handle any sort of formatting, leaving it up
     to the user. To do so, implement the :meth:`format_page` method.

@@ -1,23 +1,28 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 from abc import ABC
 from typing import TYPE_CHECKING, List, Optional
 
 import aiohttp
 import discord
-from async_lru import alru_cache
-from discord import app_commands
+from discord import app_commands, ui
 from discord.app_commands import Choice, locale_str as _T
 
 import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import LatteMaidCog
-from core.errors import AppCommandError
+from core.errors import (
+    RiotAuthAlreadyLinked,
+    RiotAuthMaxLimitReached,
+    RiotAuthMultiFactorTimeout,
+    RiotAuthNotLinked,
+    ValorantExtError,
+)
 from core.i18n import _
 from core.ui.embed import MiadEmbed as Embed
-from core.utils.database.errors import RiotAccountAlreadyExists
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
@@ -25,11 +30,15 @@ from valorantx2.errors import RiotMultifactorError
 from valorantx2.utils import locale_converter
 
 from .account_manager import AccountManager
+from .admin import Admin
 from .context_menu import ContextMenu
 from .events import Events
 from .notify import Notify
 from .tests.images import StoreImage
+from .ui import embeds as e
 from .ui.modal import RiotMultiFactorModal
+
+# from .ui.tests2 import ValorantPageSource, ValorantSwitchAccountView
 from .ui.views import (
     CarrierView,
     CollectionView,
@@ -48,6 +57,24 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
+# class StoreFrontPageSource(ValorantPageSource):
+#     async def format_page_valorant(self, view: ValorantSwitchAccountView, riot_auth: RiotAuth) -> List[Embed]:
+#         storefront = await self.valorant_client.fetch_storefront(riot_auth)
+#         embeds = e.store_e(
+#             storefront.skins_panel_layout,
+#             riot_id=riot_auth.display_name,
+#             locale=locale_converter.to_valorant(view.locale),
+#         )
+#         return embeds
+
+
+# class WalletPageSource(ValorantPageSource):
+#     async def format_page_valorant(self, view: ValorantSwitchAccountView, riot_auth: RiotAuth) -> Embed:
+#         wallet = await self.valorant_client.fetch_wallet(riot_auth)
+#         embed = e.wallet_e(wallet, riot_auth.display_name, locale=locale_converter.to_valorant(view.locale))
+#         return embed
+
+
 # thanks for redbot
 class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
     """
@@ -58,7 +85,7 @@ class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
     pass
 
 
-class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
+class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
 
@@ -71,15 +98,10 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         return self.bot.valorant_client
 
     async def cog_load(self) -> None:
-        _log.info('Loading Valorant API Client...')
         self.valorant_version_checker.start()
 
     async def cog_unload(self) -> None:
         self.valorant_version_checker.cancel()
-
-    @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # 12 hours
-    async def fetch_patch_notes(self, locale: discord.Locale) -> valorantx.PatchNotes:
-        return await self.valorant_client.fetch_patch_notes(locale_converter.to_valorant(locale))
 
     # user
 
@@ -99,7 +121,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         user = await self.get_user(id)
         if user is None:
             await self.bot.db.create_user(id, locale=locale)
-            raise AppCommandError(_('You have not linked any riot accounts.', 0, locale))
+            raise RiotAuthNotLinked(_('You have not linked any riot accounts.', 0, locale))
 
         return user
 
@@ -134,7 +156,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
             user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
 
         if len(user.riot_accounts) >= 5:
-            raise AppCommandError('You can only link up to 5 accounts.')
+            raise RiotAuthMaxLimitReached(_('You can only link up to 5 accounts.', 0, interaction.locale))
 
         riot_auth = RiotAuth()
 
@@ -147,20 +169,20 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
 
             # when timeout
             if multi_modal.code is None:
-                raise AppCommandError('You did not enter the code in time.')
+                raise RiotAuthMultiFactorTimeout(_('You did not enter the code in time.', 0, interaction.locale))
             try:
                 await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
             except aiohttp.ClientResponseError as e:
                 _log.error('riot auth multifactor error', exc_info=e)
-                raise AppCommandError('Invalid Multi-factor code.') from e
+                raise ValorantExtError('Invalid Multi-factor code.') from e
             assert multi_modal.interaction is not None
             interaction = multi_modal.interaction
             multi_modal.stop()
-        except valorantx.RiotAuthenticationError as e:
-            raise AppCommandError('Invalid username or password.') from e
-        except aiohttp.ClientResponseError as e:
-            _log.error('Riot server is currently unavailable.', exc_info=e)
-            raise AppCommandError('Riot server is currently unavailable.') from e
+        # except valorantx.RiotAuthenticationError as e:
+        #     raise AppCommandError('Invalid username or password.') from e
+        # except aiohttp.ClientResponseError as e:
+        #     _log.error('Riot server is currently unavailable.', exc_info=e)
+        #     raise AppCommandError('Riot server is currently unavailable.') from e
 
         await interaction.response.defer(ephemeral=True)
 
@@ -169,7 +191,7 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
             puuid=riot_auth.puuid, owner_id=interaction.user.id
         )
         if riot_account is not None:
-            raise AppCommandError('You already have this account linked.')
+            raise RiotAuthAlreadyLinked(_('You already have this account linked.', 0, interaction.locale))
 
         # fetch userinfo and region
         try:
@@ -189,9 +211,8 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
                 _log.error('riot auth error fetching region', exc_info=e)
         assert riot_auth.region is not None
 
-        # TODO: encrypt token before saving
-        try:
-            await self.bot.db.create_riot_account(
+        self.bot.loop.create_task(
+            self.bot.db.create_riot_account(
                 interaction.user.id,
                 puuid=riot_auth.puuid,
                 game_name=riot_auth.game_name,
@@ -205,14 +226,13 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
                 entitlements_token=riot_auth.entitlements_token,  # type: ignore
                 ssid=riot_auth.get_ssid(),
             )
-        except RiotAccountAlreadyExists:
-            raise AppCommandError('You already have this account linked.')
-        else:
-            _log.info(
-                f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) - {riot_auth.region}'
-            )
-            # invalidate cache
-            # self.??.invalidate(self, id=interaction.user.id)
+        )
+
+        _log.info(
+            f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) - {riot_auth.region}'
+        )
+        # invalidate cache
+        # self.??.invalidate(self, id=interaction.user.id)
 
         e = Embed(description=f"Successfully logged in {chat.bold(riot_auth.display_name)}")
         await interaction.followup.send(embed=e, ephemeral=True)
@@ -271,6 +291,10 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
         view = StoreFrontView(interaction, AccountManager(user, self.bot))
         await view.callback(interaction)
 
+        # source = StoreFrontPageSource(user)
+        # view = ValorantSwitchAccountView(source, interaction)
+        # await view.start_valorant()
+
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
@@ -294,11 +318,12 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
         user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer(ephemeral=private)
-        wallet = WalletView(
-            interaction,
-            AccountManager(user, self.bot),
-        )
-        await wallet.callback(interaction)
+        view = WalletView(interaction, AccountManager(user, self.bot))
+        await view.callback(interaction)
+
+        # source = WalletPageSource(user)
+        # view = ValorantSwitchAccountView(source, interaction)
+        # await view.start_valorant()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.guild_only()
@@ -386,7 +411,6 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
 
         await interaction.response.defer()
         queue = mode.value if mode is not None else None
-
         view = CarrierView(
             interaction,
             AccountManager(user, self.bot),
@@ -414,7 +438,6 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     @dynamic_cooldown(cooldown_medium)
     async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
         user = await self.get_or_create_user(interaction.user.id, interaction.locale)
-
         await interaction.response.defer()
 
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
@@ -423,33 +446,29 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
     async def patchnote(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
 
-        patch_notes = await self.fetch_patch_notes(interaction.locale)
-        # view = PatchNotesView(interaction, patch_notes)
-        # await view.start()
+        patch_notes = await self.valorant_client.fetch_patch_notes(locale_converter.to_valorant(interaction.locale))
+        latest = patch_notes.get_latest_patch_note()
+        if latest is not None:
+            pns = await self.valorant_client.fetch_patch_note_from_site(latest.url)
 
-        # latest = patch_notes.get_latest_patch_note()
-        # if latest is not None:
-        #     pns = await self.valorant_client.fetch_patch_note_from_site(latest.url)
+            embed = e.patch_note_e(latest, pns.banner.url if pns.banner is not None else None)
 
-        #     embed = e.patch_note(latest, pns.banner.url)
+            if embed.image.url is not None:
+                with contextlib.suppress(Exception):
+                    embed.colour = await self.bot.get_or_fetch_color(latest.uid, embed.image.url, 5)
 
-        #     image_url = embed.image.url
-        #     if image_url is not None:
-        #         color_thief = await self.bot.get_or_fetch_colors(latest.uid, image_url, 5)
-        #         embed.colour = random.choice(color_thief)
+            view = ui.View().add_item(
+                ui.Button(
+                    label=patch_notes.see_article_title,
+                    url=latest.url,
+                    emoji=str(self.bot.emoji.link_standard),
+                )
+            )
 
-        #     view = BaseView().add_item(
-        #         ui.Button(
-        #             label=patch_notes.see_article_title,
-        #             url=latest.url,
-        #             emoji=str(self.bot.emoji.link_standard),
-        #         )
-        #     )
+            await interaction.followup.send(embed=embed, view=view)
 
-        #     await interaction.followup.send(embed=embed, view=view)
-
-        # else:
-        #     raise CommandError('Patch note not found')
+        else:
+            raise ValorantExtError('Patch note not found')
 
     # infomation commands
 
@@ -719,4 +738,5 @@ class Valorant(ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMet
             embed = Embed(colour=0x63C0B5)
             embed.set_image(url="attachment://store.png")
 
+            await interaction.followup.send(embed=embed, file=sid.to_discord_file())
             await interaction.followup.send(embed=embed, file=sid.to_discord_file())

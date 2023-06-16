@@ -12,14 +12,12 @@ from valorantx2.utils import MISSING
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from valorantx2.client import Client as ValorantClient
 
 
 class AccountManager:
     def __init__(self, user: User, bot: LatteMaid = MISSING) -> None:
         self.user: User = user
         self.bot: LatteMaid = bot
-        self.valorant_client: ValorantClient = bot.valorant_client
         self.first_account: Optional[RiotAuth] = None
         self._riot_accounts: Dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False

@@ -7,7 +7,9 @@ import valorantx
 from async_lru import alru_cache
 from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
+from valorantx.enums import Locale
 from valorantx.models.match import MatchHistory
+from valorantx.models.patchnotes import PatchNotes
 from valorantx.models.seasons import Season
 from valorantx.models.store import StoreFront, Wallet
 from valorantx.models.user import ClientUser
@@ -34,6 +36,7 @@ __all__ = (
 
 T = TypeVar('T')
 Response = Coroutine[Any, Any, T]
+Coro = Coroutine[Any, Any, T]
 
 
 # valorantx Client customized for lattemaid
@@ -108,6 +111,11 @@ class Client(valorantx.Client):
 
     # patch note
 
+    @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # ttl 12 hours
+    async def fetch_patch_notes(self, locale: str | Locale = Locale.american_english) -> valorantx.PatchNotes:
+        return await super().fetch_patch_notes(locale)
+
+    @alru_cache(maxsize=64, ttl=60 * 60 * 12)  # ttl 12 hours
     async def fetch_patch_note_from_site(self, url: str) -> PatchNoteScraper:
         # TODO: doc
         text = await self.http.text_from_url(url)

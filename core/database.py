@@ -29,7 +29,7 @@ class DatabaseConnection(_DatabaseConnection):
         await super().initialize(drop_table)
         await self._cache_users()
         await self._cache_blacklist()
-        self._log.info('cached %d users and %d blacklists', len(self._users), len(self._blacklist))
+        self._log.info('initialized database')
 
     async def _cache_users(self) -> None:
         async for user in super().get_users():

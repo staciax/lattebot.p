@@ -7,7 +7,7 @@ import traceback
 from typing import TYPE_CHECKING, Optional, Union
 
 import discord
-from discord import ui
+from discord import app_commands, ui
 from discord.interactions import Interaction
 from jishaku.paginators import PaginatorInterface, WrappedPaginator
 
@@ -31,7 +31,7 @@ _log = logging.getLogger(__name__)
 
 
 async def application_error_handler(
-    interaction: Interaction[LatteMaid], error: Union[Exception, discord.app_commands.AppCommandError]
+    interaction: Interaction[LatteMaid], error: Union[Exception, app_commands.AppCommandError]
 ):
     client = interaction.client
     locale = interaction.locale
@@ -97,7 +97,7 @@ def build_error_handle_embed(
 
     embed = MiadEmbed().error()
 
-    if isinstance(error, discord.app_commands.errors.CommandInvokeError):
+    if isinstance(error, app_commands.errors.CommandInvokeError):
         error = error.original
 
     # https://discord.com/developers/docs/topics/opcodes-and-status-codes
@@ -107,8 +107,27 @@ def build_error_handle_embed(
         10015,  # Unknown webhook
     ):
         embed.description = _('The message was deleted.', 0, locale)
-    elif isinstance(error, errors.AppCommandError):
+    elif isinstance(error, errors.ComponentOnCooldown):
+        embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', 0, locale).format(
+            seconds=error.retry_after
+        )
+    elif isinstance(error, errors.CheckFailure):
+        # command = error.command
+        # author = error.author
         embed.description = error.message
+    elif isinstance(error, errors.RiotAuthError):
+        embed.description = error.message
+    elif isinstance(error, app_commands.errors.AppCommandError):
+        if isinstance(error, app_commands.errors.CommandOnCooldown):
+            embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', 0, locale).format(
+                seconds=error.retry_after
+            )
+        # elif isinstance(error, (app_commands.errors.MissingRole, app_commands.errors.MissingAnyRole)):
+        #     embed.description = _('You do not have the required role(s).', 0, locale)
+        elif isinstance(error, app_commands.errors.CommandNotFound):
+            embed.description = _(f'CommandNotFound', 0, locale)
+        elif isinstance(error, app_commands.errors.NoPrivateMessage):
+            embed.description = _('UserAlreadyExists', 0, locale)
     elif isinstance(error, database.errors.DatabaseBaseError):
         if isinstance(error, database.errors.UserAlreadyExists):
             embed.description = _('You are already registered.', 0, locale)
@@ -122,7 +141,6 @@ def build_error_handle_embed(
             embed.description = _('The Riot account is already registered.', 0, locale)
         elif isinstance(error, database.errors.RiotAccountDoesNotExist):
             embed.description = _('The Riot account is not registered.', 0, locale)
-
     elif isinstance(error, valorantx.errors.HTTPException):
         if isinstance(error, valorantx.errors.RiotAuthenticationError):
             embed.description = _('Riot Authentication Error', 0, locale)

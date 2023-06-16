@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import logging
 import os
+import random
 import traceback
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
@@ -331,11 +332,20 @@ class LatteMaid(commands.AutoShardedBot):
 
     # colors
 
-    def get_colors(self, id: str) -> List[discord.Colour]:
+    # TODO: overload
+
+    def get_colors(self, id: str, /) -> Optional[List[discord.Colour]]:
         """Returns the colors of the image."""
         if id in self.colors:
             return self.colors[id]
-        return []
+        return None
+
+    def get_color(self, id: str, /) -> Optional[discord.Colour]:
+        """Returns the color of the image."""
+        colors = self.get_colors(id)
+        if colors is not None:
+            return random.choice(colors)
+        return None
 
     def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
         """Sets the colors of the image."""
@@ -363,7 +373,41 @@ class LatteMaid(commands.AutoShardedBot):
             colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
         return self.store_colors(id, colors)
 
+    async def get_or_fetch_color(
+        self,
+        id: str,
+        image: Union[discord.Asset, str],
+        palette: int = 0,
+    ) -> discord.Colour:
+        """Returns a random color of the image."""
+        colors = await self.get_or_fetch_colors(id, image, palette)
+        return random.choice(colors)
+
     # bot methods
+
+    async def load_extension(self, name: str, *, package: Optional[str] = None) -> None:
+        try:
+            await super().load_extension(name, package=package)
+        except Exception as e:
+            _log.error('failed to load extension %s', name, exc_info=e)
+        else:
+            _log.info('loaded extension %s', name)
+
+    async def unload_extension(self, name: str, *, package: Optional[str] = None) -> None:
+        try:
+            await super().unload_extension(name, package=package)
+        except Exception as e:
+            _log.error('failed to unload extension %s', name, exc_info=e)
+        else:
+            _log.info('unloaded extension %s', name)
+
+    async def reload_extension(self, name: str, *, package: Optional[str] = None) -> None:
+        try:
+            await super().reload_extension(name, package=package)
+        except Exception as e:
+            _log.error('failed to reload extension %s', name, exc_info=e)
+        else:
+            _log.info('reloaded extension %s', name)
 
     async def close(self) -> None:
         await self.cogs_unload()

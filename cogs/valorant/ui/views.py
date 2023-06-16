@@ -166,7 +166,7 @@ class BaseSwitchAccountView(BaseValorantView):
 
     @property
     def valorant_client(self) -> ValorantClient:
-        return self.account_manager.valorant_client
+        return self.bot.valorant_client
 
     def _build_buttons(self) -> None:
         for index, acc in enumerate(self.account_manager.riot_accounts, start=1):
@@ -241,6 +241,7 @@ class NightMarketView(BaseSwitchAccountView):
         self.embeds: Optional[List[Embed]] = None
         self.current_opened: Dict[str, int] = {}
         self.current_author_puuid: Optional[str] = None
+        self.cooldown._cooldown.rate = 6  # type: ignore
 
     async def format_page(self, riot_auth: RiotAuth) -> List[Embed]:
         storefront = await self.valorant_client.fetch_storefront(riot_auth)

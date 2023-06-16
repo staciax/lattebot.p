@@ -216,7 +216,12 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:
     rad_display_name = 'Radiant'
     if rad := wallet.get_radiant_currency():
         rad_display_name = rad.display_name.from_locale(locale)
-        rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Point', '')  # type: ignore
+        rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Points', '').replace('Point', '')  # type: ignore
+
+    # knd_display_name = 'Kingdom'
+    # if knd := wallet.get_kingdom_currency():
+    #     knd_display_name = knd.display_name.from_locale(locale)
+    #     knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')  # type: ignore
 
     embed.add_field(
         name=vp_display_name,
@@ -226,6 +231,10 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:
         name=rad_display_name,
         value=f'{wallet.radiant_points}',
     )
+    # embed.add_field(
+    #     name=knd_display_name,
+    #     value=f'{wallet.kingdom_points}',
+    # )
     return embed
 
 
@@ -448,6 +457,20 @@ def spray_loadout_e(
     spray_icon = spray.animation_gif or spray.full_transparent_icon or spray.display_icon
     if spray_icon is not None:
         embed.set_thumbnail(url=spray_icon)
+    return embed
+
+
+# patch note embed
+
+
+def patch_note_e(pn: valorantx.PatchNote, banner_url: Optional[str] = None) -> Embed:
+    embed = Embed(
+        title=pn.title,
+        timestamp=pn.timestamp.replace(tzinfo=datetime.timezone.utc),
+        url=pn.url,
+        description=chat.italics(pn.description),
+    )
+    embed.set_image(url=(banner_url or pn.banner))
     return embed
 
 
