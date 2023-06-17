@@ -79,7 +79,7 @@ def error_support_view(locale: discord.Locale) -> ui.View:
     view = ui.View()
     view.add_item(
         discord.ui.Button(
-            label=_('Support Server', 0, locale),
+            label=_('Support Server', locale),
             url='https://discord.gg/4N2YkXbM',
             # emoji='',
         )
@@ -107,9 +107,9 @@ def build_error_handle_embed(
         10008,  # Unknown message
         10015,  # Unknown webhook
     ):
-        embed.description = _('The message was deleted.', 0, locale)
+        embed.description = _('The message was deleted.', locale)
     elif isinstance(error, errors.ComponentOnCooldown):
-        embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', 0, locale).format(
+        embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', locale).format(
             seconds=error.retry_after
         )
     elif isinstance(error, errors.CheckFailure):
@@ -120,47 +120,47 @@ def build_error_handle_embed(
         embed.description = error.message
     elif isinstance(error, app_commands.errors.AppCommandError):
         if isinstance(error, app_commands.errors.CommandOnCooldown):
-            embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', 0, locale).format(
+            embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', locale).format(
                 seconds=error.retry_after
             )
         # elif isinstance(error, (app_commands.errors.MissingRole, app_commands.errors.MissingAnyRole)):
         #     embed.description = _('You do not have the required role(s).', 0, locale)
         elif isinstance(error, app_commands.errors.CommandNotFound):
-            embed.description = _(f'CommandNotFound', 0, locale)
+            embed.description = _(f'CommandNotFound', locale)
         elif isinstance(error, app_commands.errors.NoPrivateMessage):
-            embed.description = _('UserAlreadyExists', 0, locale)
+            embed.description = _('UserAlreadyExists', locale)
     elif isinstance(error, database.errors.DatabaseBaseError):
         if isinstance(error, database.errors.UserAlreadyExists):
-            embed.description = _('You are already registered.', 0, locale)
+            embed.description = _('You are already registered.', locale)
         elif isinstance(error, database.errors.UserDoesNotExist):
-            embed.description = _('You are not registered.', 0, locale)
+            embed.description = _('You are not registered.', locale)
         elif isinstance(error, database.errors.BlacklistAlreadyExists):
-            embed.description = _('You are already blacklisted.', 0, locale)
+            embed.description = _('You are already blacklisted.', locale)
         elif isinstance(error, database.errors.BlacklistDoesNotExist):
-            embed.description = _('You are not blacklisted.', 0, locale)
+            embed.description = _('You are not blacklisted.', locale)
         elif isinstance(error, database.errors.RiotAccountAlreadyExists):
-            embed.description = _('The Riot account is already registered.', 0, locale)
+            embed.description = _('The Riot account is already registered.', locale)
         elif isinstance(error, database.errors.RiotAccountDoesNotExist):
-            embed.description = _('The Riot account is not registered.', 0, locale)
+            embed.description = _('The Riot account is not registered.', locale)
     elif isinstance(error, valorantx.errors.HTTPException):
         if isinstance(error, valorantx.errors.RiotAuthenticationError):
-            embed.description = _('Riot Authentication Error', 0, locale)
+            embed.description = _('Riot Authentication Error', locale)
         elif isinstance(error, valorantx.errors.RiotRatelimitError):
-            embed.description = _('Riot Rate Limit Error', 0, locale)
+            embed.description = _('Riot Rate Limit Error', locale)
         elif isinstance(
             error, (valorantx.errors.RiotUnknownResponseTypeError, valorantx.errors.RiotUnknownErrorTypeError)
         ):
-            embed.description = _('Riot Unknown Error', 0, locale)
+            embed.description = _('Riot Unknown Error', locale)
         elif isinstance(error, valorantx.errors.BadRequest):  # status code 400
-            embed.description = _(f'Bad Request from Riot API\n{error.text}', 0, locale)
+            embed.description = _(f'Bad Request from Riot API\n{error.text}', locale)
         elif isinstance(error, valorantx.errors.Forbidden):  # status code 403
-            embed.description = _(f'Forbidden from Riot API \n{error.text}', 0, locale)
+            embed.description = _(f'Forbidden from Riot API \n{error.text}', locale)
         elif isinstance(error, valorantx.errors.NotFound):  # status code 404
-            embed.description = _(f'Not Found from Riot API \n{error.text}', 0, locale)
+            embed.description = _(f'Not Found from Riot API \n{error.text}', locale)
         elif isinstance(error, valorantx.errors.RateLimited):  # status code 429
-            embed.description = _(f'You are rate limited from Riot API \n{error.text}', 0, locale)
+            embed.description = _(f'You are rate limited from Riot API \n{error.text}', locale)
         elif isinstance(error, valorantx.errors.InternalServerError):  # status code 500
-            embed.description = _(f'Internal Server Error from Riot API \n{error.text}', 0, locale)
+            embed.description = _(f'Internal Server Error from Riot API \n{error.text}', locale)
     else:
         embed.custom_id = 'traceback'
 

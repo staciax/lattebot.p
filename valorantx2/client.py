@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import valorantx
 from async_lru import alru_cache
-from valorantx import Locale
 from valorantx.client import _authorize_required, _loop
-from valorantx.enums import Locale
-from valorantx.models.match import MatchHistory
-from valorantx.models.patchnotes import PatchNotes
-from valorantx.models.seasons import Season
-from valorantx.models.store import StoreFront, Wallet
+from valorantx.enums import Locale, QueueType
 from valorantx.models.user import ClientUser
-from valorantx.models.version import Version
 from valorantx.utils import MISSING
 
 from .auth import RiotAuth
@@ -24,6 +18,13 @@ from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+    from valorantx.models.contracts import Contracts
+    from valorantx.models.loadout import Loadout
+    from valorantx.models.match import MatchHistory
+    from valorantx.models.patchnotes import PatchNotes
+    from valorantx.models.seasons import Season
+    from valorantx.models.store import FeaturedBundle, StoreFront, Wallet
+    from valorantx.models.version import Version
 
     from core.bot import LatteMaid
 
@@ -33,10 +34,6 @@ __all__ = (
     'Client',
 )
 # fmt: on
-
-T = TypeVar('T')
-Response = Coroutine[Any, Any, T]
-Coro = Coroutine[Any, Any, T]
 
 
 # valorantx Client customized for lattemaid
@@ -54,10 +51,8 @@ class Client(valorantx.Client):
         self._season: Season = MISSING
         self._act: Season = MISSING
         self.me: ClientUser = MISSING
-        self._tasks: Dict[str, asyncio.Task[Any]] = {}
-
-        # global lock
-        self._lock: asyncio.Lock = asyncio.Lock()
+        self._tasks: Dict[str, asyncio.Task[None]] = {}
+        self.lock: asyncio.Lock = asyncio.Lock()
         # client users
         # self._users: Dict[str, User] = {}
 
@@ -112,7 +107,7 @@ class Client(valorantx.Client):
     # patch note
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # ttl 12 hours
-    async def fetch_patch_notes(self, locale: str | Locale = Locale.american_english) -> valorantx.PatchNotes:
+    async def fetch_patch_notes(self, locale: str | Locale = Locale.american_english) -> PatchNotes:
         return await super().fetch_patch_notes(locale)
 
     @alru_cache(maxsize=64, ttl=60 * 60 * 12)  # ttl 12 hours
@@ -131,7 +126,7 @@ class Client(valorantx.Client):
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
-    async def fetch_featured_bundle(self) -> List[valorantx.FeaturedBundle]:
+    async def fetch_featured_bundle(self) -> List[FeaturedBundle]:
         # cache re-use
         for cache in self.fetch_storefront._LRUCacheWrapper__cache.values():  # type: ignore
             if not cache.fut.done():
@@ -148,7 +143,7 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
-        async with self._lock:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_storefront()
@@ -156,15 +151,15 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_match_details(self, match_id: str) -> MatchDetails:
-        # async with self._lock:
+        # async with self.lock:
         data = await self.http.get_match_details(match_id)
         # TODO: save data to file or cache?
         return MatchDetails(client=self, data=data)
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
-    async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Contracts:
-        async with self._lock:
+    async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> Contracts:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_contracts()
@@ -172,7 +167,7 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=60)  # ttl 1 minute
     @_authorize_required
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
-        async with self._lock:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_wallet()
@@ -184,15 +179,15 @@ class Client(valorantx.Client):
         puuid: Optional[str] = None,
         riot_auth: Optional[RiotAuth] = None,
     ) -> valorantx.MatchmakingRating:
-        async with self._lock:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_mmr(puuid=puuid)
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
-    async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> valorantx.Loadout:
-        async with self._lock:
+    async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> Loadout:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_loudout()
@@ -202,17 +197,17 @@ class Client(valorantx.Client):
     async def fetch_match_history(
         self,
         puuid: Optional[str] = None,
-        queue: Optional[Union[str, valorantx.QueueType]] = None,
+        queue: Optional[Union[str, QueueType]] = None,
         *,
         start: int = 0,
         end: int = 15,
         with_details: bool = True,
         riot_auth: Optional[RiotAuth] = None,
     ) -> MatchHistory:
-        if isinstance(queue, valorantx.QueueType):
+        if isinstance(queue, QueueType):
             queue = queue.value
 
-        async with self._lock:
+        async with self.lock:
             if riot_auth is not None:
                 await self.set_authorize(riot_auth)
             return await super().fetch_match_history(

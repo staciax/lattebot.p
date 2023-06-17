@@ -19,8 +19,9 @@ import valorantx2 as valorantx
 from core.utils.enums import Emoji
 
 from .database import DatabaseConnection
-from .i18n import I18n, _
-from .translator import Translator
+
+# from .i18n import I18n, _
+from .translator_test import Translator
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
 
@@ -47,10 +48,10 @@ INITIAL_EXTENSIONS: Tuple[str, ...] = (
     # 'cogs.events',
     'cogs.help',
     'cogs.jsk',
-    'cogs.stats',
+    # 'cogs.stats',
     'cogs.valorant',
     # 'cogs.ipc',
-    # 'cogs.test',
+    'cogs.test',
 )
 
 
@@ -94,30 +95,16 @@ class LatteMaid(commands.AutoShardedBot):
         # assets
         self.emoji: Type[Emoji] = Emoji
 
-        # bot invite link
-        self._permission_invite: int = 280576
-        self.invite_url = discord.utils.oauth_url(
-            self.application_id,  # type: ignore
-            permissions=discord.Permissions(self._permission_invite),
-        )
-
         # support guild
         self.support_guild_id: int = 1097859504906965042
         self.support_invite_url: str = 'https://discord.gg/mKysT7tr2v'
 
-        # oauth2
-        # self.linked_role_uri: str = 'http://localhost:8000/v1/linked-role'
-
         # maintenance
         self._is_maintenance: bool = False
-        self.maintenance_message: str = _('Bot is in maintenance mode.')
+        self.maintenance_message: str = 'Bot is in maintenance mode.'
         self.maintenance_time: Optional[datetime.datetime] = None
 
-        # encryption
-        # self.encryption: Encryption = Encryption(config.cryptography)
-
         # i18n
-        self.i18n: I18n = I18n(self)
         self.translator: Translator = MISSING
 
         # http session
@@ -128,6 +115,9 @@ class LatteMaid(commands.AutoShardedBot):
 
         # colour
         self.colors: Dict[str, List[discord.Colour]] = {}
+
+        # encryption
+        # self.encryption: Encryption = Encryption(config.cryptography)
 
         # database
         self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore TODO: debug mode check and change
@@ -155,6 +145,15 @@ class LatteMaid(commands.AutoShardedBot):
 
     def is_debug_mode(self) -> bool:
         return self._debug_mode
+
+    def get_invite_url(self) -> str:
+        scopes = ('bot', 'applications.commands')
+        permissions = discord.Permissions(int(os.getenv('INVITE_PERMISSIONS', 280576)))
+        return discord.utils.oauth_url(self.application_id, permissions=permissions, scopes=scopes)  # type: ignore
+
+    # def get_oauth2_url(self) -> str:
+    #     scopes = ('identify', 'guilds')
+    #     return discord.utils.oauth_url(self.application_id, scopes=scopes)
 
     # @discord.utils.cached_property
     # def webhook(self) -> discord.Webhook:
@@ -221,11 +220,8 @@ class LatteMaid(commands.AutoShardedBot):
         self.bot_app_info = await self.application_info()
         self.owner_id = self.bot_app_info.owner.id
 
-        # localizations
-        self.translator.load_string_localize()
-
         # valorant client
-        await self._run_valorant_client()
+        # await self._run_valorant_client()
 
         # valorantx
         # self.valorant_client = valorantx.Client()

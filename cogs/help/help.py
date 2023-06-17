@@ -11,13 +11,15 @@ from discord.app_commands.models import AppCommand, AppCommandGroup, Argument
 from discord.ext import commands
 
 from core.checks import cooldown_short
-from core.translator import _
+from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+
+_ = I18n('help', __file__)
 
 
 class HelpPageSource(ListPageSource):
@@ -150,6 +152,7 @@ class HelpCommand(ViewAuthor, LattePages):
         self.message = await self.interaction.original_response()
 
 
+@cog_i18n(_)
 class Help(commands.Cog, name='help'):
     """Help command"""
 

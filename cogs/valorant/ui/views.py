@@ -11,7 +11,6 @@ from discord.enums import ButtonStyle
 
 import core.utils.chat_formatting as chat
 from core.errors import AppCommandError
-from core.i18n import _
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
@@ -54,6 +53,10 @@ __all__ = (
 ViewT = TypeVar('ViewT', bound='BaseView')
 
 _log = logging.getLogger(__name__)
+
+
+def _(x: str, y=None, z=None) -> str:
+    return x
 
 
 class BaseValorantView(ViewAuthor):

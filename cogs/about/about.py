@@ -77,14 +77,14 @@ class About(commands.Cog, name='about'):
         embed = MiadEmbed().secondary()
         embed.set_author(
             name=f'{self.bot.user.name} ɪɴᴠɪᴛᴇ',  # type: ignore
-            url=self.bot.invite_url,
+            url=self.bot.get_invite_url(),
             icon_url=self.bot.user.avatar,  # type: ignore
         )
         embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')  # type: ignore
         # embed.set_image(url=str(self.cdn.invite_banner))
 
         view = ui.View()
-        view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.invite_url, emoji=str(self.emoji.latte_icon)))
+        view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.get_invite_url(), emoji=str(self.emoji.latte_icon)))
 
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -97,7 +97,6 @@ class About(commands.Cog, name='about'):
         locale = interaction.locale
 
         e = self.bot.emoji
-
         core_dev = self.bot.owner
         guild_count = len(self.bot.guilds)
         channel_count = len(list(self.bot.get_all_channels()))
@@ -108,8 +107,15 @@ class About(commands.Cog, name='about'):
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
 
         embed = MiadEmbed(timestamp=interaction.created_at).purple()
-        embed.set_author(name=_('About Me', locale), icon_url=self.bot.user.avatar)  # type: ignore
-        embed.add_field(name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:', value=self.get_latest_commits(limit=5), inline=False)
+        embed.set_author(
+            name=_('about.me', locale),
+            icon_url=self.bot.user.avatar if self.bot.user else None,
+        )
+        embed.add_field(
+            name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:',
+            value=self.get_latest_commits(limit=5),
+            inline=False,
+        )
         embed.add_field(
             name='ꜱᴛᴀᴛꜱ:',
             value=f'{e.latte_icon} ꜱᴇʀᴠᴇʀꜱ: `{guild_count}`\n'
@@ -126,7 +132,7 @@ class About(commands.Cog, name='about'):
             + f'{e.discord_py} ᴅɪꜱᴄᴏʀᴅ.ᴘʏ: `{discord.__version__}`',  # dpy_version[:dpy_version.find('+')]
             inline=True,
         )
-        embed.add_field(name='\u200b', value='\u200b', inline=True)
+        embed.add_empty_field(inline=True)
         embed.add_field(
             name='ᴘʀᴏᴄᴇꜱꜱ:',
             value=f'ᴏꜱ: `{platform.system()}`\n'
@@ -140,12 +146,19 @@ class About(commands.Cog, name='about'):
             + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
             inline=True,
         )
-        embed.add_field(name='\u200b', value='\u200b', inline=True)
-        embed.set_footer(text=f'ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ {core_dev}', icon_url=core_dev.avatar)
+        embed.add_empty_field(inline=True)
+        embed.set_footer(
+            text=f'ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ {core_dev}',
+            icon_url=core_dev.avatar,
+        )
 
         view = ui.View()
         view.add_item(
-            ui.Button(label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', url=self.bot.support_invite_url, emoji=str(self.emoji.latte_icon))
+            ui.Button(
+                label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ',
+                url=self.bot.support_invite_url,
+                emoji=str(self.emoji.latte_icon),
+            )
         )
         view.add_item(
             ui.Button(

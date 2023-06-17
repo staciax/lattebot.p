@@ -42,6 +42,10 @@ class MiadEmbed(DiscordEmbed):
         for n, v in fields:
             self.add_field(name=n, value=v, inline=field_inline)
 
+    def add_empty_field(self, *, inline: bool = False) -> Self:
+        self.add_field(name='\u200b', value='\u200b', inline=inline)
+        return self
+
     def secondary(self) -> Self:
         self.colour = 0x111111
         return self

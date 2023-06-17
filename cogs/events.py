@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from core.utils.useful import MiadEmbed
+from core.ui.embed import MiadEmbed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

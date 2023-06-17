@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, Optional
 import discord
 from discord import app_commands
 
-from .i18n import _
+# from .i18n import _
 
 if TYPE_CHECKING:
     from .bot import LatteMaid
@@ -29,7 +29,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             _log.info('blacklisted user tried to use bot %s', user_id)
 
             await interaction.response.send_message(
-                _('You are blacklisted from using this bot.'),
+                'You are blacklisted from using this bot.',
                 ephemeral=True,
             )
 
@@ -43,7 +43,8 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             _log.info('guild %s is blacklisted', guild.id)
 
             await interaction.response.send_message(
-                _('This guild is blacklisted from using this bot.'),
+                # _('This guild is blacklisted from using this bot.'),
+                'This guild is blacklisted from using this bot.',
                 ephemeral=True,
             )
 
@@ -94,3 +95,10 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         self, interaction: discord.Interaction['LatteMaid'], error: app_commands.AppCommandError, /
     ) -> None:
         self.client.dispatch('app_command_error', interaction, error)
+
+    async def fake_translator(self, *, guild: Optional[discord.abc.Snowflake] = None) -> None:
+        commands = self._get_all_commands(guild=guild)
+
+        translator = self.translator
+        if translator:
+            payload = [await command.get_translated_payload(translator) for command in commands]
