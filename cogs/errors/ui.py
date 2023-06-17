@@ -13,10 +13,9 @@ from jishaku.paginators import PaginatorInterface, WrappedPaginator
 
 import valorantx2 as valorantx
 from core import errors
-from core.i18n import _
+from core.i18n import I18n
+from core.ui.embed import MiadEmbed
 from core.utils import database
-
-from .embed import MiadEmbed
 
 # from valorantx import valorant_api
 
@@ -26,6 +25,8 @@ if TYPE_CHECKING:
 
 # inspired by shenhe_bot (seriaati) url: https://github.com/seriaati/shenhe_bot
 # thanks for shenhe_bot <3
+
+_ = I18n('Errors', __file__)
 
 _log = logging.getLogger(__name__)
 

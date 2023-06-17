@@ -18,6 +18,8 @@ from discord.app_commands.checks import bot_has_permissions  # , dynamic_cooldow
 from discord.ext import commands
 from discord.utils import format_dt
 
+from core.i18n import I18n, cog_i18n
+
 # from core.checks import cooldown_short
 from core.ui.embed import MiadEmbed
 from core.utils.useful import count_python
@@ -26,7 +28,10 @@ if TYPE_CHECKING:
     from core.bot import LatteMaid
     from core.utils.enums import Emoji
 
+_ = I18n('about', __file__)
 
+
+@cog_i18n(_)
 class About(commands.Cog, name='about'):
 
     """Latte's About command"""
@@ -89,6 +94,8 @@ class About(commands.Cog, name='about'):
     async def about(self, interaction: Interaction[LatteMaid]) -> None:
         # await interaction.response.defer()
 
+        locale = interaction.locale
+
         e = self.bot.emoji
 
         core_dev = self.bot.owner
@@ -101,7 +108,7 @@ class About(commands.Cog, name='about'):
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
 
         embed = MiadEmbed(timestamp=interaction.created_at).purple()
-        embed.set_author(name='About Me', icon_url=self.bot.user.avatar)  # type: ignore
+        embed.set_author(name=_('About Me', locale), icon_url=self.bot.user.avatar)  # type: ignore
         embed.add_field(name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:', value=self.get_latest_commits(limit=5), inline=False)
         embed.add_field(
             name='ꜱᴛᴀᴛꜱ:',

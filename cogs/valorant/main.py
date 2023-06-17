@@ -21,7 +21,7 @@ from core.errors import (
     RiotAuthNotLinked,
     ValorantExtError,
 )
-from core.i18n import _
+from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
@@ -53,6 +53,8 @@ from .ui.views import (
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2.client import Client as ValorantClient
+
+_ = I18n('valorant', __file__)
 
 _log = logging.getLogger(__name__)
 

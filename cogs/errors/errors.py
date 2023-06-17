@@ -7,17 +7,21 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from core.translator import _
-from core.ui.errors import application_error_handler
+from core.i18n import I18n, cog_i18n
+
+from .ui import application_error_handler
 
 if TYPE_CHECKING:
     from discord.ui import Item, Modal
 
     from core.bot import LatteMaid
 
+_ = I18n('errors', __file__)
+
 _log = logging.getLogger(__file__)
 
 
+@cog_i18n(_)
 class Errors(commands.Cog, name='errors'):
     """Developer commands"""
 
