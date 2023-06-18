@@ -5,7 +5,7 @@ import itertools
 import platform
 
 # from functools import lru_cache
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 import discord
 import psutil
@@ -26,9 +26,33 @@ from core.utils.useful import count_python
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from core.utils.enums import Emoji
 
 _ = I18n('about', __file__)
+
+
+def format_commit(commit: pygit2.Commit) -> str:
+    """format a commit"""
+    short, _, _ = commit.message.partition('\n')
+    short = short[0:40] + '...' if len(short) > 40 else short
+    short_sha2 = commit.hex[0:6]
+    commit_tz = datetime.timezone(datetime.timedelta(minutes=commit.commit_time_offset))
+    commit_time = datetime.datetime.fromtimestamp(commit.commit_time).astimezone(commit_tz)
+    offset = format_dt(commit_time, style='R')
+    return f'[`{short_sha2}`](https://github.com/staciax/latte-maid/commit/{commit.hex}) {short} ({offset})'
+
+
+def get_last_parent() -> str:
+    """Get the last parent of the repo"""
+    repo = pygit2.Repository('./.git')
+    parent = repo.head.target.hex  # type: ignore
+    return parent[0:6]
+
+
+def get_latest_commits(limit: int = 3) -> str:
+    """Get the latest commits from the repo"""
+    repo = pygit2.Repository('./.git')
+    commits = list(itertools.islice(repo.walk(repo.head.target, pygit2.GIT_SORT_TOPOLOGICAL), limit))
+    return '\n'.join(format_commit(c) for c in commits)
 
 
 @cog_i18n(_)
@@ -38,37 +62,12 @@ class About(commands.Cog, name='about'):
 
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        self.emoji: Type[Emoji] = bot.emoji
+        # self.emoji: Type[Emoji] = bot.emoji
         self.process = psutil.Process()
 
     @property
     def display_emoji(self) -> Optional[discord.Emoji]:
         return self.bot.get_emoji(998453861511610398)
-
-    @staticmethod
-    def format_commit(commit: pygit2.Commit) -> str:
-        """format a commit"""
-        short, _, _ = commit.message.partition('\n')
-        short = short[0:40] + '...' if len(short) > 40 else short
-        short_sha2 = commit.hex[0:6]
-        commit_tz = datetime.timezone(datetime.timedelta(minutes=commit.commit_time_offset))
-        commit_time = datetime.datetime.fromtimestamp(commit.commit_time).astimezone(commit_tz)
-        offset = format_dt(commit_time, style='R')
-        return f'[`{short_sha2}`](https://github.com/staciax/latte-maid/commit/{commit.hex}) {short} ({offset})'
-
-    @staticmethod
-    def get_last_parent() -> str:
-        """Get the last parent of the repo"""
-        repo = pygit2.Repository('./.git')
-        parent = repo.head.target.hex  # type: ignore
-        return parent[0:6]
-
-    # @lru_cache(maxsize=1)
-    def get_latest_commits(self, limit: int = 3) -> str:
-        """Get the latest commits from the repo"""
-        repo = pygit2.Repository('./.git')
-        commits = list(itertools.islice(repo.walk(repo.head.target, pygit2.GIT_SORT_TOPOLOGICAL), limit))
-        return '\n'.join(self.format_commit(c) for c in commits)
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
@@ -84,7 +83,7 @@ class About(commands.Cog, name='about'):
         # embed.set_image(url=str(self.cdn.invite_banner))
 
         view = ui.View()
-        view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.get_invite_url(), emoji=str(self.emoji.latte_icon)))
+        view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.get_invite_url(), emoji=str(self.bot.emoji.latte_icon)))
 
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -113,7 +112,7 @@ class About(commands.Cog, name='about'):
         )
         embed.add_field(
             name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:',
-            value=self.get_latest_commits(limit=5),
+            value=get_latest_commits(limit=5),
             inline=False,
         )
         embed.add_field(
@@ -157,14 +156,14 @@ class About(commands.Cog, name='about'):
             ui.Button(
                 label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ',
                 url=self.bot.support_invite_url,
-                emoji=str(self.emoji.latte_icon),
+                emoji=str(e.latte_icon),
             )
         )
         view.add_item(
             ui.Button(
                 label='ᴅᴇᴠᴇʟᴏᴘᴇʀ',
                 url=f'https://discord.com/users/{core_dev.id}',
-                emoji=str(self.emoji.stacia_dev),
+                emoji=str(e.stacia_dev),
             )
         )
 
@@ -180,13 +179,13 @@ class About(commands.Cog, name='about'):
 
         view = ui.View()
         view.add_item(
-            ui.Button(label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', url=self.bot.support_invite_url, emoji=str(self.emoji.latte_icon))
+            ui.Button(label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', url=self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
         )
         view.add_item(
             ui.Button(
                 label='ᴅᴇᴠᴇʟᴏᴘᴇʀ',
                 url=f'https://discord.com/users/{self.bot.owner_id}',
-                emoji=str(self.emoji.stacia_dev),
+                emoji=str(self.bot.emoji.stacia_dev),
             )
         )
 

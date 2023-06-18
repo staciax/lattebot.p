@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, TypeVar, Union
+from typing import Dict, Optional, TypeVar, Union
 
 from discord import Locale
 from discord.app_commands import Command, Group
@@ -26,36 +26,11 @@ def get_locale_path(
     return cog_folder / 'locales' / 'strings' / f'{locale}.{fmt}'
 
 
-# def get_locale_app_command_path(cog_folder: Path, locale: str, fmt: str) -> Path:
-#     return cog_folder / 'locales' / 'app_commands' / f'{locale}.{fmt}'
-
-
-_translators: List[I18n] = []
-
-
 class I18n:
     def __init__(self, name: str, file_location: Union[str, Path, os.PathLike]):
         self.cog_folder = Path(file_location).resolve().parent
         self.cog_name = name
         self.translations: Dict[str, Dict[str, str]] = {}
-        _translators.append(self)
-        self.load()
-
-    def load(self) -> None:
-        for locale in Locale:
-            locale_string_path = get_locale_path(self.cog_folder, locale.value.lower(), 'json')
-            with contextlib.suppress(IOError, FileNotFoundError):
-                with locale_string_path.open(encoding='utf-8') as file:
-                    self._parse(locale.value, file)
-
-        _log.info('loaded')
-
-    def unload(self) -> None:
-        self.translations.clear()
-        _log.info('unloaded')
-
-    def reload(self) -> None:
-        self.unload()
         self.load()
 
     def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
@@ -76,6 +51,23 @@ class I18n:
             return key
         else:
             return result
+
+    def load(self) -> None:
+        for locale in Locale:
+            locale_string_path = get_locale_path(self.cog_folder, locale.value.lower(), 'json')
+            with contextlib.suppress(IOError, FileNotFoundError):
+                with locale_string_path.open(encoding='utf-8') as file:
+                    self._parse(locale.value, file)
+
+        _log.info('loaded')
+
+    def unload(self) -> None:
+        self.translations.clear()
+        _log.info('unloaded')
+
+    def reload(self) -> None:
+        self.unload()
+        self.load()
 
     def get_text(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
         return self.__call__(key, locale)
@@ -99,15 +91,7 @@ class I18n:
 
         self.translations[locale][key] = value
 
-
-# def cog_i18n(i18n: I18n):
-#     def decorator(cog_class: type[CogT]) -> type[CogT]:
-#         for name, attr in cog_class.__dict__.items():
-#             if isinstance(attr, (Command, Group)):
-#                 ...
-#         return cog_class
-
-#     return decorator
+    # app commands
 
 
 def cog_i18n(i18n: I18n):
@@ -117,9 +101,9 @@ def cog_i18n(i18n: I18n):
             if isinstance(attr, (Command, Group)):
                 setattr(attr, '__i18n__', i18n)
                 setattr(cog_class, name, attr)
-
-            # if context_values := getattr(attr, '__context_menu__', None):
-            #     print(context_values)
+            # if getattr(attr, '__context_menu__', None):
+            #     setattr(attr, '__i18n__', i18n)
+            #     setattr(cog_class, name, attr)
         return cog_class
 
     return decorator

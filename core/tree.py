@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-# import contextlib
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
 import discord
 from discord import app_commands
-
-# from .i18n import _
 
 if TYPE_CHECKING:
     from .bot import LatteMaid
@@ -92,13 +89,15 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         return synced
 
     async def on_error(
-        self, interaction: discord.Interaction['LatteMaid'], error: app_commands.AppCommandError, /
+        self,
+        interaction: discord.Interaction['LatteMaid'],
+        error: app_commands.AppCommandError,
+        /,
     ) -> None:
         self.client.dispatch('app_command_error', interaction, error)
 
     async def fake_translator(self, *, guild: Optional[discord.abc.Snowflake] = None) -> None:
         commands = self._get_all_commands(guild=guild)
-
-        translator = self.translator
-        if translator:
-            payload = [await command.get_translated_payload(translator) for command in commands]
+        assert self.translator is not None
+        for command in commands:
+            await command.get_translated_payload(self.translator)

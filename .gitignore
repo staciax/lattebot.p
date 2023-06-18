@@ -137,7 +137,7 @@ dmypy.json
 # local db for test
 test.db
 test.py
-test_db.py
+test_*.py
 
 # playground
 playground.py

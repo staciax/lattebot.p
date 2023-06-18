@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypedDict, Union
 
 import discord
 from discord import Locale, app_commands
@@ -74,11 +74,6 @@ class Translator(app_commands.Translator):
         elif tcl == TCL.choice_name and isinstance(localizable, Choice):
             ...
 
-        try:
-            print(self.__latest_command.name, self.__latest_parameter.name)
-        except:
-            pass
-
         return None
 
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> Optional[str]:
@@ -107,7 +102,8 @@ class Translator(app_commands.Translator):
         elif isinstance(localizable, Choice):
             ...
 
-        localize_keys = self._build_localize_keys(binding, tcl, localizable)
+        cog, localize_keys = self._build_localize_keys(binding, tcl, localizable)
+        print(cog, localize_keys)
 
         # if binding is None:
         #     print(localize_keys)
@@ -187,21 +183,24 @@ class Translator(app_commands.Translator):
         binding: Optional[Union[commands.Cog, str]],
         tcl: TCL,
         localizable: Localizable,
-    ) -> List[str]:
+    ) -> Tuple[Optional[str], List[str]]:
         keys = []
 
-        if tcl == TCL.other:
-            keys.append('other')
-        elif isinstance(localizable, ContextMenu):
-            keys.append('context_menus')
-        else:
-            keys.append('app_commands')
+        # if tcl == TCL.other:
+        #     keys.append('other')
+        # elif isinstance(localizable, ContextMenu):
+        #     keys.append('context_menus')
+        # else:
+        #     keys.append('app_commands')
 
+        bidding_str: Optional[str] = None
         if binding is not None:
             if isinstance(binding, commands.Cog):
-                keys.append(binding.qualified_name.lower())
+                bidding_str = binding.qualified_name.lower()
+                # keys.append(binding.qualified_name.lower())
             else:
-                keys.append(binding.lower())
+                bidding_str = binding.lower()
+                # keys.append(binding.lower())
 
         if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
             keys.extend([localizable.name, 'name'])
@@ -236,7 +235,7 @@ class Translator(app_commands.Translator):
                     _choice_key.insert(0, self.__latest_binding.qualified_name.lower())
                 keys.extend(_choice_key)
 
-        return keys
+        return bidding_str, keys
 
     async def get_i18n(
         self,

@@ -276,17 +276,17 @@ class LatteMaid(commands.AutoShardedBot):
         if not hasattr(self, 'launch_time'):
             self.launch_time: datetime.datetime = datetime.datetime.now()
 
+        if self.is_debug_mode():
+            await self.change_presence(
+                activity=discord.Activity(type=discord.ActivityType.listening, name='latte maid is in debug mode'),
+                status=discord.Status.idle,
+            )
         _log.info(
             f'logged in as: {self.user} '
             + (f'activity: {self.activity.name} ' if self.activity is not None else '')
             + f'servers: {len(self.guilds)} '
             + f'users: {sum(guild.member_count for guild in self.guilds if guild.member_count is not None)}'
         )
-        if self.is_debug_mode():
-            await self.change_presence(
-                activity=discord.Activity(type=discord.ActivityType.listening, name='latte maid is in debug mode'),
-                status=discord.Status.idle,
-            )
 
     async def on_message(self, message: discord.Message, /) -> None:
         if message.author == self.user:
