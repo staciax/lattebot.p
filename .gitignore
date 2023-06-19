@@ -139,5 +139,8 @@ test.db
 test.py
 test_*.py
 
+# cog test
+cogs/test/*
+
 # playground
 playground.py
