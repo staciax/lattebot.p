@@ -7,11 +7,13 @@ import discord
 # from async_lru import alru_cache
 from discord import ui
 
-from core.translator import _
+from core.i18n import I18n
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2 import RiotAuth
+
+_ = I18n('valorant', __file__)
 
 
 #  TODO: from base Modal

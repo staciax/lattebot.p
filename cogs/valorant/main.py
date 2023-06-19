@@ -13,7 +13,7 @@ from discord.app_commands import Choice, locale_str as _T
 import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
-from core.cog import LatteMaidCog
+from core.cog import Cog
 from core.errors import (
     RiotAuthAlreadyLinked,
     RiotAuthMaxLimitReached,
@@ -21,7 +21,7 @@ from core.errors import (
     RiotAuthNotLinked,
     ValorantExtError,
 )
-from core.i18n import I18n
+from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
@@ -78,7 +78,7 @@ _log = logging.getLogger(__name__)
 
 
 # thanks for redbot
-class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
+class CompositeMetaClass(type(Cog), type(ABC)):
     """
     This allows the metaclass used for proper type detection to
     coexist with discord.py's metaclass
@@ -87,7 +87,8 @@ class CompositeMetaClass(type(LatteMaidCog), type(ABC)):
     pass
 
 
-class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=CompositeMetaClass):
+@cog_i18n(_)
+class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
 
@@ -123,7 +124,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=Compo
         user = await self.get_user(id)
         if user is None:
             await self.bot.db.create_user(id, locale=locale)
-            raise RiotAuthNotLinked(_('You have not linked any riot accounts.', 0, locale))
+            raise RiotAuthNotLinked(_('You have not linked any riot accounts.', locale))
 
         return user
 
@@ -158,7 +159,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=Compo
             user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
 
         if len(user.riot_accounts) >= 5:
-            raise RiotAuthMaxLimitReached(_('You can only link up to 5 accounts.', 0, interaction.locale))
+            raise RiotAuthMaxLimitReached(_('You can only link up to 5 accounts.', interaction.locale))
 
         riot_auth = RiotAuth()
 
@@ -171,7 +172,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=Compo
 
             # when timeout
             if multi_modal.code is None:
-                raise RiotAuthMultiFactorTimeout(_('You did not enter the code in time.', 0, interaction.locale))
+                raise RiotAuthMultiFactorTimeout(_('You did not enter the code in time.', interaction.locale))
             try:
                 await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
             except aiohttp.ClientResponseError as e:
@@ -193,7 +194,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, LatteMaidCog, metaclass=Compo
             puuid=riot_auth.puuid, owner_id=interaction.user.id
         )
         if riot_account is not None:
-            raise RiotAuthAlreadyLinked(_('You already have this account linked.', 0, interaction.locale))
+            raise RiotAuthAlreadyLinked(_('You already have this account linked.', interaction.locale))
 
         # fetch userinfo and region
         try:

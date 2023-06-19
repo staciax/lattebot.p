@@ -31,6 +31,7 @@ EXTENSIONS = Literal[
     'cogs.jsk',
     'cogs.stats',
     'cogs.valorant',
+    'cogs.test'
 ]
 # fmt: on
 
@@ -71,6 +72,7 @@ class Developer(commands.Cog, name='developer'):
         default_permissions=discord.Permissions(
             administrator=True,
         ),
+        guild_only=True,
     )
 
     @extension.command(name=_T('load'), description=_T('Load an extension'))
@@ -140,19 +142,22 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.command(name='_sync_tree')
     @app_commands.rename(guild_id=_T('guild_id'))
     @bot_has_permissions(send_messages=True, embed_links=True)
+    # @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
     @owner_only()
-    async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: Optional[int] = None) -> None:
+    async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: Optional[str] = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        if guild_id is not None:
-            obj = discord.Object(id=guild_id)
+        if guild_id is not None and guild_id.isdigit():
+            obj = discord.Object(id=int(guild_id))
             await self.bot.tree.sync(guild=obj)
             return
-        await self.bot.tree.sync()
+        synced = await self.bot.tree.sync()
 
-        embed = MiadEmbed(description=f"Sync Tree").success()
+        embed = MiadEmbed(description=f"sync tree: {len(synced)}").success()
         if guild_id is not None:
-            embed.description = f"Sync Tree : `{guild_id}`"
+            assert embed.description is not None
+            embed.description += f" : `{guild_id}`"
 
         # refresh application commands
         await self.bot.fetch_app_commands()
@@ -178,6 +183,7 @@ class Developer(commands.Cog, name='developer'):
         default_permissions=discord.Permissions(
             administrator=True,
         ),
+        guild_only=True,
     )
 
     @blacklist.command(name='add', description=_T('Add user or guild to blacklist'))
@@ -242,7 +248,7 @@ class Developer(commands.Cog, name='developer'):
 
         embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
 
-        if object_id not in self.bot.db.blacklist:
+        if object_id not in self.bot.db._blacklist:
             embed.description = f'{bold(object_id)} is not blacklisted.'
             embed.success()
 

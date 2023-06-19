@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Union
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from core.i18n import I18n, cog_i18n
+from core.cog import Cog
 
 from .ui import application_error_handler
 
@@ -16,13 +15,8 @@ if TYPE_CHECKING:
 
     from core.bot import LatteMaid
 
-_ = I18n('errors', __file__)
 
-_log = logging.getLogger(__file__)
-
-
-@cog_i18n(_)
-class Errors(commands.Cog, name='errors'):
+class Errors(Cog, name='errors'):
     """Developer commands"""
 
     def __init__(self, bot: LatteMaid) -> None:

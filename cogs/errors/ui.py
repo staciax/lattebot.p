@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # inspired by shenhe_bot (seriaati) url: https://github.com/seriaati/shenhe_bot
 # thanks for shenhe_bot <3
 
-_ = I18n('Errors', __file__)
+_ = I18n('errors', __file__)
 
 _log = logging.getLogger(__name__)
 

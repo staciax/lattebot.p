@@ -15,12 +15,11 @@ import pygit2
 from discord import Interaction, app_commands, ui
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import bot_has_permissions  # , dynamic_cooldown
-from discord.ext import commands
 from discord.utils import format_dt
 
-from core.i18n import I18n, cog_i18n
-
 # from core.checks import cooldown_short
+from core.cog import Cog
+from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
 from core.utils.useful import count_python
 
@@ -56,13 +55,12 @@ def get_latest_commits(limit: int = 3) -> str:
 
 
 @cog_i18n(_)
-class About(commands.Cog, name='about'):
+class About(Cog, name='about'):
 
     """Latte's About command"""
 
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
-        # self.emoji: Type[Emoji] = bot.emoji
         self.process = psutil.Process()
 
     @property

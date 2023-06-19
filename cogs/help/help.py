@@ -11,6 +11,7 @@ from discord.app_commands.models import AppCommand, AppCommandGroup, Argument
 from discord.ext import commands
 
 from core.checks import cooldown_short
+from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
@@ -153,7 +154,7 @@ class HelpCommand(ViewAuthor, LattePages):
 
 
 @cog_i18n(_)
-class Help(commands.Cog, name='help'):
+class Help(Cog, name='help'):
     """Help command"""
 
     def __init__(self, bot: LatteMaid):

@@ -51,7 +51,7 @@ def context_menu(
     return inner
 
 
-class LatteMaidCog(commands.Cog):
+class Cog(commands.Cog):
     __cog_context_menus__: List[app_commands.ContextMenu]
 
     async def _inject(
@@ -66,14 +66,19 @@ class LatteMaidCog(commands.Cog):
             method = getattr(self, method_name)
             if context_values := getattr(method, '__context_menu__', None):
                 menu = app_commands.ContextMenu(callback=method, **context_values)
-                if self.qualified_name.lower() in self.__module__.lower():
-                    menu.module = 'cogs.' + self.qualified_name.lower()
+                setattr(menu, 'binding', self)
                 context_values['context_menu_class'] = menu
                 bot.tree.add_command(menu, guilds=method.__context_menu_guilds__)
                 try:
                     self.__cog_context_menus__.append(menu)
                 except AttributeError:
                     self.__cog_context_menus__ = [menu]
+
+        if i18n := getattr(self, '__i18n__', None):
+            for locale in i18n.supported_locales:
+                i18n.invalidate_app_command_cache(i18n, self, locale.value)
+            i18n.save()
+            bot.translator.update_app_commands_i18n(i18n.app_translations)
 
         return self
 
@@ -88,3 +93,6 @@ class LatteMaidCog(commands.Cog):
                         self.__cog_context_menus__.remove(menu)
                     except ValueError:
                         pass
+
+        if i18n := getattr(self, '__i18n__', None):
+            bot.translator.remove_app_commands_i18n(i18n.app_translations)

@@ -21,7 +21,7 @@ from core.utils.enums import Emoji
 from .database import DatabaseConnection
 
 # from .i18n import I18n, _
-from .translator_test import Translator
+from .translator import Translator
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
 
@@ -47,7 +47,7 @@ INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.errors',
     # 'cogs.events',
     'cogs.help',
-    'cogs.jsk',
+    # 'cogs.jsk',
     # 'cogs.stats',
     'cogs.valorant',
     # 'cogs.ipc',
