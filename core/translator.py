@@ -128,6 +128,7 @@ class Translator(app_commands.Translator):
         return cls.__string_i18n__[locale].get(string)
 
     # app_commands
+    # TODO: i know this is bad, but i don't know how to fix it
 
     def update_app_commands_i18n(self, i18n: Dict[str, Dict[str, AppCommandLocalization]]) -> None:
         payload = {}

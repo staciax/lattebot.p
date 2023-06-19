@@ -161,6 +161,8 @@ class I18n:
                 with locale_path.open(encoding='utf-8') as file:
                     self.translations[locale.value] = json.load(file)
 
+        _log.info(f'loaded {len(self.translations)} translations')
+
     def save_translations(self) -> None:
         for locale, translations in self.translations.items():
             locale_path = get_path(self.cog_folder, locale, 'strings')
@@ -200,6 +202,8 @@ class I18n:
 
             with locale_path.open('r', encoding='utf-8') as file:
                 self.app_translations[locale.value] = json.load(file)
+
+        _log.info(f'loaded {len(self.app_translations)} app command translations')
 
     def save_app_command_translations(self) -> None:
         for locale, translations in self.app_translations.items():
@@ -244,7 +248,7 @@ class I18n:
         self.app_translations[locale][command.qualified_name].update(data)
 
     @staticmethod
-    def invalidate_app_command_cache(i18n: I18n, cog: type[commands.Cog], locale: str) -> None:
+    def invalidate_app_command_cache(i18n: I18n, cog: Union[type[commands.Cog], commands.Cog], locale: str) -> None:
         for attr in cog.__dict__.values():
             if isinstance(attr, (Command, Group)):
                 i18n.update_app_command_translation(

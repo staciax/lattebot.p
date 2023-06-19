@@ -88,10 +88,8 @@ class Developer(commands.Cog, name='developer'):
         except commands.ExtensionAlreadyLoaded:
             raise AppCommandError(f"The extension is already loaded.")
         except Exception as e:
-            _log.error(f'error loading extension {extension}', exc_info=e)
-            raise AppCommandError('The extension load failed')
+            raise AppCommandError('The extension load failed') from e
 
-        _log.info(f'loaded extension {extension}')
         embed = MiadEmbed(description=f"Load : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
@@ -106,13 +104,10 @@ class Developer(commands.Cog, name='developer'):
         try:
             await self.bot.unload_extension(f'{extension}')
         except commands.ExtensionNotLoaded:
-            _log.info(f'extension {extension} is not loaded')
             raise AppCommandError(f'The extension was not loaded.')
         except Exception as e:
-            _log.error(f'error unloading extension {extension}', exc_info=e)
-            raise AppCommandError('The extension unload failed')
+            raise AppCommandError('The extension unload failed') from e
 
-        _log.info(f'unloaded extension {extension}')
         embed = MiadEmbed(description=f"Unload : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
@@ -126,15 +121,12 @@ class Developer(commands.Cog, name='developer'):
 
         try:
             await self.bot.reload_extension(f'{extension}')
-            _log.info(f'reloading extension {extension}')
         except commands.ExtensionNotLoaded:
             raise AppCommandError(f'The extension was not loaded.')
         except commands.ExtensionNotFound:
             raise AppCommandError(f'The Extension Not Found')
         except Exception as e:
-            _log.error(f'error reloading extension {extension}', exc_info=e)
-            raise AppCommandError('The extension reload failed')
-        _log.info(f'reloaded extension {extension}')
+            raise AppCommandError('The extension reload failed') from e
 
         embed = MiadEmbed(description=f"Reload : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)

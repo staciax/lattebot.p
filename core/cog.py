@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from .bot import LatteMaid
+    from .i18n import I18n
+
 
 T = TypeVar('T')
 Coro = Coroutine[Any, Any, T]
@@ -74,9 +76,15 @@ class Cog(commands.Cog):
                 except AttributeError:
                     self.__cog_context_menus__ = [menu]
 
-        if i18n := getattr(self, '__i18n__', None):
+        if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
+            i18n: I18n
+
+            if getattr(self, '__i18n_update__', False):
+                i18n.load_app_command_translations()
+
             for locale in i18n.supported_locales:
                 i18n.invalidate_app_command_cache(i18n, self, locale.value)
+
             i18n.save()
             bot.translator.update_app_commands_i18n(i18n.app_translations)
 
@@ -94,5 +102,10 @@ class Cog(commands.Cog):
                     except ValueError:
                         pass
 
-        if i18n := getattr(self, '__i18n__', None):
+        if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
+            i18n: I18n
+
             bot.translator.remove_app_commands_i18n(i18n.app_translations)
+
+            # mark if when enjecting cog, we need to update i18n
+            setattr(self, '__i18n_update__', True)

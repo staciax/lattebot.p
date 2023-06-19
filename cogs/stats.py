@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
-class Event(commands.Cog, name='events'):
-    """Bot Events"""
+class Stats(commands.Cog, name='stats'):
+    """Stats cog"""
 
     def __init__(self, bot: LatteMaid) -> None:
         load_dotenv()
@@ -58,4 +58,4 @@ class Event(commands.Cog, name='events'):
 
 
 async def setup(bot: LatteMaid) -> None:
-    await bot.add_cog(Event(bot))
+    await bot.add_cog(Stats(bot))

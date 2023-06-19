@@ -386,6 +386,7 @@ class LatteMaid(commands.AutoShardedBot):
             await super().load_extension(name, package=package)
         except Exception as e:
             _log.error('failed to load extension %s', name, exc_info=e)
+            raise e
         else:
             _log.info('loaded extension %s', name)
 
@@ -394,6 +395,7 @@ class LatteMaid(commands.AutoShardedBot):
             await super().unload_extension(name, package=package)
         except Exception as e:
             _log.error('failed to unload extension %s', name, exc_info=e)
+            raise e
         else:
             _log.info('unloaded extension %s', name)
 
@@ -402,6 +404,7 @@ class LatteMaid(commands.AutoShardedBot):
             await super().reload_extension(name, package=package)
         except Exception as e:
             _log.error('failed to reload extension %s', name, exc_info=e)
+            raise e
         else:
             _log.info('reloaded extension %s', name)
 
