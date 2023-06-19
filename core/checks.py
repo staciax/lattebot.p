@@ -64,7 +64,3 @@ def custom_cooldown(
     interaction: discord.Interaction[LatteMaid], rate: float, per: float
 ) -> Optional[app_commands.Cooldown]:
     return app_commands.Cooldown(rate, per)
-
-
-# def x():
-#     return dynamic_cooldown(cooldown_short)

@@ -5,6 +5,8 @@ from discord.app_commands import AppCommandError as DiscordAppCommandError
 from discord.app_commands.commands import Command, ContextMenu
 from discord.app_commands.models import AppCommand, AppCommandGroup
 
+# TODO: improve this
+
 
 class LatteMaidError(DiscordAppCommandError):
     """Base class for all Latte errors."""

@@ -45,7 +45,7 @@ class PageSource:
             # read this as follows:
             # if hasattr(self, '__prepare')
             # except that it works as you expect
-            self.__prepare  # type: ignore
+            self.__prepare
         except AttributeError:
             await self.prepare()
             self.__prepare = True

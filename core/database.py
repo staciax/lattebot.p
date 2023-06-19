@@ -15,6 +15,8 @@ __all__ = (
     'BlackList',
 )
 
+# TODO: improve this
+
 
 class DatabaseConnection(_DatabaseConnection):
     def __init__(self, uri: str) -> None:

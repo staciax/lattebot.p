@@ -13,6 +13,7 @@ from discord.ext import commands
 
 CogT = TypeVar('CogT', bound=commands.Cog)
 
+# TODO: improve this
 
 _log = logging.getLogger(__name__)
 

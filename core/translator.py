@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
+# TODO: improve this
+
 
 class Translator(app_commands.Translator):
     __app_commands_i18n__: Dict[str, Dict[str, AppCommandLocalization]] = {}

@@ -86,7 +86,9 @@ class Cog(commands.Cog):
                 i18n.invalidate_app_command_cache(i18n, self, locale.value)
 
             i18n.save()
+
             bot.translator.update_app_commands_i18n(i18n.app_translations)
+            # i know cache is not a good idea, but i don't want to make a new dict every time
 
         return self
 

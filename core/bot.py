@@ -19,8 +19,6 @@ import valorantx2 as valorantx
 from core.utils.enums import Emoji
 
 from .database import DatabaseConnection
-
-# from .i18n import I18n, _
 from .translator import Translator
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
@@ -220,13 +218,6 @@ class LatteMaid(commands.AutoShardedBot):
         self.bot_app_info = await self.application_info()
         self.owner_id = self.bot_app_info.owner.id
 
-        # valorant client
-        # await self._run_valorant_client()
-
-        # valorantx
-        # self.valorant_client = valorantx.Client()
-        # self.loop.create_task(self.valorant_client.login(self.riot_username, self.riot_password))
-
         # load cogs
         await self.cogs_load()
 
@@ -234,23 +225,10 @@ class LatteMaid(commands.AutoShardedBot):
         if self._tree_sync_at_startup:
             await self.tree_sync()
 
-        # tree translator app commands
-        # tree_app_commands = self.tree.get_commands()
-        # for command in tree_app_commands:
-        #     await command.get_translated_payload(self.translator)
-
-        # if os.environ.get('I18N') == 'True':
-        #     await self.translator.get_i18n(
-        #         excludes=['developer', 'jishaku'],  # exclude cogs
-        #         only_public=True,  # exclude @app_commands.guilds()
-        #         replace=True,
-        #         set_locale=[
-        #             discord.Locale.american_english,
-        #             discord.Locale.thai,
-        #         ],
-        #     )
-
         await self.fetch_app_commands()
+
+        # valorant client
+        # await self._run_valorant_client()
 
     # cogs property
 

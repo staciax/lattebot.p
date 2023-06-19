@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
+# TODO: improve this
+
 
 class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
