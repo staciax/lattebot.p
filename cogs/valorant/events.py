@@ -92,7 +92,8 @@ class Events(MixinMeta):
     @valorant_version_checker.before_loop
     async def before_valorant_version_checker(self) -> None:
         await self.bot.wait_until_ready()
-        await self.valorant_client.wait_until_ready()
+        if not self.valorant_client.is_ready():
+            return
         _log.info(f'valorant version checker loop has been started')
 
     @valorant_version_checker.after_loop
@@ -117,7 +118,8 @@ class Events(MixinMeta):
     @valorant_cache_control.before_loop
     async def before_valorant_cache_control(self) -> None:
         await self.bot.wait_until_ready()
-        await self.valorant_client.wait_until_ready()
+        if not self.valorant_client.is_ready():
+            return
         _log.info(f'valorant cache control loop has been started')
 
     @valorant_cache_control.after_loop
