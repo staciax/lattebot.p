@@ -13,7 +13,7 @@ from core.bot import LatteMaid
 from core.checks import owner_only
 from core.errors import AppCommandError
 from core.ui.embed import MiadEmbed
-from core.utils.chat_formatting import bold, inline
+from core.utils.chat_formatting import inline
 from core.utils.database.models.blacklist import BlackList
 from core.utils.pages import LattePages, ListPageSource
 
@@ -67,7 +67,7 @@ class Developer(commands.Cog, name='developer'):
         self.bot = bot
 
     extension = app_commands.Group(
-        name=_T('_ext'),
+        name=_T('ext'),
         description=_T('extension manager'),
         default_permissions=discord.Permissions(
             administrator=True,
@@ -131,7 +131,7 @@ class Developer(commands.Cog, name='developer'):
         embed = MiadEmbed(description=f"Reload : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
-    @app_commands.command(name='_sync_tree')
+    @app_commands.command(name='sync_tree')
     @app_commands.rename(guild_id=_T('guild_id'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     # @app_commands.default_permissions(administrator=True)
@@ -183,6 +183,9 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def blacklist_add(self, interaction: Interaction[LatteMaid], object_id: str) -> None:
+        if not object_id.isdigit():
+            raise AppCommandError(f'`{object_id}` is not a valid ID')
+
         await interaction.response.defer(ephemeral=True)
 
         if object_id in self.bot.db._blacklist:  # TODO: fix this
@@ -191,7 +194,8 @@ class Developer(commands.Cog, name='developer'):
         await self.bot.db.create_blacklist(int(object_id))
 
         blacklist = (
-            await self.bot.fetch_user(int(object_id))
+            self.bot.get_user(int(object_id))
+            or await self.bot.fetch_user(int(object_id))
             or self.bot.get_guild(int(object_id))
             or await self.bot.fetch_guild(int(object_id))
             or object_id
@@ -210,15 +214,19 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def blacklist_remove(self, interaction: Interaction[LatteMaid], object_id: str):
+        if not object_id.isdigit():
+            raise AppCommandError(f'`{object_id}` is not a valid ID')
+
         await interaction.response.defer(ephemeral=True)
 
-        if object_id not in self.bot.db._blacklist:
+        if int(object_id) not in self.bot.db._blacklist:
             raise AppCommandError(f'`{object_id}` is not in blacklist')
 
         await self.bot.db.delete_blacklist(int(object_id))
 
         blacklist = (
-            await self.bot.fetch_user(int(object_id))
+            self.bot.get_user(int(object_id))
+            or await self.bot.fetch_user(int(object_id))
             or self.bot.get_guild(int(object_id))
             or await self.bot.fetch_guild(int(object_id))
             or object_id
@@ -231,20 +239,23 @@ class Developer(commands.Cog, name='developer'):
 
         await interaction.followup.send(embed=embed, silent=True)
 
-    @blacklist.command(name=_T('check'), description=_T('Check if a user or guild is blacklisted'))
-    @app_commands.describe(object_id=_T('Object ID'))
-    @bot_has_permissions(send_messages=True, embed_links=True)
-    @owner_only()
-    async def blacklist_check(self, interaction: Interaction[LatteMaid], object_id: str):
-        await interaction.response.defer(ephemeral=True)
+    # @blacklist.command(name=_T('check'), description=_T('Check if a user or guild is blacklisted'))
+    # @app_commands.describe(object_id=_T('Object ID'))
+    # @bot_has_permissions(send_messages=True, embed_links=True)
+    # @owner_only()
+    # async def blacklist_check(self, interaction: Interaction[LatteMaid], object_id: str):
+    #     if not object_id.isdigit():
+    #         raise AppCommandError(f'`{object_id}` is not a valid ID')
 
-        embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
+    #     await interaction.response.defer(ephemeral=True)
 
-        if object_id not in self.bot.db._blacklist:
-            embed.description = f'{bold(object_id)} is not blacklisted.'
-            embed.success()
+    #     embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
 
-        await interaction.followup.send(embed=embed, silent=True)
+    #     if int(object_id) not in self.bot.db._blacklist:
+    #         embed.description = f'{bold(object_id)} is not blacklisted.'
+    #         embed.success()
+
+    #     await interaction.followup.send(embed=embed, silent=True)
 
     @blacklist.command(name=_T('list'), description=_T('Lists all blacklisted users'))
     @owner_only()
