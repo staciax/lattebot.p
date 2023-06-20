@@ -102,9 +102,11 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
 
     async def cog_load(self) -> None:
         self.valorant_version_checker.start()
+        self.valorant_cache_control.start()
 
     async def cog_unload(self) -> None:
         self.valorant_version_checker.cancel()
+        self.valorant_cache_control.cancel()
 
     # user
 
