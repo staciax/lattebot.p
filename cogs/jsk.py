@@ -4,15 +4,15 @@ import inspect
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import discord
 from discord import app_commands
 from discord.app_commands import locale_str as _T
-
-# from discord.app_commands.checks import bot_has_permissions
+from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
-from jishaku.codeblocks import codeblock_converter
+from discord.ext.commands.view import StringView
+from jishaku.codeblocks import Codeblock, codeblock_converter
 from jishaku.cog import OPTIONAL_FEATURES, STANDARD_FEATURES
 from jishaku.exception_handling import ReplResponseReactor
 from jishaku.features.baseclass import Feature
@@ -21,7 +21,7 @@ from jishaku.paginators import PaginatorInterface, WrappedPaginator, use_file_ch
 from jishaku.repl import AsyncCodeExecutor, get_var_dict_from_ctx  # type: ignore
 
 from core.checks import owner_only
-from core.errors import LatteMaidError
+from core.errors import AppCommandError
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -58,18 +58,32 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         self.bot.tree.remove_command(self.ctx_msg_jsk_py.name, type=self.ctx_msg_jsk_py.type)
         await super().cog_unload()
 
-    @Feature.Command(name="jishaku", aliases=["jsk"], invoke_without_command=True, ignore_extra=False)
-    async def jsk(self, ctx: commands.Context) -> None:
+    async def cog_check(self, ctx: ContextA):  # type: ignore  # pylint: disable=invalid-overridden-method
+        if not await ctx.bot.is_owner(ctx.author):
+            raise commands.NotOwner('You must own this bot to use Jishaku.')
+        return True
+
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
+        if not await interaction.client.is_owner(interaction.user):
+            raise AppCommandError('You must own this bot to use Jishaku.')
+        return super().interaction_check(interaction)
+
+    @Feature.Command(name='jishaku', aliases=['jsk'], invoke_without_command=True, ignore_extra=False)
+    async def jsk(self, ctx: commands.Context[LatteMaid]) -> None:
         """
         The Jishaku debug and diagnostic commands.
 
         This command on its own gives a status brief.
         All other functionality is within its subcommands.
         """
-        embed = discord.Embed(title="Jishaku", color=discord.Color.blurple())
+        embed = discord.Embed(
+            title='Jishaku',
+            description=f'Jishaku is a debug and diagnostic cog for {self.bot.user}.',
+            color=discord.Color.blurple(),
+        )
         await ctx.send(embed=embed, silent=True)
 
-    @Feature.Command(parent="jsk", name="source", aliases=["src"])
+    @Feature.Command(parent='jsk', name='source', aliases=['src'])
     async def jsk_source(self, ctx: commands.Context[LatteMaid], *, command_name: str) -> None:
         """
         Displays the source code for an app command.
@@ -77,16 +91,16 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
 
         command = self.bot.get_command(command_name) or self.bot.tree.get_command(command_name)
         if not command:
-            await ctx.send(f"Couldn't find command `{command_name}`.")
+            await ctx.send(f'Couldn\'t find command `{command_name}`.')
             return
 
         try:
             source_lines, _ = inspect.getsourcelines(command.callback)  # type: ignore
         except (TypeError, OSError):
-            await ctx.send(f"Was unable to retrieve the source for `{command}` for some reason.")
+            await ctx.send(f'Was unable to retrieve the source for `{command}` for some reason.')
             return
 
-        filename = "source.py"
+        filename = 'source.py'
 
         try:
             filename = pathlib.Path(inspect.getfile(command.callback)).name  # type: ignore
@@ -106,10 +120,10 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
             interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
             await interface.send_to(ctx)
 
-    @Feature.Command(parent="jsk", name="py", aliases=["python"])
-    async def jsk_python(self, ctx: ContextA, *, argument: codeblock_converter):  # type: ignore
+    @Feature.Command(parent='jsk', name='py', aliases=['python'])
+    async def jsk_python(self, ctx: commands.Context[LatteMaid], *, argument: codeblock_converter):  # type: ignore
         if TYPE_CHECKING:
-            argument: Codeblock = argument  # type: ignore
+            argument: Codeblock = argument
 
         arg_dict = get_var_dict_from_ctx(ctx, '')
         arg_dict.update(get_var_dict_from_ctx(ctx, '_'))
@@ -135,28 +149,63 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         finally:
             scope.clear_intersection(arg_dict)
 
-    @owner_only()
+    @app_commands.command(name=_T('_jsk'))
+    @app_commands.describe(sub=_T('Sub command of jsk'), args=_T('Arguments of jsk'))
+    @app_commands.rename(sub=_T('sub'), args=_T('args'))
     @app_commands.default_permissions(administrator=True)
-    # @bot_has_permissions(administrator=True)
+    @bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
+    @owner_only()
+    async def jishaku_app(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        sub: Optional[app_commands.Range[str, 1, 20]] = None,
+        args: Optional[str] = None,
+    ) -> None:
+        """Jishaku
+
+        Attributes:
+            sub (str): The subcommand to use.
+            args (str): The arguments to pass to the subcommand.
+        """
+
+        await interaction.response.defer(ephemeral=True)
+
+        jsk = self.bot.get_command('jishaku' if sub is None else f'jishaku {sub}')
+
+        if jsk is None:
+            raise AppCommandError(f'Couldn\'t find command `jishaku {sub}`.')
+
+        ctx = await self.bot.get_context(interaction)
+        ctx.invoked_with = jsk.qualified_name
+        ctx.command = jsk
+        if args:
+            ctx.view = StringView(args)
+        await self.bot.invoke(ctx)
+
+    @app_commands.default_permissions(administrator=True)
+    @bot_has_permissions(send_messages=True, embed_links=True, add_reactions=True)
+    @owner_only()
     async def ctx_message_jishaku_python(
-        self, interaction: discord.Interaction[LatteMaid], message: discord.Message
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        message: discord.Message,
     ) -> None:
         if not message.content:
-            raise LatteMaidError('No code provided.')
+            raise AppCommandError('No code provided.')
 
         await interaction.response.defer(ephemeral=message.content.startswith('_'))
 
         content = message.content.removeprefix('_').strip()
 
         jsk = self.bot.get_command(f'jishaku py')
-        ctx = await commands.Context.from_interaction(interaction)
+        ctx = await self.bot.get_context(interaction)
         codeblock = codeblock_converter(content)
 
         try:
             await jsk(ctx, argument=codeblock)  # type: ignore
         except Exception as e:
             _log.error(e)
-            raise LatteMaidError('Invalid Python code.') from e
+            raise AppCommandError('Invalid Python code.') from e
 
 
 async def setup(bot: LatteMaid) -> None:
