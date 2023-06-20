@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, time, timedelta
 from typing import TYPE_CHECKING
@@ -13,8 +14,10 @@ from discord.app_commands.checks import dynamic_cooldown
 from discord.ext import tasks
 
 from core.checks import cooldown_short
+from valorantx2.errors import BadRequest, RateLimited
 
 from .abc import MixinMeta
+from .account_manager import AccountManager
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -24,31 +27,54 @@ _log = logging.getLogger(__name__)
 
 
 class Notify(MixinMeta):
-    async def send_notify(self):
-        ...  # todo webhook send
+    async def send_notify(self) -> None:
+        ...
+
+    async def do_notify(self):
+        async for user in self.bot.db.get_users():
+            if len(user.riot_accounts) <= 0:
+                continue
+
+            account_manager = AccountManager(user, self.bot)
+            await account_manager.wait_until_ready()
+
+            for riot_auth in account_manager.riot_accounts:
+                try:
+                    sf = self.valorant_client.fetch_storefront(riot_auth)
+                except BadRequest as e:
+                    # token expired
+                    continue
+                except RateLimited:
+                    # await asyncio.sleep(e.retry_after)  # TODO: retry_after in RateLimited
+                    await asyncio.sleep(60 * 5)  # 5 minutes
+                else:
+                    await self.send_notify()
+                    # TODO: send webhook
 
     @tasks.loop(time=time(hour=0, minute=1, second=00))  # utc 00:01:00
     async def notify_alert(self) -> None:
-        await self.send_notify()
+        ...
+        # await self.do_notify()
 
     @notify_alert.before_loop
     async def before_daily_send(self) -> None:
         await self.bot.wait_until_ready()
-        await self.valorant_client.wait_until_ready()
-        _log.info('Notify alert loop started')
+        if not self.valorant_client.is_ready():
+            return
+        _log.info('notify alert loop started')
 
-    notify = app_commands.Group(name=_T('notify'), description=_T('Notify commands'), guild_only=True)
+    # notify = app_commands.Group(name=_T('notify'), description=_T('Notify commands'), guild_only=True)
 
-    @notify.command(
-        name=_T('add'),
-        description=_T('Set a notification when a specific skin is available on your store'),
-    )  # type: ignore
-    @app_commands.describe(skin=_T('The name of the skin you want to notify'))
-    @app_commands.rename(skin=_T('skin'))
-    @dynamic_cooldown(cooldown_short)
-    async def notify_add(self, interaction: discord.Interaction[LatteMaid], skin: str) -> None:
-        """Set a notification when a specific skin is available on your store"""
-        ...
+    # @notify.command(
+    #     name=_T('add'),
+    #     description=_T('Set a notification when a specific skin is available on your store'),
+    # )  # type: ignore
+    # @app_commands.describe(skin=_T('The name of the skin you want to notify'))
+    # @app_commands.rename(skin=_T('skin'))
+    # @dynamic_cooldown(cooldown_short)
+    # async def notify_add(self, interaction: discord.Interaction[LatteMaid], skin: str) -> None:
+    #     """Set a notification when a specific skin is available on your store"""
+    #     ...
 
     # @notify_add.autocomplete('skin')  # type: ignore
     # async def notify_add_autocomplete(

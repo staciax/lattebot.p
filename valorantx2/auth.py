@@ -10,6 +10,8 @@ from valorantx import RiotAuth as RiotAuth_
 from valorantx.errors import RiotAuthenticationError
 from valorantx.utils import MISSING
 
+from .errors import RiotAuthRateLimited
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 
@@ -36,6 +38,18 @@ class RiotAuth(RiotAuth_):
 
     def __hash__(self) -> int:
         return hash((self.owner_id, self.user_id, self.region))  # self.expires_at
+
+    async def authorize(
+        self, username: str, password: str, use_query_response_mode: bool = False, remember: bool = False
+    ) -> None:
+        try:
+            await super().authorize(username, password, use_query_response_mode, remember)
+        except aiohttp.ClientResponseError as e:
+            if e.status == 429:
+                if e.headers is not None:
+                    retry_after = e.headers.get('Retry-After')
+                    if retry_after and int(retry_after) >= 0:
+                        raise RiotAuthRateLimited(int(retry_after))
 
     async def authorize_multi_factor(self, code: str, remember: bool = False):
         headers = {

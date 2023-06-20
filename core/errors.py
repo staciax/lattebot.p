@@ -42,15 +42,13 @@ class MissingRequiredArgument(AppCommandError):
         super().__init__(f'{param} is a required argument that is missing.')
 
 
-class ValorantExtError(LatteMaidError):
-    """Base class for all valorant cog errors."""
-
-    def __init__(self, message: Optional[str] = None, /) -> None:
+class UserInputError(AppCommandError):
+    def __init__(self, message: Optional[str] = None) -> None:
         self.message = message
         super().__init__(message)
 
 
-class RiotAuthError(ValorantExtError):
+class RiotAuthError(UserInputError):
     """Base class for all valorant cog Riot auth errors."""
 
     pass

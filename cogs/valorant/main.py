@@ -19,14 +19,14 @@ from core.errors import (
     RiotAuthMaxLimitReached,
     RiotAuthMultiFactorTimeout,
     RiotAuthNotLinked,
-    ValorantExtError,
+    UserInputError,
 )
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
-from valorantx2.errors import RiotMultifactorError
+from valorantx2.errors import RiotAuthRateLimitedError, RiotMultifactorError
 from valorantx2.utils import locale_converter
 
 from .account_manager import AccountManager
@@ -101,12 +101,21 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
         return self.bot.valorant_client
 
     async def cog_load(self) -> None:
+        # self.notify_alert.start()
         self.valorant_version_checker.start()
         self.valorant_cache_control.start()
 
     async def cog_unload(self) -> None:
+        # self.notify_alert.cancel()
         self.valorant_version_checker.cancel()
         self.valorant_cache_control.cancel()
+
+    # check
+
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
+        if not self.valorant_client.is_ready():
+            raise UserInputError(_('Valorant client is not ready. Please try again later.', interaction.locale))
+        return super().interaction_check(interaction)
 
     # user
 
@@ -179,15 +188,19 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
                 await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
             except aiohttp.ClientResponseError as e:
                 _log.error('riot auth multifactor error', exc_info=e)
-                raise ValorantExtError('Invalid Multi-factor code.') from e
+                raise UserInputError(_('Invalid Multi-factor code.', interaction.locale)) from e
             assert multi_modal.interaction is not None
             interaction = multi_modal.interaction
             multi_modal.stop()
-        # except valorantx.RiotAuthenticationError as e:
-        #     raise AppCommandError('Invalid username or password.') from e
-        # except aiohttp.ClientResponseError as e:
-        #     _log.error('Riot server is currently unavailable.', exc_info=e)
-        #     raise AppCommandError('Riot server is currently unavailable.') from e
+        except RiotAuthRateLimitedError:
+            raise UserInputError(
+                _('We are currently experiencing a high volume of traffic. Please try again later.', interaction.locale)
+            )
+        except valorantx.RiotAuthenticationError:
+            raise UserInputError(_('Invalid username or password.', interaction.locale))
+        except aiohttp.ClientResponseError as e:
+            _log.error('Riot server is currently unavailable.', exc_info=e)
+            raise UserInputError(_('Riot server is currently unavailable.', interaction.locale)) from e
 
         await interaction.response.defer(ephemeral=True)
 
@@ -239,7 +252,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
         # invalidate cache
         # self.??.invalidate(self, id=interaction.user.id)
 
-        e = Embed(description=f"Successfully logged in {chat.bold(riot_auth.display_name)}")
+        e = Embed(description=f'Successfully logged in {chat.bold(riot_auth.display_name)}')
         await interaction.followup.send(embed=e, ephemeral=True)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
@@ -275,7 +288,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
             return []
 
         if len(user.riot_accounts) == 0:
-            return [app_commands.Choice(name="You have no accounts linked.", value="-")]
+            return [app_commands.Choice(name=_('You have no accounts linked.', interaction.locale), value="-")]
 
         return [
             app_commands.Choice(
@@ -473,7 +486,7 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
             await interaction.followup.send(embed=embed, view=view)
 
         else:
-            raise ValorantExtError('Patch note not found')
+            raise UserInputError('Patch note not found')
 
     # infomation commands
 
