@@ -118,19 +118,35 @@ class I18n:
         ],
     ):
         self.cog_folder = Path(file_location).resolve().parent
-        self._name = name
+        self.cog_name = name
         self.supported_locales = supported_locales
         self.translations: Dict[str, Dict[str, str]] = {}
         self.app_translations: Dict[str, Dict[str, AppCommandLocalization]] = {}
-        self.load()
+        self._loaded: bool = False
 
     def load(self) -> None:
+        if self._loaded:
+            return
         self.load_translations()
         self.load_app_command_translations()
+        self._loaded = True
+        _log.info(f'loaded i18n for {self.cog_name} ')
 
-    def save(self) -> None:
+    def unload(self) -> None:
+        if self._loaded:
+            self._save()
+            self.translations.clear()
+            self.app_translations.clear()
+            self._loaded = False
+        _log.info(f'unloaded i18n for {self.cog_name}')
+
+    def _save(self) -> None:
         self.save_translations()
         self.save_app_command_translations()
+        _log.debug(f'saved i18n for {self.cog_name}')
+
+    def is_loaded(self) -> bool:
+        return self._loaded
 
     # strings
 
@@ -139,38 +155,48 @@ class I18n:
             key = str(key)
 
         if locale is None:
-            locale = Locale.american_english.value.lower()
+            locale = Locale.american_english.value
 
         if isinstance(locale, Locale):
-            locale = locale.value.lower()
+            locale = locale.value
+
+        # default to american english
+        if locale not in self.translations:
+            locale = Locale.american_english.value
 
         try:
             result = self.translations[locale][key]
         except KeyError:
-            # TODO: add to file
-            _log.warning(f'no translation for {key!r} in {locale}')
+            _log.warning(f'not found: {key!r} in {locale} for {self.cog_name}')
             return key
         else:
             return result
 
     def load_translations(self) -> None:
-        for locale in Locale:
+        for locale in self.supported_locales:
             locale_path = get_path(self.cog_folder, locale.value, 'strings')
             if not locale_path.exists():
+                self.translations[locale.value] = {}
                 continue
+
             with contextlib.suppress(IOError, FileNotFoundError):
                 with locale_path.open(encoding='utf-8') as file:
                     self.translations[locale.value] = json.load(file)
 
-        _log.info(f'loaded {len(self.translations)} translations')
+        _log.debug(f'loaded {len(self.translations)} translations for {self.cog_name}')
 
     def save_translations(self) -> None:
         for locale, translations in self.translations.items():
             locale_path = get_path(self.cog_folder, locale, 'strings')
             if not locale_path.parent.exists():
                 locale_path.parent.mkdir(parents=True)
+                _log.debug(f'created {locale_path.parent}')
+
             with locale_path.open('w', encoding='utf-8') as file:
                 json.dump(translations, file, indent=4, ensure_ascii=False)
+                _log.debug(f'successfully saved translations for {self.cog_name} in {locale}')
+
+        _log.debug(f'saved {len(self.translations)} translations for {self.cog_name}')
 
     def get_translation(self, locale: str, key: str) -> Optional[str]:
         if locale not in self.translations:
@@ -204,7 +230,7 @@ class I18n:
             with locale_path.open('r', encoding='utf-8') as file:
                 self.app_translations[locale.value] = json.load(file)
 
-        _log.info(f'loaded {len(self.app_translations)} app command translations')
+        _log.debug(f'loaded {len(self.app_translations)} app command translations for {self.cog_name}')
 
     def save_app_command_translations(self) -> None:
         for locale, translations in self.app_translations.items():
@@ -213,6 +239,9 @@ class I18n:
             #     locale_path.parent.mkdir(parents=True)
             with locale_path.open('w', encoding='utf-8') as file:
                 json.dump(dict(sorted(translations.items())), file, indent=4, ensure_ascii=False)
+                _log.debug(f'successfully saved app command translations for {self.cog_name} in {locale}')
+
+        _log.debug(f'saved {len(self.app_translations)} app command translations for {self.cog_name}')
 
     def get_app_command_translation(
         self, locale: str, command: Union[Command, Group]
@@ -248,21 +277,31 @@ class I18n:
 
         self.app_translations[locale][command.qualified_name].update(data)
 
-    @staticmethod
-    def invalidate_app_command_cache(i18n: I18n, cog: Union[type[commands.Cog], commands.Cog], locale: str) -> None:
-        for attr in cog.__dict__.values():
-            if isinstance(attr, (Command, Group)):
-                i18n.update_app_command_translation(
-                    locale,
-                    attr,
-                    get_app_command_payload(
+    # @staticmethod
+    def validate_app_i18n_from_cog(
+        self,
+        cog: Union[type[commands.Cog], commands.Cog],
+        *,
+        with_save: bool = True,
+    ) -> None:
+        for locale in self.supported_locales:
+            for attr in cog.__dict__.values():
+                if isinstance(attr, (Command, Group)):
+                    self.update_app_command_translation(
+                        locale.value,
                         attr,
-                        data=i18n.get_app_command_translation(locale, attr),
-                        merge=True,
-                    ),
-                )
-            elif hasattr(attr, '__context_menu__'):
-                print(attr.__context_menu__)
+                        get_app_command_payload(
+                            attr,
+                            data=self.get_app_command_translation(locale.value, attr),
+                            merge=True,
+                        ),
+                    )
+                elif hasattr(attr, '__context_menu__'):
+                    print(attr.__context_menu__)
+
+        if not with_save:
+            return
+        self.save_app_command_translations()
 
 
 def cog_i18n(i18n: I18n):

@@ -79,16 +79,11 @@ class Cog(commands.Cog):
         if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
             i18n: I18n
 
-            if getattr(self, '__i18n_update__', False):
-                i18n.load_app_command_translations()
-
-            for locale in i18n.supported_locales:
-                i18n.invalidate_app_command_cache(i18n, self, locale.value)
-
-            i18n.save()
+            i18n.load()
+            i18n.validate_app_i18n_from_cog(self)
 
             bot.translator.update_app_commands_i18n(i18n.app_translations)
-            # i know cache is not a good idea, but i don't want to make a new dict every time
+            # # i know cache is not a good idea, but i don't want to make a new dict every time
 
         return self
 
@@ -106,8 +101,6 @@ class Cog(commands.Cog):
 
         if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
             i18n: I18n
-
+            # remove app commands translations from cache
             bot.translator.remove_app_commands_i18n(i18n.app_translations)
-
-            # mark if when enjecting cog, we need to update i18n
-            setattr(self, '__i18n_update__', True)
+            i18n.unload()

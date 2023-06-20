@@ -36,16 +36,17 @@ class DatabaseConnection(_DatabaseConnection):
     async def _cache_users(self) -> None:
         async for user in super().get_users():
             self._users[user.id] = user
-        self._log.info('cached %d users', len(self._users))
+        self._log.debug('cached %d users', len(self._users))
 
     async def _cache_blacklist(self) -> None:
         async for user in super().get_blacklists():
             self._blacklist[user.id] = user
-        self._log.info('cached %d blacklists', len(self._blacklist))
+        self._log.debug('cached %d blacklists', len(self._blacklist))
 
     async def reload_cache(self) -> None:
         await self._cache_users()
         await self._cache_blacklist()
+        self._log.info('reloaded cache')
 
     @property
     def users(self) -> List[User]:

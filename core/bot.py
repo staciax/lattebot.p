@@ -45,7 +45,7 @@ INITIAL_EXTENSIONS: Tuple[str, ...] = (
     'cogs.errors',
     # 'cogs.events',
     'cogs.help',
-    # 'cogs.jsk',
+    'cogs.jsk',
     # 'cogs.stats',
     'cogs.valorant',
     # 'cogs.ipc',
@@ -69,6 +69,8 @@ class LatteMaid(commands.AutoShardedBot):
         intents = discord.Intents.none()  # set all intents to False
         intents.guilds = True
         # intents.dm_messages = True # wait for implementation modmail?
+
+        intents = discord.Intents.all()
 
         # allowed_mentions
         allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)

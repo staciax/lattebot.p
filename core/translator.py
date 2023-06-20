@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 # TODO: improve this
+# i know this is bad, but it works for now
+# in the future, i'll make this better
 
 
 class Translator(app_commands.Translator):
@@ -59,10 +61,10 @@ class Translator(app_commands.Translator):
         else:
             translations = {}
 
-        localize_keys = self._build_localize_keys(tcl, localizable)
+        keys = self._build_localize_keys(tcl, localizable)
 
-        def find_value_by_list_of_keys(fi18n: Any, keys: List[str]) -> Optional[str]:
-            _string = fi18n.copy()
+        def find_value_by_keys(data: Any, keys: List[str]) -> Optional[str]:
+            _string = data.copy()
             for k in keys:
                 try:
                     _string = _string[k]
@@ -70,14 +72,14 @@ class Translator(app_commands.Translator):
                     return None
 
             if not isinstance(_string, str):
-                _string = str(_string)
+                _log.debug(f'not a string: {string.message} for {locale.value} (tcl: {tcl})')
+                return None
 
             return _string
 
-        locale_string = find_value_by_list_of_keys(translations, localize_keys)
+        locale_string = find_value_by_keys(translations, keys)
         if locale_string is None:
             _log.debug(f'not found: {string.message} for {locale.value} (tcl: {tcl})')
-        print(locale, locale_string, localize_keys)
         return locale_string
 
     def _build_localize_keys(
@@ -130,7 +132,6 @@ class Translator(app_commands.Translator):
         return cls.__string_i18n__[locale].get(string)
 
     # app_commands
-    # TODO: i know this is bad, but i don't know how to fix it
 
     def update_app_commands_i18n(self, i18n: Dict[str, Dict[str, AppCommandLocalization]]) -> None:
         payload = {}

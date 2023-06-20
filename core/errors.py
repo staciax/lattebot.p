@@ -36,6 +36,12 @@ class AppCommandError(LatteMaidError):
     pass
 
 
+class MissingRequiredArgument(AppCommandError):
+    def __init__(self, param: str) -> None:
+        self.param: str = param
+        super().__init__(f'{param} is a required argument that is missing.')
+
+
 class ValorantExtError(LatteMaidError):
     """Base class for all valorant cog errors."""
 
@@ -82,12 +88,6 @@ class RiotAuthMultiFactorTimeout(RiotAuthError):
 
 # class CommandNotFound(LatteMaidError):
 #     """Raised when a command is not found."""
-
-#     pass
-
-
-# class CheckFailure(LatteMaidError):
-#     """Raised when a check fails."""
 
 #     pass
 
