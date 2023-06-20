@@ -107,8 +107,9 @@ class Events(MixinMeta):
     # every 6:30 AM UTC+7
 
     def do_cache_control(self) -> None:
-        self.valorant_client.fetch_featured_bundle.cache_clear()
-        self.valorant_client.fetch_storefront.cache_clear()
+        for method in self.valorant_client.__dict__.values():
+            if hasattr(method, 'cache_clear'):
+                method.cache_clear()
         _log.info(f'valorant client cache cleared')
 
     @tasks.loop(time=datetime.time(hour=6, minute=30, tzinfo=utc7))
