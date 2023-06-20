@@ -33,3 +33,9 @@ __all__ = (
     'RiotUnknownResponseTypeError',
     'RiotUnknownErrorTypeError',
 )
+
+
+class RiotAuthRateLimitedError(ValorantXException):
+    def __init__(self, retry_after: int) -> None:
+        self.retry_after: int = retry_after
+        super().__init__(f'Rate limited. Retry after {retry_after} seconds.')

@@ -19,7 +19,6 @@ from core.utils import database
 
 # from valorantx import valorant_api
 
-
 if TYPE_CHECKING:
     from discord.ui import Item, Modal
 
@@ -29,7 +28,7 @@ _log = logging.getLogger(__name__)
 
 _ = I18n('errors', __file__, string_only=True)
 
-# NOTE: error handler
+# NOTE: app error handler
 # inspired by shenhe_bot (seriaati) url: https://github.com/seriaati/shenhe_bot
 # thanks for shenhe_bot <3
 
@@ -41,7 +40,7 @@ async def application_error_handler(
     client = interaction.client
     locale = interaction.locale
     embed = build_error_handle_embed(interaction.user, error, locale)
-    view = error_support_view(locale)
+    view = guild_support_view(locale)
 
     with contextlib.suppress(discord.HTTPException):
         kwargs = {
@@ -79,16 +78,14 @@ async def application_error_handler(
                 client.loop.create_task(client.traceback_log.send(content=client.owner.mention, file=traceback_fp))
 
 
-def error_support_view(locale: discord.Locale) -> ui.View:
-    view = ui.View()
-    view.add_item(
+def guild_support_view(locale: discord.Locale) -> ui.View:
+    view = ui.View().add_item(
         discord.ui.Button(
             label=_('Support Server', locale),
             url='https://discord.gg/4N2YkXbM',
             # emoji='',
         )
     )
-
     return view
 
 
