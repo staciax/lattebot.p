@@ -13,7 +13,10 @@ from discord.ext import commands
 
 CogT = TypeVar('CogT', bound=commands.Cog)
 
-# TODO: improve this
+# this is first version of i18n.py
+# this is not completed yet
+# i think this is not good code
+# i will fix this code later
 
 _log = logging.getLogger(__name__)
 
@@ -116,19 +119,26 @@ class I18n:
             Locale.american_english,
             Locale.thai,
         ],
+        *,
+        string_only: bool = False,
+        load_at_startup: bool = True,
     ):
-        self.cog_folder = Path(file_location).resolve().parent
-        self.cog_name = name
-        self.supported_locales = supported_locales
+        self.cog_folder: Path = Path(file_location).resolve().parent
+        self.cog_name: str = name
+        self.supported_locales: List[Locale] = supported_locales
+        self.string_only: bool = string_only
         self.translations: Dict[str, Dict[str, str]] = {}
         self.app_translations: Dict[str, Dict[str, AppCommandLocalization]] = {}
         self._loaded: bool = False
+        if load_at_startup:
+            self.load()
 
     def load(self) -> None:
         if self._loaded:
             return
-        self.load_translations()
-        self.load_app_command_translations()
+        self.load_translations(save_after_load=self.string_only)
+        if not self.string_only:
+            self.load_app_command_translations()
         self._loaded = True
         _log.info(f'loaded i18n for {self.cog_name} ')
 
@@ -136,13 +146,15 @@ class I18n:
         if self._loaded:
             self._save()
             self.translations.clear()
-            self.app_translations.clear()
+            if not self.string_only:
+                self.app_translations.clear()
             self._loaded = False
         _log.info(f'unloaded i18n for {self.cog_name}')
 
     def _save(self) -> None:
         self.save_translations()
-        self.save_app_command_translations()
+        if not self.string_only:
+            self.save_app_command_translations()
         _log.debug(f'saved i18n for {self.cog_name}')
 
     def is_loaded(self) -> bool:
@@ -172,7 +184,7 @@ class I18n:
         else:
             return result
 
-    def load_translations(self) -> None:
+    def load_translations(self, save_after_load: bool = False) -> None:
         for locale in self.supported_locales:
             locale_path = get_path(self.cog_folder, locale.value, 'strings')
             if not locale_path.exists():
@@ -184,6 +196,9 @@ class I18n:
                     self.translations[locale.value] = json.load(file)
 
         _log.debug(f'loaded {len(self.translations)} translations for {self.cog_name}')
+
+        if save_after_load:
+            self.save_translations()
 
     def save_translations(self) -> None:
         for locale, translations in self.translations.items():
@@ -235,8 +250,10 @@ class I18n:
     def save_app_command_translations(self) -> None:
         for locale, translations in self.app_translations.items():
             locale_path = get_path(self.cog_folder, locale, 'app_commands')
-            # if not locale_path.parent.exists():
-            #     locale_path.parent.mkdir(parents=True)
+            if not locale_path.parent.exists():
+                locale_path.parent.mkdir(parents=True)
+                _log.debug(f'created {locale_path.parent}')
+
             with locale_path.open('w', encoding='utf-8') as file:
                 json.dump(dict(sorted(translations.items())), file, indent=4, ensure_ascii=False)
                 _log.debug(f'successfully saved app command translations for {self.cog_name} in {locale}')
@@ -277,7 +294,6 @@ class I18n:
 
         self.app_translations[locale][command.qualified_name].update(data)
 
-    # @staticmethod
     def validate_app_i18n_from_cog(
         self,
         cog: Union[type[commands.Cog], commands.Cog],
