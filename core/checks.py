@@ -42,25 +42,25 @@ def owner_only() -> Callable[[T], T]:
     return app_commands.check(actual_check)
 
 
-def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
     if interaction.user == interaction.client.owner:
         return None
-    return app_commands.Cooldown(1, 5)
+    return Cooldown(1, 5)
 
 
-def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
     if interaction.user == interaction.client.owner:
         return None
-    return app_commands.Cooldown(1, 10)
+    return Cooldown(1, 10)
 
 
-def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Optional[app_commands.Cooldown]:
+def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
     if interaction.user == interaction.client.owner:
         return None
-    return app_commands.Cooldown(1, 20)
+    return Cooldown(1, 20)
 
 
-def custom_cooldown(
-    interaction: discord.Interaction[LatteMaid], rate: float, per: float
-) -> Optional[app_commands.Cooldown]:
-    return app_commands.Cooldown(rate, per)
+def custom_cooldown(interaction: discord.Interaction[LatteMaid], rate: float, per: float) -> Optional[Cooldown]:
+    if interaction.user == interaction.client.owner:
+        return None
+    return Cooldown(rate, per)

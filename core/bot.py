@@ -6,7 +6,7 @@ import logging
 import os
 import random
 import traceback
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 import aiohttp
 import discord
@@ -39,17 +39,17 @@ os.environ['JISHAKU_HIDE'] = 'True'
 
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
-INITIAL_EXTENSIONS: Tuple[str, ...] = (
+INITIAL_EXTENSIONS = (
     'cogs.about',
     'cogs.admin',
     'cogs.errors',
-    # 'cogs.events',
+    'cogs.events',
     'cogs.help',
     'cogs.jsk',
-    # 'cogs.stats',
+    'cogs.stats',
     'cogs.valorant',
-    # 'cogs.ipc',
     'cogs.test',
+    # 'cogs.ipc', # someday maybe
 )
 
 
@@ -70,13 +70,11 @@ class LatteMaid(commands.AutoShardedBot):
         intents.guilds = True
         # intents.dm_messages = True # wait for implementation modmail?
 
-        intents = discord.Intents.all()
-
         # allowed_mentions
         allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
 
         super().__init__(
-            command_prefix=commands.when_mentioned,
+            command_prefix=[],
             help_command=None,
             allowed_mentions=allowed_mentions,
             case_insensitive=True,
@@ -286,18 +284,20 @@ class LatteMaid(commands.AutoShardedBot):
     async def fetch_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         """Fetch all application commands."""
 
-        app_commands_list = await self.tree.fetch_commands()
+        app_cmds = await self.tree.fetch_commands()
 
-        for fetch in app_commands_list:
-            if fetch.type == discord.AppCommandType.chat_input:
-                if len(fetch.options) > 0:
-                    self._app_commands[fetch.name] = fetch
-                    for option in fetch.options:
+        payload = {}
+        for app_cmd in app_cmds:
+            if app_cmd.type == discord.AppCommandType.chat_input:
+                if len(app_cmd.options) > 0:
+                    payload[app_cmd.name] = app_cmd
+                    for option in app_cmd.options:
                         if isinstance(option, app_commands.AppCommandGroup):
-                            self._app_commands[option.qualified_name] = option
+                            payload[option.qualified_name] = option
                 else:
-                    self._app_commands[fetch.name] = fetch
+                    payload[app_cmd.name] = app_cmd
 
+        self._app_commands = payload
         return list(self._app_commands.values())
 
     def get_app_command(self, name: str) -> Optional[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
@@ -306,9 +306,7 @@ class LatteMaid(commands.AutoShardedBot):
     def get_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
 
-    # colors
-
-    # TODO: overload
+    # colors # TODO: overload
 
     def get_colors(self, id: str, /) -> Optional[List[discord.Colour]]:
         """Returns the colors of the image."""
