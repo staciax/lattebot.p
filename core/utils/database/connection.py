@@ -51,7 +51,7 @@ class DatabaseConnection:
         self._log.info('database connection initialized')
 
     async def _create_tables(self, drop: bool = False) -> None:
-        self._log.info('creating tables . . .')
+        self._log.info('creating tables')
         async with self._async_engine.begin() as engine:
             if drop:
                 await engine.run_sync(Base.metadata.drop_all)
