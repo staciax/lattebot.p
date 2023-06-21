@@ -10,7 +10,7 @@ from valorantx import RiotAuth as RiotAuth_
 from valorantx.errors import RiotAuthenticationError
 from valorantx.utils import MISSING
 
-from .errors import RiotAuthRateLimited
+from .errors import RiotAuthRateLimitedError
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -49,7 +49,7 @@ class RiotAuth(RiotAuth_):
                 if e.headers is not None:
                     retry_after = e.headers.get('Retry-After')
                     if retry_after and int(retry_after) >= 0:
-                        raise RiotAuthRateLimited(int(retry_after))
+                        raise RiotAuthRateLimitedError(int(retry_after))
 
     async def authorize_multi_factor(self, code: str, remember: bool = False):
         headers = {
