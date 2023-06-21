@@ -74,7 +74,7 @@ def setup_logging():
         # sqlalchemy
         # logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
 
-        log.setLevel(logging.INFO)
+        log.setLevel(logging.INFO if args.prod else logging.DEBUG)
         handler = RotatingFileHandler(
             filename='_lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
         )
