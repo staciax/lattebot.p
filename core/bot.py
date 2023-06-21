@@ -40,7 +40,7 @@ os.environ['JISHAKU_HIDE'] = 'True'
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
 
-INITIAL_EXTENSIONS = (
+initial_extensions = (
     'cogs.about',
     'cogs.admin',
     'cogs.errors',
@@ -183,14 +183,14 @@ class LatteMaid(commands.AutoShardedBot):
     async def cogs_load(self) -> None:
         """Load cogs."""
         cogs = await asyncio.gather(
-            *[self.load_extension(extension) for extension in INITIAL_EXTENSIONS], return_exceptions=True
+            *[self.load_extension(extension) for extension in initial_extensions], return_exceptions=True
         )
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
     async def cogs_unload(self) -> None:
         """Unload cogs."""
         cogs = await asyncio.gather(
-            *[self.unload_extension(extension) for extension in INITIAL_EXTENSIONS], return_exceptions=True
+            *[self.unload_extension(extension) for extension in initial_extensions], return_exceptions=True
         )
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
