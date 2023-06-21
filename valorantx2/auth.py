@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import aiohttp
 import yarl
@@ -13,6 +13,8 @@ from valorantx.utils import MISSING
 from .errors import RiotAuthRateLimitedError
 
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     from core.bot import LatteMaid
 
 # fmt: off
@@ -87,11 +89,6 @@ class RiotAuth(RiotAuth_):
             ) as r:
                 self.entitlements_token = (await r.json())['entitlements_token']
 
-    def get_ssid(self) -> str:
-        url = yarl.URL('https://auth.riotgames.com')
-        riot_cookies = self._cookie_jar.filter_cookies(url)
-        return riot_cookies['ssid'].value
-
     async def reauthorize(self) -> None:
         _log.info(f're authorizing {self.game_name}#{self.tag_line}({self.puuid})')
 
@@ -125,3 +122,17 @@ class RiotAuth(RiotAuth_):
             self.session_is_outdated = True
             self.bot.dispatch('re_authorize_failed', self)
             raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')
+
+    def get_ssid(self) -> str:
+        url = yarl.URL('https://auth.riotgames.com')
+        riot_cookies = self._cookie_jar.filter_cookies(url)
+        if 'ssid' not in riot_cookies:
+            return ''
+        return riot_cookies['ssid'].value
+
+    @classmethod
+    def from_data(cls, data: Dict[str, Any]) -> Self:
+        self = super().from_data(data)
+        if 'owner_id' in data:
+            self.owner_id = data['owner_id']
+        return self

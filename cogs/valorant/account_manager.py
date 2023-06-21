@@ -54,6 +54,7 @@ class AccountManager:
                 'tag_line': riot_account.tag_line,
                 'region': riot_account.region,
                 'ssid': riot_account.ssid,
+                'owner_id': riot_account.owner_id,
             }
 
             riot_auth = RiotAuth.from_data(payload)
