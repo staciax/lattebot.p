@@ -1,113 +1,29 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeVar, Union
 
 from discord import Locale
-from discord.app_commands import Command, Group, Parameter
-from discord.ext import commands
 
-CogT = TypeVar('CogT', bound=commands.Cog)
+if TYPE_CHECKING:
+    from discord.ext import commands
 
-# this is first version of i18n.py
-# this is not completed yet
-# i think this is not good code
-# i will fix this code later
+    CogT = TypeVar('CogT', bound=commands.Cog)
 
 _log = logging.getLogger(__name__)
-
-
-class OptionLocalization(TypedDict, total=False):
-    display_name: str
-    description: str
-    choices: Dict[Union[str, int, float], str]
-
-
-class ContextMenuLocalization(TypedDict):
-    name: str
-
-
-class AppCommandLocalization(ContextMenuLocalization, total=False):
-    description: str
-    options: Dict[str, OptionLocalization]
 
 
 def get_path(
     cog_folder: Path,
     locale: str,
-    folder: Literal['app_commands', 'strings', 'context_menus'],
     fmt: str = 'json',
 ) -> Path:
-    return cog_folder / 'locales' / folder / f'{locale}.{fmt}'
-
-
-def get_parameter_payload(
-    parameter: Parameter,
-    data: Optional[OptionLocalization] = None,
-    *,
-    merge: bool = True,
-) -> OptionLocalization:
-    payload: OptionLocalization = {
-        'display_name': parameter.display_name,
-        'description': parameter.description,
-    }
-
-    if len(parameter.choices) > 0:
-        payload['choices'] = {str(choice.value): choice.name for choice in parameter.choices}
-
-    if merge and data is not None:
-        if 'display_name' in data and payload['display_name'] != data['display_name']:
-            payload['display_name'] = data['display_name']
-
-        if 'description' in data and payload['description'] != data['description']:
-            payload['description'] = data['description']
-
-        if len(parameter.choices) > 0:
-            payload['choices'] = {}
-            for choice in parameter.choices:
-                if str(choice.value) in data.get('choices', {}):
-                    payload['choices'][str(choice.value)] = data.get('choices', {})[str(choice.value)]
-                else:
-                    payload['choices'][str(choice.value)] = choice.name
-
-    return payload
-
-
-def get_app_command_payload(
-    command: Union[Command, Group],
-    data: Optional[AppCommandLocalization] = None,
-    *,
-    merge: bool = True,
-) -> AppCommandLocalization:
-    payload: AppCommandLocalization = {
-        'name': command.name,
-        'description': command.description,
-    }
-
-    if isinstance(command, Group):
-        return payload
-
-    if len(command.parameters) > 0:
-        payload['options'] = {param.name: get_parameter_payload(param) for param in command.parameters}
-
-    if merge and data is not None:
-        if payload['name'] != data['name']:
-            payload['name'] = data['name']
-
-        if ('description' in data and 'description' in payload) and payload['description'] != data['description']:
-            payload['description'] = data['description']
-
-        if len(command.parameters) > 0:
-            payload['options'] = {
-                param.name: get_parameter_payload(param, data.get('options', {}).get(param.name, {}), merge=True)
-                for param in command.parameters
-            }
-
-    return payload
+    return cog_folder / 'locales' / 'strings' / '{locale}.{fmt}'.format(locale=locale, fmt=fmt)
 
 
 class I18n:
@@ -120,212 +36,118 @@ class I18n:
             Locale.thai,
         ],
         *,
-        string_only: bool = False,
-        load_at_startup: bool = True,
-    ):
+        read_only: bool = False,
+        load_later: bool = False,
+    ) -> None:
         self.cog_folder: Path = Path(file_location).resolve().parent
         self.cog_name: str = name
         self.supported_locales: List[Locale] = supported_locales
-        self.string_only: bool = string_only
-        self.translations: Dict[str, Dict[str, str]] = {}
-        self.app_translations: Dict[str, Dict[str, AppCommandLocalization]] = {}
-        self._loaded: bool = False
-        if load_at_startup:
-            self.load()
-
-    def load(self) -> None:
-        if self._loaded:
-            return
-        self.load_translations(save_after_load=self.string_only)
-        if not self.string_only:
-            self.load_app_command_translations()
-        self._loaded = True
-        _log.info(f'loaded i18n for {self.cog_name} ')
-
-    def unload(self) -> None:
-        if self._loaded:
-            self._save()
-            self.translations.clear()
-            if not self.string_only:
-                self.app_translations.clear()
-            self._loaded = False
-        _log.info(f'unloaded i18n for {self.cog_name}')
-
-    def _save(self) -> None:
-        self.save_translations()
-        if not self.string_only:
-            self.save_app_command_translations()
-        _log.debug(f'saved i18n for {self.cog_name}')
-
-    def is_loaded(self) -> bool:
-        return self._loaded
-
-    # strings
+        self.read_only: bool = read_only
+        self.loop = asyncio.get_event_loop()
+        self.lock = asyncio.Lock()
+        self._data: Dict[str, Dict[str, Dict[str, str]]] = {}
+        if load_later:
+            self.loop.create_task(self.load())
+        else:
+            self._load()
 
     def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
-        if isinstance(key, int):
-            key = str(key)
-
         if locale is None:
-            locale = Locale.american_english.value
+            locale = Locale.american_english
 
         if isinstance(locale, Locale):
             locale = locale.value
 
         # default to american english
-        if locale not in self.translations:
-            locale = Locale.american_english.value
+        if locale not in self._data:
+            locale = Locale.american_english
 
-        try:
-            result = self.translations[locale][key]
-        except KeyError:
-            _log.warning(f'not found: {key!r} in {locale} for {self.cog_name}')
+        text = self.get_text(key, locale)
+        if text is None:
             return key
-        else:
-            return result
+        return text
 
-    def load_translations(self, save_after_load: bool = False) -> None:
+    async def load(self) -> None:
+        async with self.lock:
+            await self.loop.run_in_executor(None, self._load)
+
+    def _load(self) -> None:
         for locale in self.supported_locales:
-            locale_path = get_path(self.cog_folder, locale.value, 'strings')
-            if not locale_path.exists():
-                self.translations[locale.value] = {}
-                continue
+            self.load_from_file(locale.value)
+        if not self.read_only:
+            self.loop.create_task(self.save())
+        _log.info(f'loaded i18n for cogs.{self.cog_name} ')
 
-            with contextlib.suppress(IOError, FileNotFoundError):
-                with locale_path.open(encoding='utf-8') as file:
-                    self.translations[locale.value] = json.load(file)
+    def load_from_file(self, locale: str) -> None:
+        locale_path = get_path(self.cog_folder, locale)
+        if not locale_path.exists():
+            self._data[locale] = {}
 
-        _log.debug(f'loaded {len(self.translations)} translations for {self.cog_name}')
+        with contextlib.suppress(IOError, FileNotFoundError):
+            with locale_path.open(encoding='utf-8') as file:
+                self._data[locale] = json.load(file)
 
-        if save_after_load:
-            self.save_translations()
+    async def save(self) -> None:
+        for locale in self._data:
+            async with self.lock:
+                await self.loop.run_in_executor(None, self._dump, locale)
+        _log.debug(f'saved i18n for {self.cog_name}')
 
-    def save_translations(self) -> None:
-        for locale, translations in self.translations.items():
-            locale_path = get_path(self.cog_folder, locale, 'strings')
-            if not locale_path.parent.exists():
-                locale_path.parent.mkdir(parents=True)
-                _log.debug(f'created {locale_path.parent}')
+    def _dump(self, locale: str) -> None:
+        locale_path = get_path(self.cog_folder, locale)
 
-            with locale_path.open('w', encoding='utf-8') as file:
-                json.dump(translations, file, indent=4, ensure_ascii=False)
-                _log.debug(f'successfully saved translations for {self.cog_name} in {locale}')
+        if locale not in self._data:
+            self._data[locale] = {}
 
-        _log.debug(f'saved {len(self.translations)} translations for {self.cog_name}')
+        if not locale_path.parent.exists():
+            locale_path.parent.mkdir(parents=True)
+            _log.debug(f'created {locale_path.parent}')
 
-    def get_translation(self, locale: str, key: str) -> Optional[str]:
-        if locale not in self.translations:
-            return None
-        return self.translations[locale].get(key, None)
+        if not locale_path.exists():
+            locale_path.touch()
 
-    def store_translation(
-        self,
-        locale: str,
-        key: str,
-        value: str,
-        *,
-        skip_if_exists: bool = False,
-    ) -> None:
-        if locale not in self.translations:
-            self.translations[locale] = {}
+        data = self._data[locale]
+        assert isinstance(data, dict)
 
-        if skip_if_exists and key in self.translations[locale]:
+        with locale_path.open('w', encoding='utf-8') as file:
+            json.dump(data.copy(), file, indent=4, ensure_ascii=False)
+            _log.debug(f'successfully saved translations for {self.cog_name} in {locale}')
+
+    def get_locale(self, locale: str, default: Any = None) -> Optional[Union[Dict[str, str], Any]]:
+        """Retrieves a locale entry."""
+        return self._data.get(locale, default)
+
+    async def remove_locale(self, locale: str) -> None:
+        """Removes a locale."""
+        self._data.pop(locale, None)
+        await self.save()
+
+    async def add_locale(self, locale: str) -> None:
+        """Adds a locale."""
+        if locale in self._data:
             return
+        self._data[locale] = {}
+        await self.save()
 
-        self.translations[locale][key] = value
+    def get_text(self, key: str, locale: Union[Locale, str]) -> Union[str, Optional[str]]:
+        if isinstance(locale, Locale):
+            locale = locale.value
 
-    # app commands
-
-    def load_app_command_translations(self) -> None:
-        for locale in self.supported_locales:
-            locale_path = get_path(self.cog_folder, locale.value, 'app_commands')
-            if not locale_path.exists():
-                continue
-
-            with locale_path.open('r', encoding='utf-8') as file:
-                self.app_translations[locale.value] = json.load(file)
-
-        _log.debug(f'loaded {len(self.app_translations)} app command translations for {self.cog_name}')
-
-    def save_app_command_translations(self) -> None:
-        for locale, translations in self.app_translations.items():
-            locale_path = get_path(self.cog_folder, locale, 'app_commands')
-            if not locale_path.parent.exists():
-                locale_path.parent.mkdir(parents=True)
-                _log.debug(f'created {locale_path.parent}')
-
-            with locale_path.open('w', encoding='utf-8') as file:
-                json.dump(dict(sorted(translations.items())), file, indent=4, ensure_ascii=False)
-                _log.debug(f'successfully saved app command translations for {self.cog_name} in {locale}')
-
-        _log.debug(f'saved {len(self.app_translations)} app command translations for {self.cog_name}')
-
-    def get_app_command_translation(
-        self, locale: str, command: Union[Command, Group]
-    ) -> Optional[AppCommandLocalization]:
-        if locale not in self.app_translations:
+        locale_data = self.get_locale(locale)
+        if locale_data is None:
             return None
-        if command.name not in self.app_translations[locale]:
-            return None
-        return self.app_translations[locale][command.name]
 
-    def store_app_command_translation(
-        self,
-        locale: str,
-        command: Union[Command, Group],
-        data: AppCommandLocalization,
-    ) -> None:
-        if locale not in self.app_translations:
-            self.app_translations[locale] = {}
+        return locale_data.get(key)
 
-        self.app_translations[locale][command.qualified_name] = data
-
-    def update_app_command_translation(
-        self,
-        locale: str,
-        command: Union[Command, Group],
-        data: AppCommandLocalization,
-    ) -> None:
-        if locale not in self.app_translations:
-            self.app_translations[locale] = {}
-
-        if command.qualified_name not in self.app_translations[locale]:
-            return self.store_app_command_translation(locale, command, data)
-
-        self.app_translations[locale][command.qualified_name].update(data)
-
-    def validate_app_i18n_from_cog(
-        self,
-        cog: Union[type[commands.Cog], commands.Cog],
-        *,
-        with_save: bool = True,
-    ) -> None:
-        for locale in self.supported_locales:
-            for attr in cog.__dict__.values():
-                if isinstance(attr, (Command, Group)):
-                    self.update_app_command_translation(
-                        locale.value,
-                        attr,
-                        get_app_command_payload(
-                            attr,
-                            data=self.get_app_command_translation(locale.value, attr),
-                            merge=True,
-                        ),
-                    )
-                elif hasattr(attr, '__context_menu__'):
-                    print(attr.__context_menu__)
-
-        if not with_save:
-            return
-        self.save_app_command_translations()
+    def __contains__(self, locale: Union[Locale, str]) -> bool:
+        if isinstance(locale, Locale):
+            locale = locale.value
+        return locale in self._data
 
 
 def cog_i18n(i18n: I18n):
     def decorator(cog_class: type[CogT]) -> type[CogT]:
         setattr(cog_class, '__i18n__', i18n)
-        # for locale in i18n.supported_locales:
-        #     i18n.invalidate_app_command_cache(i18n, cog_class, locale.value)
-        # i18n.save()
         return cog_class
 
     return decorator

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Any, Callable, Coroutine, Dict, Iterable, List, Optional, TypeVar, Union
 
 import discord
@@ -12,7 +13,6 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from .bot import LatteMaid
-    from .i18n import I18n
 
 
 T = TypeVar('T')
@@ -56,6 +56,14 @@ def context_menu(
 class Cog(commands.Cog):
     __cog_context_menus__: List[app_commands.ContextMenu]
 
+    def _get_file_path(self) -> Optional[str]:
+        module = sys.modules[self.__module__]
+        file_path = module.__file__
+        return file_path
+
+    def get_context_menus(self) -> List[app_commands.ContextMenu]:
+        return [menu for menu in self.__cog_context_menus__ if isinstance(menu, app_commands.ContextMenu)]
+
     async def _inject(
         self,
         bot: LatteMaid,
@@ -64,6 +72,8 @@ class Cog(commands.Cog):
         guilds: List[discord.abc.Snowflake],
     ) -> Self:
         await super()._inject(bot, override, guild, guilds)
+
+        # context menus in cog
         for method_name in dir(self):
             method = getattr(self, method_name)
             if context_values := getattr(method, '__context_menu__', None):
@@ -76,19 +86,22 @@ class Cog(commands.Cog):
                 except AttributeError:
                     self.__cog_context_menus__ = [menu]
 
-        if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
-            i18n: I18n
+        # app commands localization
+        fp = self._get_file_path()
+        if fp is not None:
+            await bot.translator.load_from_files(self.qualified_name, fp)
 
-            i18n.load()
-            if not i18n.string_only:
-                i18n.validate_app_i18n_from_cog(self)
-                bot.translator.update_app_commands_i18n(i18n.app_translations)
-                # # i know cache is not a good idea, but i don't want to make a new dict every time
+            for app_command in self.get_app_commands():
+                bot.translator.add_app_command_localization(app_command)
+
+            await bot.translator.save_to_files(self.qualified_name, fp)
 
         return self
 
     async def _eject(self, bot: LatteMaid, guild_ids: Optional[Iterable[int]]) -> None:
         await super()._eject(bot, guild_ids)
+
+        # context menus in cog
         for method_name in dir(self):
             method = getattr(self, method_name)
             if context_values := getattr(method, '__context_menu__', None):
@@ -99,9 +112,9 @@ class Cog(commands.Cog):
                     except ValueError:
                         pass
 
-        if i18n := getattr(self, '__i18n__', None):  # type: ignore it fine
-            i18n: I18n
-            if not i18n.string_only:
-                # remove app commands translations from cache
-                bot.translator.remove_app_commands_i18n(i18n.app_translations)
-            i18n.unload()
+        # app commands localization
+        if fp := self._get_file_path():
+            await bot.translator.save_to_files(self.qualified_name, fp)
+
+        for app_command in self.get_app_commands():
+            bot.translator.remove_app_command_localization(app_command)

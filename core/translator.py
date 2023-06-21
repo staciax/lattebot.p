@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
-from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+import os
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, TypeVar, Union
 
 from discord import Locale, app_commands
 from discord.app_commands import (
@@ -14,32 +17,129 @@ from discord.app_commands import (
     TranslationContextLocation as TCL,
     locale_str,
 )
+from discord.ext import commands
 
 if TYPE_CHECKING:
     from discord.app_commands import TranslationContext
 
     from .bot import LatteMaid
-    from .i18n import AppCommandLocalization, ContextMenuLocalization
 
     Localizable = Union[Command, Group, ContextMenu, Parameter, Choice]
 
+T = TypeVar('T')
+CogT = TypeVar('CogT', bound=commands.Cog)
+
 _log = logging.getLogger(__name__)
 
-# TODO: improve this
 # i know this is bad, but it works for now
 # in the future, i'll make this better
 
 
-class Translator(app_commands.Translator):
-    __app_commands_i18n__: Dict[str, Dict[str, AppCommandLocalization]] = {}
-    __context_menus_i18n__: Dict[str, Dict[str, ContextMenuLocalization]] = {}
-    __string_i18n__: Dict[str, Dict[str, str]] = {}
+class OptionLocalization(TypedDict, total=False):
+    display_name: str
+    description: str
+    choices: Dict[Union[str, int, float], str]
 
-    def __init__(self, bot: LatteMaid) -> None:
+
+class ContextMenuLocalization(TypedDict):
+    name: str
+
+
+class AppCommandLocalization(ContextMenuLocalization, total=False):
+    description: str
+    options: Dict[str, OptionLocalization]
+
+
+def get_path(
+    cog_folder: Path,
+    locale: str,
+    fmt: str = 'json',
+) -> Path:
+    return cog_folder / 'locales' / 'app_commands' / f'{locale}.{fmt}'
+
+
+def get_parameter_payload(
+    parameter: Parameter,
+    data: Optional[OptionLocalization] = None,
+    *,
+    merge: bool = True,
+) -> OptionLocalization:
+    payload: OptionLocalization = {
+        'display_name': parameter.display_name,
+        'description': parameter.description,
+    }
+
+    if len(parameter.choices) > 0:
+        payload['choices'] = {str(choice.value): choice.name for choice in parameter.choices}
+
+    if merge and data is not None:
+        if 'display_name' in data and payload['display_name'] != data['display_name']:
+            payload['display_name'] = data['display_name']
+
+        if 'description' in data and payload['description'] != data['description']:
+            payload['description'] = data['description']
+
+        if len(parameter.choices) > 0:
+            payload['choices'] = {}
+            for choice in parameter.choices:
+                if str(choice.value) in data.get('choices', {}):
+                    payload['choices'][str(choice.value)] = data.get('choices', {})[str(choice.value)]
+                else:
+                    payload['choices'][str(choice.value)] = choice.name
+
+    return payload
+
+
+def get_app_command_payload(
+    command: Union[Command, Group],
+    data: Optional[AppCommandLocalization] = None,
+    *,
+    merge: bool = True,
+) -> AppCommandLocalization:
+    payload: AppCommandLocalization = {
+        'name': command.name,
+        'description': command.description,
+    }
+
+    if merge and data is not None:
+        if payload['name'] != data['name']:
+            payload['name'] = data['name']
+
+        if ('description' in data and 'description' in payload) and payload['description'] != data['description']:
+            payload['description'] = data['description']
+
+    if isinstance(command, Group):
+        return payload
+
+    if len(command.parameters) > 0:
+        payload['options'] = {param.name: get_parameter_payload(param) for param in command.parameters}
+
+    if merge and data is not None:
+        if len(command.parameters) > 0:
+            payload['options'] = {
+                param.name: get_parameter_payload(param, data.get('options', {}).get(param.name, {}), merge=True)
+                for param in command.parameters
+            }
+
+    return payload
+
+
+class Translator(app_commands.Translator):
+    def __init__(
+        self,
+        bot: LatteMaid,
+        supported_locales: List[Locale] = [
+            Locale.american_english,
+            Locale.thai,
+        ],
+    ) -> None:
         super().__init__()
         self.bot: LatteMaid = bot
-        self.__latest_command: Optional[Union[Command, Group, ContextMenu]] = None
-        self.__latest_parameter: Optional[Parameter] = None
+        self.supported_locales: List[Locale] = supported_locales
+        self._app_command_localizations: Dict[str, Dict[str, AppCommandLocalization]] = {}
+        self._context_menu_localizations: Dict[str, Dict[str, ContextMenuLocalization]] = {}
+        self._other_localizations: Dict[str, Dict[str, Any]] = {}
+        self.lock: asyncio.Lock = asyncio.Lock()
 
     async def load(self) -> None:
         _log.info('loaded')
@@ -51,13 +151,16 @@ class Translator(app_commands.Translator):
         localizable: Localizable = context.data
         tcl: TCL = context.location
 
-        if locale.value not in self.__app_commands_i18n__:
+        if locale not in self.supported_locales:
+            return None
+
+        if locale.value not in self._app_command_localizations:
             return None
 
         if tcl != TCL.other:
-            translations = self.__app_commands_i18n__[locale.value]
+            translations = self._app_command_localizations.get(locale.value, {})
         elif isinstance(localizable, ContextMenu):
-            translations = self.__context_menus_i18n__[locale.value]
+            translations = self._context_menu_localizations.get(locale.value, {})
         else:
             translations = {}
 
@@ -78,9 +181,66 @@ class Translator(app_commands.Translator):
             return _string
 
         locale_string = find_value_by_keys(translations, keys)
+
         if locale_string is None:
-            _log.debug(f'not found: {string.message} for {locale.value} (tcl: {tcl})')
+            _log.debug(
+                f'not found: message: {string.message!r}, locale: {locale.value}, tcl: {tcl.name}, type: {type(localizable)}'
+            )
+
+        _log.info(
+            f'translated: {string.message!r}, locale: {locale.value}, tcl: {context.location.name} -> {locale_string!r}'
+        )
         return locale_string
+
+    async def load_from_files(self, cog_name: str, cog_folder: Union[str, Path, os.PathLike]) -> None:
+        for locale in self.supported_locales:
+            locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
+
+            if not locale_path.exists():
+                continue
+
+            async with self.lock:
+                with locale_path.open('r', encoding='utf-8') as file:
+                    self._app_command_localizations[locale.value] = json.load(file)
+
+        _log.debug(f'loaded app command localizations for {cog_name}')
+
+    async def save_to_files(self, cog_name: str, cog_folder: Union[str, Path, os.PathLike]) -> None:
+        for locale, localization in self._app_command_localizations.items():
+            locale_path = get_path(Path(cog_folder).resolve().parent, locale)
+            if not locale_path.parent.exists():
+                locale_path.parent.mkdir(parents=True)
+                _log.debug(f'created {locale_path.parent}')
+
+            with locale_path.open('w', encoding='utf-8') as file:
+                json.dump(dict(sorted(localization.items())), file, indent=4, ensure_ascii=False)
+                _log.debug(f'successfully saved app command translations for {cog_name} in {locale}')
+
+    def get_app_command_localization(
+        self,
+        locale: str,
+        command: Union[Command, Group],
+    ) -> Optional[AppCommandLocalization]:
+        if locale not in self._app_command_localizations:
+            return None
+        if command.name not in self._app_command_localizations[locale]:
+            return None
+        return self._app_command_localizations[locale][command.qualified_name]
+
+    def add_app_command_localization(self, command: Union[Command, Group]) -> None:
+        for locale in self.supported_locales:
+            if locale.value not in self._app_command_localizations:
+                self._app_command_localizations[locale.value] = {}
+
+            self._app_command_localizations[locale.value][command.qualified_name] = get_app_command_payload(
+                command,
+                self.get_app_command_localization(locale.value, command),
+                merge=True,
+            )
+
+    def remove_app_command_localization(self, command: Union[Command, Group]) -> None:
+        for locale in self.supported_locales:
+            self._app_command_localizations.setdefault(locale.value, {}).pop(command.qualified_name, None)
 
     def _build_localize_keys(
         self,
@@ -94,14 +254,14 @@ class Translator(app_commands.Translator):
             self.__latest_command = localizable
 
         elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, (Command, Group)):
-            keys.extend([localizable.name, 'description'])
+            keys.extend([localizable.qualified_name, 'description'])
 
         elif tcl == TCL.parameter_name and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.name, 'options', localizable.name, 'display_name'])
+            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'display_name'])
             self.__latest_parameter = localizable
 
         elif tcl == TCL.parameter_description and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.name, 'options', localizable.name, 'description'])
+            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'description'])
 
         elif tcl == TCL.choice_name:
             if (
@@ -111,7 +271,7 @@ class Translator(app_commands.Translator):
             ):
                 keys.extend(
                     [
-                        self.__latest_command.name,
+                        self.__latest_command.qualified_name,
                         'options',
                         self.__latest_parameter.name,
                         'choices',
@@ -120,39 +280,3 @@ class Translator(app_commands.Translator):
                 )
 
         return keys
-
-    @classmethod
-    def get_string(cls, string: str, locale: Union[Locale, str]) -> Optional[str]:
-        if isinstance(locale, Locale):
-            locale = locale.value
-
-        if locale not in cls.__string_i18n__:
-            return None
-
-        return cls.__string_i18n__[locale].get(string)
-
-    # app_commands
-
-    def update_app_commands_i18n(self, i18n: Dict[str, Dict[str, AppCommandLocalization]]) -> None:
-        payload = {}
-
-        for locale in chain(self.__app_commands_i18n__, i18n):
-            payload[locale] = {
-                **self.__app_commands_i18n__.get(locale, {}),
-                **i18n.get(locale, {}),
-            }
-
-        self.__app_commands_i18n__ = payload
-
-    def remove_app_commands_i18n(self, i18n: Dict[str, Dict[str, AppCommandLocalization]]) -> None:
-        self.__app_commands_i18n__ = {
-            locale: {
-                name: localization
-                for name, localization in self.__app_commands_i18n__[locale].items()
-                if locale in i18n and name not in i18n[locale]
-            }
-            for locale in self.__app_commands_i18n__
-        }
-
-
-_ = Translator.get_string
