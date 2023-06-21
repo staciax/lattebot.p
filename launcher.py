@@ -65,11 +65,11 @@ def setup_logging():
         logging.getLogger('discord.http').setLevel(logging.WARNING)
         logging.getLogger('discord.state').addFilter(RemoveNoise())
 
-        # valorantx2
-        logging.getLogger('valorantx2').setLevel(logging.INFO)
-        logging.getLogger('valorantx2.http').setLevel(logging.WARNING)
-        logging.getLogger('valorantx2.valorant_api').setLevel(logging.INFO)
-        logging.getLogger('valorantx2.valorant_api.http').setLevel(logging.WARNING)
+        # valorantx
+        logging.getLogger('valorantx').setLevel(logging.INFO)
+        logging.getLogger('valorantx.http').setLevel(logging.WARNING)
+        logging.getLogger('valorantx.valorant_api').setLevel(logging.INFO)
+        logging.getLogger('valorantx.valorant_api.http').setLevel(logging.WARNING)
 
         # sqlalchemy
         # logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
