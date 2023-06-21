@@ -13,9 +13,6 @@ from discord.ext import commands
 from core.bot import LatteMaid
 
 from ..errors import CheckFailure, ComponentOnCooldown
-from ..translator import _
-
-# from .ui import interaction_error_handler
 
 if TYPE_CHECKING:
     from bot import LatteMaid
@@ -73,7 +70,6 @@ class BaseView(ui.View):
 
     async def on_error(self, interaction: Interaction, error: Exception, item: ui.Item[Any]) -> None:
         interaction.client.dispatch('view_error', interaction, error, item)
-        # return await interaction_error_handler(interaction, error)
 
     # --- code from pycord ---
 
