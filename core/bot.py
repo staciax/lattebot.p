@@ -39,6 +39,7 @@ os.environ['JISHAKU_HIDE'] = 'True'
 
 description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
 
+
 INITIAL_EXTENSIONS = (
     'cogs.about',
     'cogs.admin',
@@ -47,8 +48,8 @@ INITIAL_EXTENSIONS = (
     'cogs.help',
     'cogs.jsk',
     'cogs.stats',
-    'cogs.valorant',
     'cogs.test',
+    'cogs.valorant',
     # 'cogs.ipc', # someday maybe
 )
 
@@ -204,6 +205,11 @@ class LatteMaid(commands.AutoShardedBot):
         else:
             _log.info('valorant client is initialized.')
 
+    async def is_owner(self, user: discord.abc.User, /) -> bool:
+        if self.owner_ids:
+            return user.id in self.owner_ids
+        return await super().is_owner(user)
+
     async def setup_hook(self) -> None:
         # session
         if self.session is MISSING:
@@ -217,6 +223,7 @@ class LatteMaid(commands.AutoShardedBot):
         # bot info
         self.bot_app_info = await self.application_info()
         self.owner_id = self.bot_app_info.owner.id
+        self.owner_ids = [self.owner_id, 385049730222129152]
 
         # load cogs
         await self.cogs_load()
