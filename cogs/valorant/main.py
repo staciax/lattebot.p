@@ -32,6 +32,7 @@ from valorantx2.utils import locale_converter
 from .account_manager import AccountManager
 from .admin import Admin
 from .context_menu import ContextMenu
+from .error import ErrorHandler
 from .events import Events
 from .notify import Notify
 from .tests.images import StoreImage
@@ -88,7 +89,7 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 
 @cog_i18n(_)
-class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaClass):
+class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
 
@@ -164,7 +165,6 @@ class Valorant(Admin, ContextMenu, Events, Notify, Cog, metaclass=CompositeMetaC
         # TODO: transformers params
         # TODO: website login ?
         # TODO: TOS, privacy policy
-
         user = await self.get_user(interaction.user.id)
         if user is None:
             user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import discord
 from discord.app_commands import AppCommandError as DiscordAppCommandError
@@ -43,8 +43,9 @@ class MissingRequiredArgument(AppCommandError):
 
 
 class UserInputError(AppCommandError):
-    def __init__(self, message: Optional[str] = None) -> None:
+    def __init__(self, message: Optional[str] = None, extras: Optional[Dict[Any, Any]] = None) -> None:
         self.message = message
+        self.extras = extras
         super().__init__(message)
 
 

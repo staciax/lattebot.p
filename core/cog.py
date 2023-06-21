@@ -64,6 +64,13 @@ class Cog(commands.Cog):
     def get_context_menus(self) -> List[app_commands.ContextMenu]:
         return [menu for menu in self.__cog_context_menus__ if isinstance(menu, app_commands.ContextMenu)]
 
+    async def cog_app_command_error(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        error: app_commands.AppCommandError,
+    ) -> None:
+        interaction.client.dispatch('app_command_error', interaction, error)
+
     async def _inject(
         self,
         bot: LatteMaid,
@@ -78,7 +85,8 @@ class Cog(commands.Cog):
             method = getattr(self, method_name)
             if context_values := getattr(method, '__context_menu__', None):
                 menu = app_commands.ContextMenu(callback=method, **context_values)
-                setattr(menu, 'binding', self)
+                menu.on_error = self.cog_app_command_error
+                setattr(menu, '__binding__', self)
                 context_values['context_menu_class'] = menu
                 bot.tree.add_command(menu, guilds=method.__context_menu_guilds__)
                 try:
