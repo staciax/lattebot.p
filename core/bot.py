@@ -205,11 +205,6 @@ class LatteMaid(commands.AutoShardedBot):
         else:
             _log.info('valorant client is initialized.')
 
-    async def is_owner(self, user: discord.abc.User, /) -> bool:
-        if self.owner_ids:
-            return user.id in self.owner_ids
-        return await super().is_owner(user)
-
     async def setup_hook(self) -> None:
         # session
         if self.session is MISSING:
@@ -222,8 +217,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # bot info
         self.bot_app_info = await self.application_info()
-        self.owner_id = self.bot_app_info.owner.id
-        self.owner_ids = [self.owner_id, 385049730222129152]
+        self.owner_ids = [self.bot_app_info.owner.id, 385049730222129152]
 
         # load cogs
         await self.cogs_load()
