@@ -43,7 +43,20 @@ class AccountManager:
 
     async def init(self) -> None:
         for index, riot_account in enumerate(sorted(self.user.riot_accounts, key=lambda x: x.created_at)):
-            riot_auth = RiotAuth.from_db(riot_account)
+            payload = {
+                'access_token': riot_account.access_token,
+                'id_token': riot_account.id_token,
+                'entitlements_token': riot_account.entitlements_token,
+                'token_type': riot_account.token_type,
+                'expires_at': riot_account.expires_at,
+                'user_id': riot_account.puuid,
+                'game_name': riot_account.game_name,
+                'tag_line': riot_account.tag_line,
+                'region': riot_account.region,
+                'ssid': riot_account.ssid,
+            }
+
+            riot_auth = RiotAuth.from_data(payload)
 
             # for dispatching events to the bot when reauthorizing
             if self.bot is not MISSING:

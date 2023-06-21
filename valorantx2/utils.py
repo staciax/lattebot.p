@@ -1,6 +1,7 @@
-from discord import Locale as DiscordLocale
 from valorantx import Locale as ValorantLocale
 from valorantx.utils import MISSING as MISSING
+
+from .enums import DiscordLocale
 
 __all__ = (
     'locale_converter',
@@ -8,7 +9,7 @@ __all__ = (
 )
 
 
-class locale_converter:  # ignore naming rule
+class locale_converter:
     @staticmethod
     def to_valorant(locale: DiscordLocale) -> ValorantLocale:
         return getattr(ValorantLocale, locale.name, ValorantLocale.american_english)
