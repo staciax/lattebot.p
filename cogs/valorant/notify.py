@@ -1,9 +1,6 @@
-from __future__ import annotations
-
 import asyncio
 import logging
 from datetime import datetime, time, timedelta
-from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -14,16 +11,15 @@ from discord.app_commands.checks import dynamic_cooldown
 from discord.ext import tasks
 
 from core.checks import cooldown_short
+from core.i18n import I18n
 from valorantx2.errors import BadRequest, RateLimited
 
 from .abc import MixinMeta
 from .account_manager import AccountManager
 
-if TYPE_CHECKING:
-    from core.bot import LatteMaid
-
-
 _log = logging.getLogger(__name__)
+
+_ = I18n('valorant.events', __file__, read_only=True)
 
 
 class Notify(MixinMeta):

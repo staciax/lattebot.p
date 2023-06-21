@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import discord
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2 import RiotAuth
 
-_ = I18n('valorant', __file__)
+_ = I18n('valorant.ui.modal', Path(__file__).resolve().parent, read_only=True)
 
 
 #  TODO: from base Modal

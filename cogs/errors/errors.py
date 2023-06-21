@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
-_ = I18n('errors', __file__, string_only=True)
+_ = I18n('errors', __file__)
 
 # NOTE: app error handler
 # inspired by shenhe_bot (seriaati) url: https://github.com/seriaati/shenhe_bot
@@ -50,8 +50,22 @@ async def application_error_handler(
             'silent': True,
         }
         if interaction.response.is_done():
-            await interaction.followup.send(**kwargs)
+            message = await interaction.followup.send(**kwargs, wait=True)
+            if interaction.guild is None:
+                return
+            if interaction.channel is None:
+                return
+            if (
+                not message.flags.ephemeral
+                and not interaction.channel.permissions_for(interaction.guild.me).manage_messages
+            ):
+                # delete message after 120 seconds
+                await message.delete(delay=120)
+                # await message.edit(content='\u200b', embed=None, view=None)
+                # await interaction.followup.send(**kwargs)
+
         else:
+            # kwargs['delete_after'] = 60
             await interaction.response.send_message(**kwargs)
 
         _log_error(interaction, error)
@@ -113,6 +127,8 @@ def build_error_handle_embed(
         embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', locale).format(
             seconds=error.retry_after
         )
+    elif isinstance(error, errors.UserInputError):
+        embed.description = error.message
     elif isinstance(error, errors.CheckFailure):
         # command = error.command
         # author = error.author

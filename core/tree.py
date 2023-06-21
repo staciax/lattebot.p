@@ -5,9 +5,13 @@ from typing import TYPE_CHECKING, List, Optional
 
 import discord
 from discord import app_commands
+from discord.app_commands import ContextMenu
 
 if TYPE_CHECKING:
+    from discord.ext import commands
+
     from .bot import LatteMaid
+
 
 _log = logging.getLogger(__name__)
 
@@ -94,10 +98,11 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         error: app_commands.AppCommandError,
         /,
     ) -> None:
-        self.client.dispatch('app_command_error', interaction, error)
+        await super().on_error(interaction, error)
 
     async def fake_translator(self, *, guild: Optional[discord.abc.Snowflake] = None) -> None:
+        if self.translator is None:
+            return
         commands = self._get_all_commands(guild=guild)
-        assert self.translator is not None
         for command in commands:
             await command.get_translated_payload(self.translator)

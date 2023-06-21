@@ -11,6 +11,7 @@ from discord.app_commands.checks import dynamic_cooldown
 
 from core.checks import cooldown_medium
 from core.cog import context_menu
+from core.i18n import I18n
 
 from .abc import MixinMeta
 
@@ -19,6 +20,9 @@ if TYPE_CHECKING:
 
 
 _log = logging.getLogger(__name__)
+
+
+_ = I18n('valorant.context_menu', __file__, read_only=True)
 
 
 class ContextMenu(MixinMeta):

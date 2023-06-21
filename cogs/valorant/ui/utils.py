@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Tuple
 
-from core.translator import _
+from core.i18n import I18n
 from valorantx2.enums import GameModeURL
 
 if TYPE_CHECKING:
     from valorantx2.models import MatchPlayer
     from valorantx2.models.custom.match import MatchDetails
+
+_ = I18n('valorant.ui.utils', Path(__file__).resolve().parent, read_only=True)
 
 
 def find_match_score_by_player(match: MatchDetails, player: MatchPlayer) -> Tuple[int, int]:

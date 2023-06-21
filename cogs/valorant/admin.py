@@ -1,15 +1,12 @@
 from __future__ import annotations
 
+from core.i18n import I18n
+
 from .abc import MixinMeta
 
-# import os
-
-# import discord
-# from discord import Interaction, app_commands
-# from discord.app_commands import Choice, locale_str as _T
-
-
 SUPPORT_GUILD_ID = 1097859504906965042
+
+_ = I18n('valorant.admin', __file__, read_only=True)
 
 
 class Admin(MixinMeta):

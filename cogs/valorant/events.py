@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 # from discord.app_commands import locale_str as _T
 from discord.ext import commands, tasks
 
+from core.i18n import I18n
 from valorantx2.auth import RiotAuth
 
 from .abc import MixinMeta
@@ -22,6 +23,8 @@ times = [
     datetime.time(hour=6, minute=30, tzinfo=utc7),  # 6:30 AM UTC+7
     datetime.time(hour=20, tzinfo=utc7),  # 8:00 PM UTC+7
 ]
+
+_ = I18n('valorant.events', __file__, read_only=True)
 
 
 class Events(MixinMeta):

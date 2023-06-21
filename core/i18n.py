@@ -51,22 +51,6 @@ class I18n:
         else:
             self._load()
 
-    def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
-        if locale is None:
-            locale = Locale.american_english
-
-        if isinstance(locale, Locale):
-            locale = locale.value
-
-        # default to american english
-        if locale not in self._data:
-            locale = Locale.american_english
-
-        text = self.get_text(key, locale)
-        if text is None:
-            return key
-        return text
-
     async def load(self) -> None:
         async with self.lock:
             await self.loop.run_in_executor(None, self._load)
@@ -94,20 +78,16 @@ class I18n:
         _log.debug(f'saved i18n for {self.cog_name}')
 
     def _dump(self, locale: str) -> None:
-        locale_path = get_path(self.cog_folder, locale)
-
         if locale not in self._data:
             self._data[locale] = {}
 
-        if not locale_path.parent.exists():
-            locale_path.parent.mkdir(parents=True)
-            _log.debug(f'created {locale_path.parent}')
-
-        if not locale_path.exists():
-            locale_path.touch()
+        locale_path = get_path(self.cog_folder, locale)
+        with contextlib.suppress(IOError, FileExistsError):
+            if not locale_path.parent.exists():
+                locale_path.parent.mkdir(parents=True)
+                _log.debug(f'created {locale_path.parent}')
 
         data = self._data[locale]
-        assert isinstance(data, dict)
 
         with locale_path.open('w', encoding='utf-8') as file:
             json.dump(data.copy(), file, indent=4, ensure_ascii=False)
@@ -138,6 +118,22 @@ class I18n:
             return None
 
         return locale_data.get(key)
+
+    def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
+        if locale is None:
+            locale = Locale.american_english
+
+        if isinstance(locale, Locale):
+            locale = locale.value
+
+        # default to american english
+        if locale not in self._data:
+            locale = Locale.american_english
+
+        text = self.get_text(key, locale)
+        if text is None:
+            return key
+        return text
 
     def __contains__(self, locale: Union[Locale, str]) -> bool:
         if isinstance(locale, Locale):

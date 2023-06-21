@@ -5,13 +5,15 @@ import contextlib
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from core.translator import _
+from core.i18n import I18n
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
 from valorantx2.utils import MISSING
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+
+_ = I18n('valorant.account_manager', __file__, read_only=True)
 
 
 class AccountManager:
