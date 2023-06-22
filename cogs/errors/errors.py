@@ -10,14 +10,11 @@ import discord
 from discord import app_commands, ui
 from jishaku.paginators import PaginatorInterface, WrappedPaginator
 
-import valorantx2 as valorantx
 from core import errors
 from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
 from core.utils import database
-
-# from valorantx import valorant_api
 
 if TYPE_CHECKING:
     from discord.ui import Item, Modal
@@ -39,7 +36,8 @@ async def application_error_handler(
 ) -> None:
     client = interaction.client
     locale = interaction.locale
-    embed = build_error_handle_embed(interaction.user, error, locale)
+
+    embed = interaction.extras.get('embed') or build_error_handle_embed(interaction.user, error, locale)
     view = guild_support_view(locale)
 
     with contextlib.suppress(discord.HTTPException):
@@ -51,14 +49,7 @@ async def application_error_handler(
         }
         if interaction.response.is_done():
             message = await interaction.followup.send(**kwargs, wait=True)
-            if interaction.guild is None:
-                return
-            if interaction.channel is None:
-                return
-            if (
-                not message.flags.ephemeral
-                and not interaction.channel.permissions_for(interaction.guild.me).manage_messages
-            ):
+            if not message.flags.ephemeral:
                 # delete message after 120 seconds
                 await message.delete(delay=120)
                 # await message.edit(content='\u200b', embed=None, view=None)
@@ -159,27 +150,13 @@ def build_error_handle_embed(
             embed.description = _('The Riot account is already registered.', locale)
         elif isinstance(error, database.errors.RiotAccountDoesNotExist):
             embed.description = _('The Riot account is not registered.', locale)
-    elif isinstance(error, valorantx.errors.HTTPException):
-        if isinstance(error, valorantx.errors.RiotAuthenticationError):
-            embed.description = _('Riot Authentication Error', locale)
-        elif isinstance(error, valorantx.errors.RiotRatelimitError):
-            embed.description = _('Riot Rate Limit Error', locale)
-        elif isinstance(
-            error, (valorantx.errors.RiotUnknownResponseTypeError, valorantx.errors.RiotUnknownErrorTypeError)
-        ):
-            embed.description = _('Riot Unknown Error', locale)
-        elif isinstance(error, valorantx.errors.BadRequest):  # status code 400
-            embed.description = _(f'Bad Request from Riot API\n{error.text}', locale)
-        elif isinstance(error, valorantx.errors.Forbidden):  # status code 403
-            embed.description = _(f'Forbidden from Riot API \n{error.text}', locale)
-        elif isinstance(error, valorantx.errors.NotFound):  # status code 404
-            embed.description = _(f'Not Found from Riot API \n{error.text}', locale)
-        elif isinstance(error, valorantx.errors.RateLimited):  # status code 429
-            embed.description = _(f'You are rate limited from Riot API \n{error.text}', locale)
-        elif isinstance(error, valorantx.errors.InternalServerError):  # status code 500
-            embed.description = _(f'Internal Server Error from Riot API \n{error.text}', locale)
     else:
-        embed.custom_id = 'traceback'
+        embed.description = _('An unknown error occurred.', locale)
+        # embed.custom_id = 'traceback'
+
+    # except aiohttp.ClientResponseError as e:
+    #     _log.error('Riot server is currently unavailable.', exc_info=e)
+    #     raise UserInputError(_('Riot server is currently unavailable.', interaction.locale)) from e
 
     icon_url = user.display_avatar.url if user else None
     embed.set_author(name=embed.author.name or 'Error', icon_url=icon_url)
