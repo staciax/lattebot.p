@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
 
 import discord
@@ -11,6 +12,7 @@ from discord.enums import ButtonStyle
 
 import core.utils.chat_formatting as chat
 from core.errors import AppCommandError
+from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
@@ -55,8 +57,7 @@ ViewT = TypeVar('ViewT', bound='BaseView')
 _log = logging.getLogger(__name__)
 
 
-def _(x: str, y=None, z=None) -> str:
-    return x
+_ = I18n('valorant.ui.views', Path(__file__).resolve().parent, read_only=True)
 
 
 class BaseValorantView(ViewAuthor):
@@ -628,7 +629,7 @@ class SkinCollectionView(ViewAuthor, LattePages):
         super().__init__(collection_view.interaction, timeout=600.0)
         self.collection_view = collection_view
         self.compact = True
-        self.back.label = _('Back', 0, self.locale)
+        self.back.label = _('Back', self.locale)
 
     def fill_items(self) -> None:
         super().fill_items()
@@ -667,7 +668,7 @@ class SprayCollectionView(ViewAuthor):
         super().__init__(collection_view.interaction, timeout=600)
         self.collection_view = collection_view
         self.embeds: List[Embed] = []
-        self.back.label = _('Back', 0, self.locale)
+        self.back.label = _('Back', self.locale)
 
     # @alru_cache(maxsize=5)
     async def build_embeds(self, spray_loadout: SpraysLoadout) -> List[Embed]:
@@ -717,8 +718,8 @@ class CollectionView(BaseSwitchAccountView):
         self.skin_view = SkinCollectionView(self)
         self.spray_view = SprayCollectionView(self)
 
-        self.skin_button.label = _('Skins', 0, self.locale)
-        self.spray_button.label = _('Sprays', 0, self.locale)
+        self.skin_button.label = _('Skins', self.locale)
+        self.spray_button.label = _('Sprays', self.locale)
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         self.loadout = loadout = await self.fetch_loudout(riot_auth)
@@ -764,7 +765,7 @@ class CollectionView(BaseSwitchAccountView):
 class SelectMatchHistory(ui.Select['CarrierView']):
     def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
         super().__init__(
-            placeholder=_('Select Match to see details', 0, interaction.locale), max_values=1, min_values=1, row=1
+            placeholder=_('Select Match to see details', interaction.locale), max_values=1, min_values=1, row=1
         )
         self.interaction = interaction
         self._source: Dict[str, MatchDetails] = {}
@@ -812,7 +813,7 @@ class SelectMatchHistory(ui.Select['CarrierView']):
 
     def add_dummy(self) -> None:
         self.clear()
-        self.add_option(label=_('No Match History', 0, self.interaction.locale), value='0', emoji='📭')
+        self.add_option(label=_('No Match History', self.interaction.locale), value='0', emoji='📭')
         self.disabled = True
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
@@ -858,7 +859,7 @@ class CarrierPageSource(ListPageSource):
             # no match history
             if len(entries) == 0:
                 child.add_dummy()
-                return Embed(description=_('No Match History', 0, menu.locale)).warning()
+                return Embed(description=_('No Match History', menu.locale)).warning()
             # build pages
             for match in entries:
                 embeds.append(
@@ -1000,7 +1001,7 @@ class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
         self.valorant_locale: ValorantLocale = locale_converter.to_valorant(interaction.locale)
         if self.other_view is None:
             self.remove_item(self.back_to_home)
-        self.back_to_home.label = _('Back to Home', 0, self.locale)
+        self.back_to_home.label = _('Back to Home', self.locale)
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
         if await super().interaction_check(interaction):
