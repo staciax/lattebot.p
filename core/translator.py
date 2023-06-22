@@ -71,7 +71,6 @@ def get_parameter_payload(
             payload['display_name'] = data['display_name']
 
         if 'description' in data and payload['description'] != data['description'] and data['description'] != '…':
-            print(data['description'], parameter.description)
             payload['description'] = data['description']
 
         if len(parameter.choices) > 0:
@@ -124,7 +123,7 @@ class Translator(Translator):
         self,
         bot: LatteMaid,
         supported_locales: List[Locale] = [
-            Locale.american_english,
+            Locale.american_english,  # default
             Locale.thai,
         ],
     ) -> None:
@@ -145,6 +144,9 @@ class Translator(Translator):
     async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> Optional[str]:
         localizable: Localizable = context.data
         tcl: TCL = context.location
+
+        if locale == Locale.american_english:
+            return None
 
         if locale not in self.supported_locales:
             return None
@@ -194,9 +196,12 @@ class Translator(Translator):
             if not locale_path.exists():
                 continue
 
+            if locale.value not in self._app_command_localizations:
+                self._app_command_localizations[locale.value] = {}
+
             async with self.lock:
                 with locale_path.open('r', encoding='utf-8') as file:
-                    self._app_command_localizations[locale.value] = json.load(file)
+                    self._app_command_localizations[locale.value].update(json.load(file))
 
         _log.debug(f'loaded app command localizations for {cog_name}')
 
@@ -207,6 +212,7 @@ class Translator(Translator):
         cog_folder: Union[str, Path, os.PathLike],
     ) -> None:
         # for locale, localization in self._app_command_localizations.items():
+
         for locale in self.supported_locales:
             locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
 

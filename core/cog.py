@@ -95,16 +95,15 @@ class Cog(commands.Cog):
                     self.__cog_context_menus__ = [menu]
 
         # app commands localization
+        translator = bot.translator
         fp = self._get_file_path()
         if fp is not None:
-            await bot.translator.load_from_files(self.qualified_name, fp)
+            await translator.load_from_files(self.qualified_name, fp)
 
             for app_command in self.get_app_commands():
-                bot.translator.add_app_command_localization(app_command)
+                translator.add_app_command_localization(app_command)
 
-            await bot.translator.save_to_files(
-                [c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp
-            )
+            await translator.save_to_files([c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp)
 
         return self
 
@@ -123,10 +122,9 @@ class Cog(commands.Cog):
                         pass
 
         # app commands localization
+        translator = bot.translator
         if fp := self._get_file_path():
-            await bot.translator.save_to_files(
-                [c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp
-            )
+            await translator.save_to_files([c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp)
 
         for app_command in self.get_app_commands():
-            bot.translator.remove_app_command_localization(app_command)
+            translator.remove_app_command_localization(app_command)
