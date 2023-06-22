@@ -221,7 +221,7 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: ValorantLocale) -> Embed:
     # knd_display_name = 'Kingdom'
     # if knd := wallet.get_kingdom_currency():
     #     knd_display_name = knd.display_name.from_locale(locale)
-    #     knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')  # type: ignore
+    #     knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')
 
     embed.add_field(
         name=vp_display_name,
