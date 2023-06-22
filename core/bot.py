@@ -194,11 +194,16 @@ class LatteMaid(commands.AutoShardedBot):
         )
         [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
 
-    async def _run_valorant_client(self) -> None:
+    async def run_valorant_client(self) -> None:
+        username = os.getenv('RIOT_USERNAME')
+        password = os.getenv('RIOT_PASSWORD')
+        if username is None or password is None:
+            _log.warning('valorant client is not initialized due to missing credentials.')
+            return
         try:
-            await asyncio.wait_for(self.valorant_client.authorize('ragluxs', '4869_lucky'), timeout=60)
+            await asyncio.wait_for(self.valorant_client.authorize(username, password), timeout=120)
         except asyncio.TimeoutError:
-            _log.error('valorant client failed to initialize within 60 seconds.')
+            _log.error('valorant client failed to initialize within 120 seconds.')
         except valorantx.RiotAuthenticationError as e:
             await self.valorant_client._init()  # bypass the auth check
             _log.warning(f'valorant client failed to authorized', exc_info=e)
@@ -229,7 +234,7 @@ class LatteMaid(commands.AutoShardedBot):
         await self.fetch_app_commands()
 
         # valorant client
-        # await self._run_valorant_client()
+        # await self.run_valorant_client()
 
     # cogs property
 

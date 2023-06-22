@@ -7,8 +7,7 @@ import discord
 from discord import app_commands
 
 import valorantx2 as valorantx
-
-# from core.errors import UserInputError
+from core.errors import UserInputError
 from core.i18n import I18n
 
 # from core.ui.embed import MiadEmbed as Embed
@@ -31,11 +30,6 @@ class ErrorHandler(MixinMeta):
         interaction: discord.Interaction[LatteMaid],
         error: Union[app_commands.AppCommandError, Exception],
     ) -> None:
-        locale = interaction.locale
-        # embed = Embed().error()
-
-        message = _('An error occurred while processing the command.', locale)
-
         if isinstance(error, app_commands.errors.CommandInvokeError):
             error = error.original
 
@@ -44,18 +38,23 @@ class ErrorHandler(MixinMeta):
             # return to global error handler
             return
 
+        locale = interaction.locale
+        # embed = Embed().error()
+
+        message = _('An error occurred while processing the command.', locale)
+
         # valorant http error
         if isinstance(error, valorantx.errors.InGameAPIError):
             # valorant in game api error
-            if isinstance(error, valorantx.errors.BadRequest):  # status code 400
+            if isinstance(error, valorantx.errors.BadRequest):
                 message = _(f'Bad Request from Riot API\n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.Forbidden):  # status code 403
+            elif isinstance(error, valorantx.errors.Forbidden):
                 message = _(f'Forbidden from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.NotFound):  # status code 404
+            elif isinstance(error, valorantx.errors.NotFound):
                 message = _(f'Not Found from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.RateLimited):  # status code 429
+            elif isinstance(error, valorantx.errors.RateLimited):
                 message = _(f'You are rate limited from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.InternalServerError):  # status code 500
+            elif isinstance(error, valorantx.errors.InternalServerError):
                 message = _(f'Internal Server Error from Riot API \n{error.text}', locale)
 
         # auth error
@@ -72,8 +71,4 @@ class ErrorHandler(MixinMeta):
         # valorant api error
         # elif isinstance(error, valorant_api.errors.ValorantAPIError):
         #     ...
-
-        # raise UserInputError(message)
-
-        # interaction.extras['embed'] = embed
-        self.bot.dispatch('app_command_error', interaction, error)
+        raise UserInputError(message)
