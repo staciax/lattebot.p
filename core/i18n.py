@@ -91,7 +91,7 @@ class I18n:
 
         with locale_path.open('w', encoding='utf-8') as file:
             json.dump(data.copy(), file, indent=4, ensure_ascii=False)
-            _log.debug(f'successfully saved translations for {self.cog_name} in {locale}')
+            _log.debug(f'successfully saved for {self.cog_name} in {locale}')
 
     def get_locale(self, locale: str, default: Any = None) -> Optional[Union[Dict[str, str], Any]]:
         """Retrieves a locale entry."""
