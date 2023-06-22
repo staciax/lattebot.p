@@ -314,6 +314,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         # await view.start_valorant()
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
+    @app_commands.rename(hide=_T('hide'))
+    @app_commands.describe(hide=_T('Hide the skin offers'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
@@ -331,6 +333,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         await view.start()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
+    @app_commands.rename(private=_T('private'))
+    @app_commands.describe(private=_T('Show the message only to you'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
@@ -344,6 +348,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         # await view.start_valorant()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
+    @app_commands.rename(season=_T('season'))
+    @app_commands.describe(season=_T('Select season to view'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
@@ -357,6 +363,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         await view.callback(interaction)
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
+    @app_commands.rename(event=_T('event'))
+    @app_commands.describe(event=_T('Select event to view'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
@@ -733,7 +741,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     #
     #     await interaction.followup.send(embed=embed, file=file)
 
-    @app_commands.command(name=_T('test_image'), description=_T('...'))
+    @app_commands.command(name=_T('test_image'), description=_T('testing image'))
     @app_commands.choices(type=[Choice(name=_T('store'), value='store')])
     @app_commands.describe(type=_T('Choose the type'))
     @app_commands.rename(type=_T('type'))
@@ -753,8 +761,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             sid = StoreImageDiscord()
             await sid.generate(sf.daily_store.skins)
 
-            embed = Embed(colour=0x63C0B5)
+            embed = Embed().info()
             embed.set_image(url="attachment://store.png")
 
-            await interaction.followup.send(embed=embed, file=sid.to_discord_file())
             await interaction.followup.send(embed=embed, file=sid.to_discord_file())
