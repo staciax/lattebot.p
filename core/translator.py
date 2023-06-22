@@ -7,16 +7,10 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, TypeVar, Union
 
-from discord import Locale, app_commands
-from discord.app_commands import (
-    Choice,
-    Command,
-    ContextMenu,
-    Group,
-    Parameter,
-    TranslationContextLocation as TCL,
-    locale_str,
-)
+from discord import Locale
+from discord.app_commands.commands import Command, ContextMenu, Group, Parameter
+from discord.app_commands.models import Choice
+from discord.app_commands.translator import TranslationContextLocation as TCL, Translator, locale_str
 from discord.ext import commands
 
 if TYPE_CHECKING:
@@ -76,7 +70,8 @@ def get_parameter_payload(
         if 'display_name' in data and payload['display_name'] != data['display_name']:
             payload['display_name'] = data['display_name']
 
-        if 'description' in data and payload['description'] != data['description']:
+        if 'description' in data and payload['description'] != data['description'] and data['description'] != '…':
+            print(data['description'], parameter.description)
             payload['description'] = data['description']
 
         if len(parameter.choices) > 0:
@@ -102,10 +97,10 @@ def get_app_command_payload(
     }
 
     if merge and data is not None:
-        if payload['name'] != data['name']:
+        if data['name'] != command.name:
             payload['name'] = data['name']
 
-        if ('description' in data and 'description' in payload) and payload['description'] != data['description']:
+        if 'description' in data and data['description'] != command.description and data['description'] != '…':
             payload['description'] = data['description']
 
     if isinstance(command, Group):
@@ -124,7 +119,7 @@ def get_app_command_payload(
     return payload
 
 
-class Translator(app_commands.Translator):
+class Translator(Translator):
     def __init__(
         self,
         bot: LatteMaid,
@@ -205,15 +200,28 @@ class Translator(app_commands.Translator):
 
         _log.debug(f'loaded app command localizations for {cog_name}')
 
-    async def save_to_files(self, cog_name: str, cog_folder: Union[str, Path, os.PathLike]) -> None:
-        for locale, localization in self._app_command_localizations.items():
-            locale_path = get_path(Path(cog_folder).resolve().parent, locale)
+    async def save_to_files(
+        self,
+        app_commands: List[str],
+        cog_name: str,
+        cog_folder: Union[str, Path, os.PathLike],
+    ) -> None:
+        # for locale, localization in self._app_command_localizations.items():
+        for locale in self.supported_locales:
+            locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
+
             if not locale_path.parent.exists():
                 locale_path.parent.mkdir(parents=True)
                 _log.debug(f'created {locale_path.parent}')
 
+            localizations = self._app_command_localizations.get(locale.value, {})
+            entries = {
+                command: localization for command, localization in localizations.items() if command in app_commands
+            }
+            entries = dict(sorted(entries.items()))
+
             with locale_path.open('w', encoding='utf-8') as file:
-                json.dump(dict(sorted(localization.items())), file, indent=4, ensure_ascii=False)
+                json.dump(entries, file, indent=4, ensure_ascii=False)
                 _log.debug(f'successfully saved app command translations for {cog_name} in {locale}')
 
     def get_app_command_localization(

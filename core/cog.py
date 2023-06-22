@@ -102,7 +102,9 @@ class Cog(commands.Cog):
             for app_command in self.get_app_commands():
                 bot.translator.add_app_command_localization(app_command)
 
-            await bot.translator.save_to_files(self.qualified_name, fp)
+            await bot.translator.save_to_files(
+                [c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp
+            )
 
         return self
 
@@ -122,7 +124,9 @@ class Cog(commands.Cog):
 
         # app commands localization
         if fp := self._get_file_path():
-            await bot.translator.save_to_files(self.qualified_name, fp)
+            await bot.translator.save_to_files(
+                [c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp
+            )
 
         for app_command in self.get_app_commands():
             bot.translator.remove_app_command_localization(app_command)
