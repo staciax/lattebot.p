@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, TypeVar,
 from discord import Locale
 from discord.app_commands.commands import Command, ContextMenu, Group, Parameter
 from discord.app_commands.models import Choice
-from discord.app_commands.translator import TranslationContextLocation as TCL, Translator, locale_str
+from discord.app_commands.translator import TranslationContextLocation as TCL, Translator as _Translator, locale_str
 from discord.ext import commands
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ def get_app_command_payload(
     return payload
 
 
-class Translator(Translator):
+class Translator(_Translator):
     def __init__(
         self,
         bot: LatteMaid,
@@ -228,7 +228,7 @@ class Translator(Translator):
 
             with locale_path.open('w', encoding='utf-8') as file:
                 json.dump(entries, file, indent=4, ensure_ascii=False)
-                _log.debug(f'successfully saved app command translations for {cog_name} in {locale}')
+                _log.debug(f'saved app command localizations for {cog_name} in {locale}')
 
     def get_app_command_localization(
         self,
