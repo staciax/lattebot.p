@@ -26,7 +26,7 @@ from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
 from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
-from valorantx2.errors import RiotAuthRateLimitedError, RiotMultifactorError
+from valorantx2.errors import RiotMultifactorError
 from valorantx2.utils import locale_converter
 
 from .account_manager import AccountManager
@@ -35,11 +35,8 @@ from .context_menu import ContextMenu
 from .error import ErrorHandler
 from .events import Events
 from .notify import Notify
-from .tests.images import StoreImage
 from .ui import embeds as e
 from .ui.modal import RiotMultiFactorModal
-
-# from .ui.tests2 import ValorantPageSource, ValorantSwitchAccountView
 from .ui.views import (
     CarrierView,
     CollectionView,
@@ -58,24 +55,6 @@ if TYPE_CHECKING:
 _ = I18n('valorant', __file__)
 
 _log = logging.getLogger(__name__)
-
-
-# class StoreFrontPageSource(ValorantPageSource):
-#     async def format_page_valorant(self, view: ValorantSwitchAccountView, riot_auth: RiotAuth) -> List[Embed]:
-#         storefront = await self.valorant_client.fetch_storefront(riot_auth)
-#         embeds = e.store_e(
-#             storefront.skins_panel_layout,
-#             riot_id=riot_auth.display_name,
-#             locale=locale_converter.to_valorant(view.locale),
-#         )
-#         return embeds
-
-
-# class WalletPageSource(ValorantPageSource):
-#     async def format_page_valorant(self, view: ValorantSwitchAccountView, riot_auth: RiotAuth) -> Embed:
-#         wallet = await self.valorant_client.fetch_wallet(riot_auth)
-#         embed = e.wallet_e(wallet, riot_auth.display_name, locale=locale_converter.to_valorant(view.locale))
-#         return embed
 
 
 # thanks for redbot
@@ -114,6 +93,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     # check
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
+        if await interaction.client.is_owner(interaction.user):
+            return True
         if not self.valorant_client.is_ready():
             raise UserInputError(_('Valorant client is not ready. Please try again later.', interaction.locale))
         return super().interaction_check(interaction)
@@ -180,27 +161,13 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             multi_modal = RiotMultiFactorModal(riot_auth)
             await interaction.response.send_modal(multi_modal)
             await multi_modal.wait()
-
-            # when timeout
             if multi_modal.code is None:
+                # when timeout
                 raise RiotAuthMultiFactorTimeout(_('You did not enter the code in time.', interaction.locale))
-            try:
-                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
-            except aiohttp.ClientResponseError as e:
-                _log.error('riot auth multifactor error', exc_info=e)
-                raise UserInputError(_('Invalid Multi-factor code.', interaction.locale)) from e
+            await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
             assert multi_modal.interaction is not None
             interaction = multi_modal.interaction
             multi_modal.stop()
-        except RiotAuthRateLimitedError:
-            raise UserInputError(
-                _('We are currently experiencing a high volume of traffic. Please try again later.', interaction.locale)
-            )
-        except valorantx.RiotAuthenticationError:
-            raise UserInputError(_('Invalid username or password.', interaction.locale))
-        except aiohttp.ClientResponseError as e:
-            _log.error('Riot server is currently unavailable.', exc_info=e)
-            raise UserInputError(_('Riot server is currently unavailable.', interaction.locale)) from e
 
         await interaction.response.defer(ephemeral=True)
 
@@ -740,28 +707,3 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     #     embed.set_image(url="attachment://profile.png")
     #
     #     await interaction.followup.send(embed=embed, file=file)
-
-    @app_commands.command(name=_T('test_image'), description=_T('testing image'))
-    @app_commands.choices(type=[Choice(name=_T('store'), value='store')])
-    @app_commands.describe(type=_T('Choose the type'))
-    @app_commands.rename(type=_T('type'))
-    @app_commands.guild_only()
-    @dynamic_cooldown(cooldown_short)
-    async def test_image(self, interaction: discord.Interaction, type: Choice[str]) -> None:
-        await interaction.response.defer()
-
-        if type.value == 'store':
-
-            class StoreImageDiscord(StoreImage):
-                def to_discord_file(self) -> discord.File:
-                    return discord.File(fp=self.to_buffer(), filename='store.png')
-
-            sf = await self.valorant_client.fetch_storefront()
-
-            sid = StoreImageDiscord()
-            await sid.generate(sf.daily_store.skins)
-
-            embed = Embed().info()
-            embed.set_image(url="attachment://store.png")
-
-            await interaction.followup.send(embed=embed, file=sid.to_discord_file())
