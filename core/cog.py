@@ -101,9 +101,15 @@ class Cog(commands.Cog):
             await translator.load_from_files(self.qualified_name, fp)
 
             for app_command in self.get_app_commands():
+                if app_command._guild_ids:
+                    continue
                 translator.add_app_command_localization(app_command)
 
-            await translator.save_to_files([c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp)
+            await translator.save_to_files(
+                [c.qualified_name for c in self.get_app_commands() if not c._guild_ids],  # exclude guild commands
+                self.qualified_name,
+                fp,
+            )
 
         return self
 
@@ -124,7 +130,13 @@ class Cog(commands.Cog):
         # app commands localization
         translator = bot.translator
         if fp := self._get_file_path():
-            await translator.save_to_files([c.qualified_name for c in self.get_app_commands()], self.qualified_name, fp)
+            await translator.save_to_files(
+                [c.qualified_name for c in self.get_app_commands() if not c._guild_ids],  # exclude guild commands
+                self.qualified_name,
+                fp,
+            )
 
         for app_command in self.get_app_commands():
+            if app_command._guild_ids:
+                continue
             translator.remove_app_command_localization(app_command)
