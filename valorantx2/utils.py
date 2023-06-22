@@ -1,7 +1,6 @@
+from discord.enums import Locale as DiscordLocale
 from valorantx import Locale as ValorantLocale
 from valorantx.utils import MISSING as MISSING
-
-from .enums import DiscordLocale
 
 __all__ = (
     'locale_converter',
