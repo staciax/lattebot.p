@@ -131,10 +131,11 @@ class Developer(commands.Cog, name='developer'):
         embed = MiadEmbed(description=f"Reload : `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
-    @app_commands.command(name='sync_tree')
+    @app_commands.command(name='sync', description='Syncs the application commands to Discord.')
     @app_commands.rename(guild_id=_T('guild_id'))
+    @app_commands.describe(guild_id=_T('target guild id'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    # @app_commands.default_permissions(administrator=True)
+    @app_commands.default_permissions(administrator=True)
     @app_commands.guild_only()
     @owner_only()
     async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: Optional[str] = None) -> None:
