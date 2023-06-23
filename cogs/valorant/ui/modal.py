@@ -12,7 +12,8 @@ from core.i18n import I18n
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from valorantx2 import RiotAuth
+
+    from ..auth import RiotAuth
 
 _ = I18n('valorant.ui.modal', Path(__file__).resolve().parent, read_only=True)
 
