@@ -7,6 +7,7 @@ import valorantx
 from async_lru import alru_cache
 from valorantx.client import _authorize_required, _loop
 from valorantx.enums import Locale, QueueType
+from valorantx.models.store import StoreFront
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from valorantx.models.match import MatchHistory
     from valorantx.models.patchnotes import PatchNotes
     from valorantx.models.seasons import Season
-    from valorantx.models.store import FeaturedBundle, StoreFront, Wallet
+    from valorantx.models.store import FeaturedBundle, Wallet
     from valorantx.models.version import Version
 
     from core.bot import LatteMaid
