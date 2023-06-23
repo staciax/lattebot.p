@@ -189,6 +189,47 @@ class Translator(_Translator):
         )
         return locale_string
 
+    def _build_localize_keys(
+        self,
+        tcl: TCL,
+        localizable: Localizable,
+    ) -> List[str]:
+        keys = []
+
+        if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
+            keys.extend([localizable.qualified_name, 'name'])
+            self.__latest_command = localizable
+
+        elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, (Command, Group)):
+            keys.extend([localizable.qualified_name, 'description'])
+
+        elif tcl == TCL.parameter_name and isinstance(localizable, Parameter):
+            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'display_name'])
+            self.__latest_parameter = localizable
+
+        elif tcl == TCL.parameter_description and isinstance(localizable, Parameter):
+            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'description'])
+
+        elif tcl == TCL.choice_name:
+            if (
+                self.__latest_command is not None
+                and self.__latest_parameter is not None
+                and isinstance(localizable, Choice)
+            ):
+                keys.extend(
+                    [
+                        self.__latest_command.qualified_name,
+                        'options',
+                        self.__latest_parameter.name,
+                        'choices',
+                        str(localizable.value),
+                    ]
+                )
+
+        return keys
+
+    # app commands
+
     async def load_from_files(self, cog_name: str, cog_folder: Union[str, Path, os.PathLike]) -> None:
         for locale in self.supported_locales:
             locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
@@ -256,41 +297,6 @@ class Translator(_Translator):
         for locale in self.supported_locales:
             self._app_command_localizations.setdefault(locale.value, {}).pop(command.qualified_name, None)
 
-    def _build_localize_keys(
-        self,
-        tcl: TCL,
-        localizable: Localizable,
-    ) -> List[str]:
-        keys = []
+    # context menus
 
-        if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
-            keys.extend([localizable.qualified_name, 'name'])
-            self.__latest_command = localizable
-
-        elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, (Command, Group)):
-            keys.extend([localizable.qualified_name, 'description'])
-
-        elif tcl == TCL.parameter_name and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'display_name'])
-            self.__latest_parameter = localizable
-
-        elif tcl == TCL.parameter_description and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'description'])
-
-        elif tcl == TCL.choice_name:
-            if (
-                self.__latest_command is not None
-                and self.__latest_parameter is not None
-                and isinstance(localizable, Choice)
-            ):
-                keys.extend(
-                    [
-                        self.__latest_command.qualified_name,
-                        'options',
-                        self.__latest_parameter.name,
-                        'choices',
-                        str(localizable.value),
-                    ]
-                )
-
-        return keys
+    # TODO: add context menu localization
