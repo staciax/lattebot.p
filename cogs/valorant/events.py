@@ -1,20 +1,14 @@
-from __future__ import annotations
-
 import datetime
 import logging
-from typing import TYPE_CHECKING
 
 # from discord import app_commands
 # from discord.app_commands import locale_str as _T
 from discord.ext import commands, tasks
 
 from core.i18n import I18n
-from valorantx2.auth import RiotAuth
 
 from .abc import MixinMeta
-
-if TYPE_CHECKING:
-    from valorantx2.auth import RiotAuth
+from .auth import RiotAuth
 
 _log = logging.getLogger(__name__)
 

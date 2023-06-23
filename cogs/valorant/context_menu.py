@@ -24,9 +24,11 @@ _log = logging.getLogger(__name__)
 
 _ = I18n('valorant.context_menu', __file__, read_only=True)
 
+SUPPORT_GUILD_ID = 1097859504906965042
+
 
 class ContextMenu(MixinMeta):
-    @context_menu(name=_T('party invite'))
+    @context_menu(name=_T('party invite'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
     @dynamic_cooldown(cooldown_medium)
     async def message_invite_to_party(
         self,
@@ -34,7 +36,19 @@ class ContextMenu(MixinMeta):
         message: discord.Message,
     ) -> None:
         """Invite the author of the message to the party."""
+
         if '#' in message.content:
             await interaction.response.send_message('Not implemented yet.', ephemeral=True)
             return
+
+        # gamename, _, tagline = message.content.partition('#')
+
+        # async with self.valorant_client.lock:
+        #     party_player = await self.valorant_client.http.get_party_player()
+        #     await self.valorant_client.http.post_party_invite_by_display_name(
+        #         party_player['CurrentPartyID'],
+        #         gamename,
+        #         tagline,
+        #     )
+
         await interaction.response.send_message('Not implemented yet.', ephemeral=True)

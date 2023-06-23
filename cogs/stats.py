@@ -23,16 +23,21 @@ class Stats(commands.Cog, name='stats'):
 
     @commands.Cog.listener('on_app_command_completion')
     async def on_latte_app_command(
-        self, interaction: discord.Interaction[LatteMaid], app_command: Union[Command, ContextMenu]
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        app_command: Union[Command, ContextMenu],
     ) -> None:
-        ...
-        # if interaction.user == self.bot.owner:
+        if self.bot.is_debug_mode():
+            return
+        if await self.bot.is_owner(interaction.user):
+            return
+        # if await self.bot.is_blocked(interaction.user):
         #     return
-        # command = app_command.qualified_name
-        # message = interaction.message
-        # channel = interaction.channel
-        # assert message is not None
-        # assert channel is not None
+
+        message = interaction.message
+        channel = interaction.channel
+        assert message is not None
+        assert channel is not None
 
         # destination = None
         # if interaction.guild is None:

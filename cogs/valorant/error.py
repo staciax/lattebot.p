@@ -9,8 +9,6 @@ from discord import app_commands
 import valorantx2 as valorantx
 from core.errors import UserInputError
 from core.i18n import I18n
-
-# from core.ui.embed import MiadEmbed as Embed
 from valorantx2 import valorant_api
 
 from .abc import MixinMeta
@@ -34,6 +32,7 @@ class ErrorHandler(MixinMeta):
             error = error.original
 
         if not isinstance(error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError)):
+            _log.exception('Unhandled exception in command %s:', interaction.command, exc_info=error)
             self.bot.dispatch('app_command_error', interaction, error)
             # return to global error handler
             return
@@ -43,19 +42,9 @@ class ErrorHandler(MixinMeta):
 
         message = _('An error occurred while processing the command.', locale)
 
-        # valorant http error
-        if isinstance(error, valorantx.errors.InGameAPIError):
-            # valorant in game api error
-            if isinstance(error, valorantx.errors.BadRequest):
-                message = _(f'Bad Request from Riot API\n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.Forbidden):
-                message = _(f'Forbidden from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.NotFound):
-                message = _(f'Not Found from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.RateLimited):
-                message = _(f'You are rate limited from Riot API \n{error.text}', locale)
-            elif isinstance(error, valorantx.errors.InternalServerError):
-                message = _(f'Internal Server Error from Riot API \n{error.text}', locale)
+        # valorant auth required error
+        if isinstance(error, valorantx.RiotAuthRequired):
+            message = _('You need to login to Riot account first.', locale)
 
         # auth error
         elif isinstance(error, valorantx.errors.RiotAuthError):
@@ -68,7 +57,22 @@ class ErrorHandler(MixinMeta):
             ):
                 message = _('Riot Unknown Error', locale)
 
+        # valorant http error
+        elif isinstance(error, valorantx.errors.InGameAPIError):
+            # valorant in game api error
+            if isinstance(error, valorantx.errors.BadRequest):
+                message = _(f'Bad Request from Riot API\n{error.text}', locale)
+            elif isinstance(error, valorantx.errors.Forbidden):
+                message = _(f'Forbidden from Riot API \n{error.text}', locale)
+            elif isinstance(error, valorantx.errors.NotFound):
+                message = _(f'Not Found from Riot API \n{error.text}', locale)
+            elif isinstance(error, valorantx.errors.RateLimited):
+                message = _(f'You are rate limited from Riot API \n{error.text}', locale)
+            elif isinstance(error, valorantx.errors.InternalServerError):
+                message = _(f'Internal Server Error from Riot API \n{error.text}', locale)
+
         # valorant api error
         # elif isinstance(error, valorant_api.errors.ValorantAPIError):
         #     ...
+        print(error, type(error))
         raise UserInputError(message)

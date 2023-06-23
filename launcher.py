@@ -30,12 +30,6 @@ parser.add_argument(
     action='store_true',
     help='sync application commands to discord.',
 )
-# parser.add_argument(
-#     '-i',
-#     '--i18n',
-#     action='store_true',
-#     help='replace i18n strings.',
-# )
 args = parser.parse_args()
 
 
@@ -70,9 +64,6 @@ def setup_logging():
         logging.getLogger('valorantx.http').setLevel(logging.WARNING)
         logging.getLogger('valorantx.valorant_api').setLevel(logging.INFO)
         logging.getLogger('valorantx.valorant_api.http').setLevel(logging.WARNING)
-
-        # sqlalchemy
-        # logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
 
         log.setLevel(logging.INFO if args.prod else logging.DEBUG)
         handler = RotatingFileHandler(

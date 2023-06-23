@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from core.i18n import I18n
 from core.utils.database.models import User
-from valorantx2.auth import RiotAuth
 from valorantx2.utils import MISSING
+
+from .auth import RiotAuth
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
