@@ -16,7 +16,6 @@ from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import BaseView, ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
-from valorantx2.auth import RiotAuth
 from valorantx2.enums import Locale as ValorantLocale, RelationType
 from valorantx2.utils import locale_converter
 
@@ -25,7 +24,6 @@ from . import embeds as e, utils
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from valorantx2.auth import RiotAuth
     from valorantx2.client import Client as ValorantClient
     from valorantx2.models import (
         Contract,
@@ -38,6 +36,8 @@ if TYPE_CHECKING:
         SpraysLoadout,
     )
     from valorantx2.models.custom.match import MatchDetails
+
+    from ..auth import RiotAuth
 
 
 __all__ = (
