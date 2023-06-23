@@ -13,7 +13,7 @@ convention = {
 __all__ = (
     'Base',
 )
-# fmt: off
+# fmt: on
 
 
 class Base(DeclarativeBase):

@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 __all__ = (
     'BlackList',
 )
-# fmt: off
+# fmt: on
+
 
 class BlackList(Base):
     __tablename__ = 'blacklist'
@@ -26,7 +27,7 @@ class BlackList(Base):
     reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
     maybe_user: Mapped[Optional[User]] = relationship(
         'User',
-        back_populates='blacklist', 
+        back_populates='blacklist',
         lazy='joined',
     )
 

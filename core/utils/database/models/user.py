@@ -20,17 +20,18 @@ if TYPE_CHECKING:
 __all__ = (
     'User',
 )
-# fmt: off
+# fmt: on
+
 
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True) 
+    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True)
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
     blacklist: Mapped[Optional[BlackList]] = relationship(
         'BlackList',
         back_populates='maybe_user',
-        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan', 
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='joined',
     )
     app_command_uses: Mapped[List[AppCommand]] = relationship(

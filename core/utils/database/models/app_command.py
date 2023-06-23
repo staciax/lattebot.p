@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 __all__ = (
     'AppCommand',
 )
-# fmt: off
+# fmt: on
 
 
 class AppCommand(Base):
@@ -32,7 +32,7 @@ class AppCommand(Base):
     command: Mapped[str] = mapped_column('command', String(length=256))
     failed: Mapped[bool] = mapped_column('failed', default=False)
     author: Mapped[User] = relationship('User', back_populates='app_command_uses')
-    
+
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
@@ -49,12 +49,12 @@ class AppCommand(Base):
     async def read_by_guild_id(cls, session: AsyncSession, guild_id: int) -> Optional[Self]:
         stmt = select(cls).where(cls.guild == guild_id)
         return await session.scalar(stmt.order_by(cls.used))
-    
+
     @classmethod
     async def read_by_name(cls, session: AsyncSession, name: str) -> Optional[Self]:
         stmt = select(cls).where(cls.command == name)
         return await session.scalar(stmt.order_by(cls.used))
-    
+
     @classmethod
     async def read_all_by_name(cls, session: AsyncSession, name: str) -> AsyncIterator[Self]:
         stmt = select(cls).where(cls.command == name)
@@ -71,7 +71,7 @@ class AppCommand(Base):
         author: int,
         used: datetime.datetime,
         command: str,
-        failed: bool
+        failed: bool,
     ) -> Self:
         cmd = AppCommand(
             guild=guild,
@@ -88,7 +88,6 @@ class AppCommand(Base):
         if not new:
             raise RuntimeError()
         return new
-
 
     @classmethod
     async def delete_all_by_author_id(cls, session: AsyncSession, author_id: int) -> None:
