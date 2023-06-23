@@ -24,13 +24,13 @@ from core.errors import (
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
-from valorantx2.auth import RiotAuth
 from valorantx2.client import Client as ValorantClient
 from valorantx2.errors import RiotMultifactorError
 from valorantx2.utils import locale_converter
 
 from .account_manager import AccountManager
 from .admin import Admin
+from .auth import RiotAuth
 from .context_menu import ContextMenu
 from .error import ErrorHandler
 from .events import Events
