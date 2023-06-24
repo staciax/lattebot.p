@@ -5,7 +5,8 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from discord import SyncWebhook, utils
+from discord import utils
+from discord.webhook import SyncWebhook
 
 from core.bot import LatteMaid
 
