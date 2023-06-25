@@ -53,6 +53,8 @@ class RiotAccount(Base):
     )
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
+    main_account: Mapped[bool] = mapped_column('main_account', nullable=False, default=False)
+    notify: Mapped[bool] = mapped_column('notify', nullable=False, default=False)
 
     # NOTE: that there is no point in using a hybrid_property in this case, as your database can't encrypt and decrypt on the server side.
 
@@ -116,6 +118,7 @@ class RiotAccount(Base):
     async def create(
         cls,
         session: AsyncSession,
+        owner_id: int,
         puuid: str,
         game_name: Optional[str],
         tag_line: Optional[str],
@@ -127,7 +130,8 @@ class RiotAccount(Base):
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        owner_id: int,
+        main_account: bool = False,
+        notify: bool = False,
     ) -> Self:
         riot_account = cls(
             puuid=puuid,
@@ -142,6 +146,8 @@ class RiotAccount(Base):
             entitlements_token=entitlements_token,
             ssid=ssid,
             owner_id=owner_id,
+            main_account=main_account,
+            notify=notify,
         )
         session.add(riot_account)
         await session.flush()
@@ -164,6 +170,8 @@ class RiotAccount(Base):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        main_account: Optional[bool] = None,
+        notify: Optional[bool] = None,
     ) -> Self:
         if game_name is not None:
             self.game_name = game_name
@@ -185,6 +193,10 @@ class RiotAccount(Base):
             self.entitlements_token = entitlements_token
         if ssid is not None:
             self.ssid = ssid
+        if main_account is not None:
+            self.main_account = main_account
+        if notify is not None:
+            self.notify = notify
         await session.flush()
         # To fetch the new object
         new = await self.read_by_id(session, self.id)

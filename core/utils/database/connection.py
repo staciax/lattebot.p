@@ -163,8 +163,9 @@ class DatabaseConnection:
 
     async def create_app_command(
         self,
+        type: int,
         guild: Optional[int],
-        channel: int,
+        channel: Optional[int],
         author: int,
         used: datetime.datetime,
         command: str,
@@ -172,6 +173,7 @@ class DatabaseConnection:
     ) -> AppCommand:
         async with self._async_session() as session:
             cmd = await AppCommand.create(
+                type=type,
                 session=session,
                 guild=guild,
                 channel=channel,
@@ -198,6 +200,7 @@ class DatabaseConnection:
 
     async def create_riot_account(
         self,
+        owner_id: int,
         *,
         puuid: str,
         game_name: Optional[str],
@@ -210,7 +213,8 @@ class DatabaseConnection:
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        owner_id: int,
+        main_account: bool = False,
+        notify: bool = False,
     ) -> RiotAccount:
         async with self._async_session() as session:
             exist_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
@@ -218,6 +222,7 @@ class DatabaseConnection:
                 raise RiotAccountAlreadyExists(puuid, owner_id)
             riot_account = await RiotAccount.create(
                 session=session,
+                owner_id=owner_id,
                 puuid=puuid,
                 game_name=game_name,
                 tag_line=tag_line,
@@ -229,7 +234,8 @@ class DatabaseConnection:
                 access_token=access_token,
                 entitlements_token=entitlements_token,
                 ssid=ssid,
-                owner_id=owner_id,
+                main_account=main_account,
+                notify=notify,
             )
             await session.commit()
 
@@ -266,6 +272,8 @@ class DatabaseConnection:
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        main_account: Optional[bool] = None,
+        notify: Optional[bool] = None,
     ) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
@@ -284,6 +292,8 @@ class DatabaseConnection:
                     access_token=access_token,
                     entitlements_token=entitlements_token,
                     ssid=ssid,
+                    main_account=main_account,
+                    notify=notify,
                 )
             except SQLAlchemyError as e:
                 self._log.error(f'failed to update riot account with puuid {puuid!r} for user id {owner_id!r}: {e!r}')

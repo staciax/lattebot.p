@@ -25,8 +25,9 @@ class AppCommand(Base):
     __tablename__ = 'app_commands'
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=True)
+    type: Mapped[int] = mapped_column('type', default=1)
     guild: Mapped[Optional[int]] = mapped_column('guild_id')
-    channel: Mapped[int] = mapped_column('channel')
+    channel: Mapped[Optional[int]] = mapped_column('channel')
     author_id: Mapped[int] = mapped_column('author_id', ForeignKey('users.id'), nullable=False)
     used: Mapped[datetime.datetime] = mapped_column('used', default=datetime.datetime.utcnow)
     command: Mapped[str] = mapped_column('command', String(length=256))
@@ -66,14 +67,16 @@ class AppCommand(Base):
     async def create(
         cls,
         session: AsyncSession,
+        type: int,
         guild: Optional[int],
-        channel: int,
+        channel: Optional[int],
         author: int,
         used: datetime.datetime,
         command: str,
         failed: bool,
     ) -> Self:
         cmd = AppCommand(
+            type=type,
             guild=guild,
             channel=channel,
             author_id=author,
