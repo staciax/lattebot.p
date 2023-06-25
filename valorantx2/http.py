@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from valorantx.enums import Region
 from valorantx.http import HTTPClient as _HTTPClient, Route
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
 
     from valorantx.http import Response
+    from valorantx.types import store
 
     from .auth import RiotAuth
     from .types import account_henrikdev
@@ -40,3 +41,22 @@ class HTTPClient(_HTTPClient):
             tag_line=tag_line,
         )
         return self.request(r, headers={})
+
+    # test
+
+    def build_headers(self, riot_auth: RiotAuth) -> Dict[str, str]:
+        headers = {
+            'Authorization': 'Bearer %s' % riot_auth.access_token,
+            'X-Riot-Entitlements-JWT': riot_auth.entitlements_token,
+            'X-Riot-ClientPlatform': HTTPClient.RIOT_CLIENT_PLATFORM,
+            'X-Riot-ClientVersion': HTTPClient.RIOT_CLIENT_VERSION,
+        }
+        return headers
+
+    def get_store_storefront_test(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
+        headers = self.build_headers(riot_auth)
+        region = Region(riot_auth.region) if riot_auth.region is not None else self.region
+        return self.request(
+            Route('GET', '/store/v2/storefront/{puuid}', region, puuid=riot_auth.puuid),
+            headers=headers,
+        )
