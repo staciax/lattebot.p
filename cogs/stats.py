@@ -29,37 +29,35 @@ class Stats(commands.Cog, name='stats'):
     ) -> None:
         if self.bot.is_debug_mode():
             return
+
         if await self.bot.is_owner(interaction.user):
             return
-        # if await self.bot.is_blocked(interaction.user):
-        #     return
 
-        message = interaction.message
+        if self.bot.is_blocked(interaction.user):
+            return
+
+        app_command_type = app_command.type.value if isinstance(app_command, ContextMenu) else 1  # 1 is slash command
         channel = interaction.channel
-        assert message is not None
-        assert channel is not None
 
-        # destination = None
-        # if interaction.guild is None:
-        #     destination = 'Private Message'
-        #     guild_id = None
-        # else:
-        #     destination = f'#{channel} ({interaction.guild})'
-        #     guild_id = interaction.guild.id
-        # if interaction.command:
-        #     content = f'/{interaction.command.qualified_name}'
-        # else:
-        #     content = message.content
-        # assert message is not None
-        # _log.info(f'{message.created_at}: {message.author} in {destination}: {content}')
-        # await self.bot.db.create_app_command(
-        #     guild=guild_id,
-        #     command=command,
-        #     channel=channel.id,
-        #     author=interaction.user.id,
-        #     used=interaction.created_at,
-        #     failed=False,
-        # )
+        destination = None
+        if interaction.guild is None:
+            destination = 'Private Message'
+            guild_id = None
+        else:
+            destination = f'#{channel} ({interaction.guild})'
+            guild_id = interaction.guild.id
+
+        _log.info(f'/{interaction.created_at}: {interaction.user} in {destination}: /{app_command.qualified_name}')
+
+        await self.bot.db.create_app_command(
+            type=app_command_type,
+            command=app_command.qualified_name,
+            guild=guild_id,
+            channel=interaction.channel_id,
+            used=interaction.created_at,
+            author=interaction.user.id,
+            failed=interaction.command_failed,
+        )
 
 
 async def setup(bot: LatteMaid) -> None:
