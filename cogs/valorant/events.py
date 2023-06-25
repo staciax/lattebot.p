@@ -1,8 +1,6 @@
 import datetime
 import logging
 
-# from discord import app_commands
-# from discord.app_commands import locale_str as _T
 from discord.ext import commands, tasks
 
 from core.i18n import I18n

@@ -7,10 +7,9 @@ import discord
 
 # i18n
 from discord.app_commands import locale_str as _T
-from discord.app_commands.checks import dynamic_cooldown
 
 import valorantx2 as valorantx
-from core.checks import cooldown_medium
+from core.checks import cooldown_medium, dynamic_cooldown
 from core.cog import context_menu
 from core.errors import BadArgument
 from core.i18n import I18n
