@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import discord
 
@@ -9,11 +9,14 @@ import discord
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import dynamic_cooldown
 
+import valorantx2 as valorantx
 from core.checks import cooldown_medium
 from core.cog import context_menu
+from core.errors import BadArgument
 from core.i18n import I18n
 
 from .abc import MixinMeta
+from .account_manager import AccountManager
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -37,18 +40,55 @@ class ContextMenu(MixinMeta):
     ) -> None:
         """Invite the author of the message to the party."""
 
-        if '#' in message.content:
-            await interaction.response.send_message('Not implemented yet.', ephemeral=True)
+        if '#' not in message.content:
+            raise BadArgument('Invalid Riot ID.')
+
+        await interaction.response.defer(ephemeral=True)
+
+        user = await self.get_user(interaction.user.id)  # type: ignore
+        account_manager = AccountManager(user, self.bot)
+        await account_manager.wait_until_ready()
+
+        game_name, _, tag_line = message.content.partition('#')
+
+        if not game_name or not tag_line:
+            raise BadArgument('Invalid Riot ID.')
+
+        if len(game_name) > 16:
+            raise BadArgument('Invalid Riot ID.')
+
+        if len(tag_line) > 5:
+            raise BadArgument('Invalid Riot ID.')
+
+        try:
+            party_player = await self.valorant_client.fetch_party_player(riot_auth=account_manager.first_account)
+        except valorantx.errors.NotFound:
+            await interaction.followup.send('You are not in a party.', ephemeral=True, silent=True)
             return
+        else:
+            party = await self.valorant_client.party_invite_by_riot_id(
+                party_player.current_party_id,
+                game_name,
+                tag_line,
+                riot_auth=account_manager.first_account,
+            )
+            if party.version == 0:
+                raise BadArgument(f'Not found: {game_name}#{tag_line}')
+            await interaction.followup.send('Invited.', ephemeral=True, silent=True)
 
-        # gamename, _, tagline = message.content.partition('#')
+    @context_menu(name=_T('party request'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
+    @dynamic_cooldown(cooldown_medium)
+    async def user_request_to_party(
+        self, interaction: discord.Interaction[LatteMaid], user: Union[discord.User, discord.Member]
+    ) -> None:
+        # target
+        target = await self.get_user(user.id)  # type: ignore
+        target_account_manager = AccountManager(target, self.bot)
+        await target_account_manager.wait_until_ready()
 
-        # async with self.valorant_client.lock:
-        #     party_player = await self.valorant_client.http.get_party_player()
-        #     await self.valorant_client.http.post_party_invite_by_display_name(
-        #         party_player['CurrentPartyID'],
-        #         gamename,
-        #         tagline,
-        #     )
+        # author
+        author = await self.get_user(interaction.user.id)  # type: ignore
+        author_account_manager = AccountManager(author, self.bot)
+        await author_account_manager.wait_until_ready()
 
-        await interaction.response.send_message('Not implemented yet.', ephemeral=True)
+        await interaction.response.send_message('Not implemented.', ephemeral=True, silent=True)
