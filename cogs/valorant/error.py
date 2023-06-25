@@ -74,5 +74,5 @@ class ErrorHandler(MixinMeta):
         # valorant api error
         # elif isinstance(error, valorant_api.errors.ValorantAPIError):
         #     ...
-        print(error, type(error))
+
         raise UserInputError(message)

@@ -1,14 +1,13 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 import discord
-from discord.app_commands import AppCommandError as DiscordAppCommandError
 from discord.app_commands.commands import Command, ContextMenu
 from discord.app_commands.models import AppCommand, AppCommandGroup
 
 # TODO: improve this
 
 
-class LatteMaidError(DiscordAppCommandError):
+class LatteMaidError(Exception):
     """Base class for all Latte errors."""
 
     # def __init__(
@@ -36,17 +35,22 @@ class AppCommandError(LatteMaidError):
     pass
 
 
-class MissingRequiredArgument(AppCommandError):
+class UserInputError(AppCommandError):
+    """Base class for errors that involve errors regarding user input."""
+
+    def __init__(self, message: Optional[str] = None) -> None:
+        self.message: Optional[str] = message
+        super().__init__(message)
+
+
+class MissingRequiredArgument(UserInputError):
     def __init__(self, param: str) -> None:
         self.param: str = param
         super().__init__(f'{param} is a required argument that is missing.')
 
 
-class UserInputError(AppCommandError):
-    def __init__(self, message: Optional[str] = None, extras: Optional[Dict[Any, Any]] = None) -> None:
-        self.message = message
-        self.extras = extras
-        super().__init__(message)
+class BadArgument(UserInputError):
+    pass
 
 
 class RiotAuthError(UserInputError):
