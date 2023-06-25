@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 import aiohttp
 import discord
@@ -101,15 +101,15 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
     # user
 
-    async def get_user(self, id: int, /) -> Optional[User]:
+    async def get_user(self, id: int, /, *, check_linked: bool = True) -> User | None:
         user = await self.bot.db.get_user(id)
 
         if user is None:
             _log.info(f'User {id} not found in database.')
             return None
 
-        # if len(user.riot_accounts) == 0:
-        #     raise AppCommandError(_('You have not linked any riot accounts.', user.locale))
+        if check_linked and len(user.riot_accounts) == 0:
+            raise RiotAuthNotLinked(_('You have not linked any riot accounts.', user.locale))
 
         return user
 
@@ -146,7 +146,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         # TODO: transformers params
         # TODO: website login ?
         # TODO: TOS, privacy policy
-        user = await self.get_user(interaction.user.id)
+        user = await self.get_user(interaction.user.id, check_linked=False)
         if user is None:
             user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
 
@@ -210,6 +210,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
                 access_token=riot_auth.access_token,  # type: ignore
                 entitlements_token=riot_auth.entitlements_token,  # type: ignore
                 ssid=riot_auth.get_ssid(),
+                main_account=len(user.riot_accounts) == 0,
+                notify=False,
             )
         )
 
@@ -688,22 +690,3 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     # @dynamic_cooldown(cooldown_short)
     # async def party_leave(self, interaction: Interaction) -> None:
     #     ...
-
-    #
-    # @app_commands.command(name=_T('profile'), description=_T('Shows your profile'))
-    # @app_commands.guild_only()
-    # async def profile(self, interaction: Interaction) -> None:
-    #
-    #     await interaction.response.defer()
-    #
-    #     riot_acc = await self.get_riot_account(user_id=interaction.user.id)
-    #     client = await self.valorant_client.run(auth=riot_acc)
-    #
-    #     loadout = await client.fetch_player_loadout()
-    #
-    #     file = await profile_card(loadout)
-    #
-    #     embed = Embed(colour=0x63C0B5)
-    #     embed.set_image(url="attachment://profile.png")
-    #
-    #     await interaction.followup.send(embed=embed, file=file)
