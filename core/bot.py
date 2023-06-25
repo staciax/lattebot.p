@@ -160,6 +160,9 @@ class LatteMaid(commands.AutoShardedBot):
     #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
     #     return hook
 
+    def is_blocked(self, user: Union[discord.abc.User, discord.Guild], /) -> bool:
+        return user.id in self.db._blacklist
+
     # bot extension setup
 
     async def tree_sync(self, guild_only: bool = False) -> None:
