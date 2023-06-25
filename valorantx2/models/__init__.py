@@ -74,6 +74,7 @@ from valorantx.models import (
     version as version,
     weapons as weapons,
 )
+from valorantx.models.party import Party as Party, PartyPlayer as PartyPlayer
 
 from .account_henrikdev import *
 from .patchnote_scraper import *

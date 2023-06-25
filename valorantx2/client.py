@@ -7,6 +7,7 @@ import valorantx
 from async_lru import alru_cache
 from valorantx.client import _authorize_required, _loop
 from valorantx.enums import Locale, QueueType
+from valorantx.models.party import Party, PartyPlayer
 from valorantx.models.store import StoreFront
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
@@ -35,6 +36,8 @@ __all__ = (
     'Client',
 )
 # fmt: on
+
+# https://valorant.dyn.riotcdn.net/x/content-catalog/PublicContentCatalog-{branch}.zip
 
 
 # valorantx Client customized for lattemaid
@@ -218,3 +221,36 @@ class Client(valorantx.Client):
                 end=end,
                 with_details=with_details,
             )
+
+    # party
+
+    @_authorize_required
+    async def fetch_party_player(self, *, riot_auth: Optional[RiotAuth] = None) -> PartyPlayer:
+        async with self.lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            data = await self.http.get_party_player()
+            return PartyPlayer(client=self, data=data)
+
+    @_authorize_required
+    async def fetch_party(self, party_id: str, *, riot_auth: Optional[RiotAuth] = None) -> Party:
+        async with self.lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            data = await self.http.get_party(party_id=party_id)
+            return Party(client=self, data=data)
+
+    @_authorize_required
+    async def party_invite_by_riot_id(
+        self,
+        party_id: str,
+        game_name: str,
+        tag_line: str,
+        *,
+        riot_auth: Optional[RiotAuth] = None,
+    ) -> Party:
+        async with self.lock:
+            if riot_auth is not None:
+                await self.set_authorize(riot_auth)
+            data = await self.http.post_party_invite_by_display_name(party_id, game_name, tag_line)
+            return Party(client=self, data=data)
