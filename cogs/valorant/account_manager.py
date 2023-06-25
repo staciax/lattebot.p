@@ -22,6 +22,7 @@ class AccountManager:
         self.user: User = user
         self.bot: LatteMaid = bot
         self.first_account: Optional[RiotAuth] = None
+        self.main_account: Optional[RiotAuth] = None
         self._riot_accounts: Dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False
         self._ready: asyncio.Event = asyncio.Event()
@@ -56,6 +57,7 @@ class AccountManager:
                 'region': riot_account.region,
                 'ssid': riot_account.ssid,
                 'owner_id': riot_account.owner_id,
+                'notify': riot_account.notify,
             }
 
             riot_auth = RiotAuth.from_data(payload)
@@ -71,6 +73,8 @@ class AccountManager:
             self._riot_accounts[riot_auth.puuid] = riot_auth
             if index == 0:
                 self.first_account = riot_auth
+            if riot_account.main_account:
+                self.main_account = riot_auth
 
         self._ready.set()
 

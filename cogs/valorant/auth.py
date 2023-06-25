@@ -32,6 +32,7 @@ class RiotAuth(RiotAuth_):
     def __init__(self) -> None:
         super().__init__()
         self.owner_id: Optional[int] = None
+        self.notify: bool = False
         self.bot: LatteMaid = MISSING
         self.session_is_outdated: bool = False
 
@@ -77,4 +78,6 @@ class RiotAuth(RiotAuth_):
         self = super().from_data(data)
         if 'owner_id' in data:
             self.owner_id = data['owner_id']
+        if 'notify' in data:
+            self.notify = data['notify']
         return self
