@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING, List, Literal, Optional
 import discord
 from discord import Interaction, app_commands
 from discord.app_commands import locale_str as _T
-from discord.app_commands.checks import bot_has_permissions
 from discord.ext import commands
 
 from core.bot import LatteMaid
-from core.checks import owner_only
+from core.checks import owner_only, bot_has_permissions
 from core.errors import AppCommandError
 from core.ui.embed import MiadEmbed
 from core.utils.chat_formatting import inline
