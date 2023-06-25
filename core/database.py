@@ -143,7 +143,6 @@ class DatabaseConnection(_DatabaseConnection):
     async def create_riot_account(
         self,
         owner_id: int,
-        /,
         *,
         puuid: str,
         game_name: Optional[str],
@@ -156,8 +155,11 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: str,
         entitlements_token: str,
         ssid: str,
+        main_account: bool = False,
+        notify: bool = True,
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
+            owner_id=owner_id,
             puuid=puuid,
             game_name=game_name,
             tag_line=tag_line,
@@ -169,7 +171,8 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
-            owner_id=owner_id,
+            main_account=main_account,
+            notify=notify,
         )
 
         # validate cache
@@ -216,6 +219,8 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        main_account: Optional[bool] = None,
+        notify: Optional[bool] = None,
     ) -> bool:
         update = await super().update_riot_account(
             puuid,
@@ -230,6 +235,8 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
+            main_account=main_account,
+            notify=notify,
         )
         if update:
             # validate cache
