@@ -1,4 +1,5 @@
 from valorantx.enums import (
+    CurrencyType as CurrencyType,
     GameModeURL as GameModeURL,
     ItemType as ItemType,
     Locale as Locale,
