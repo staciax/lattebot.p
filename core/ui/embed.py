@@ -46,6 +46,10 @@ class MiadEmbed(DiscordEmbed):
         self.add_field(name='\u200b', value='\u200b', inline=inline)
         return self
 
+    def empty_title(self) -> Self:
+        self.title = '\u200b'
+        return self
+
     def secondary(self) -> Self:
         self.colour = 0x111111
         return self
