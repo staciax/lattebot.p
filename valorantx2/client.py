@@ -113,18 +113,66 @@ class Client(valorantx.Client):
     # patch note
 
     @alru_cache(maxsize=32, ttl=60 * 60 * 12)  # ttl 12 hours
-    async def fetch_patch_notes(self, locale: str | Locale = Locale.american_english) -> PatchNotes:
+    async def fetch_patch_notes(self, locale: Union[Locale, str] = Locale.american_english) -> PatchNotes:
         return await super().fetch_patch_notes(locale)
 
     @alru_cache(maxsize=64, ttl=60 * 60 * 12)  # ttl 12 hours
     async def fetch_patch_note_from_site(self, url: str) -> PatchNoteScraper:
-        # TODO: doc
+        """|coro|
+
+        Fetches patch notes from the given url.
+
+        Parameters
+        ----------
+        url: :class:`str`
+            The url to fetch the patch notes from.
+
+        Returns
+        -------
+        :class:`PatchNoteScraper`
+            The patch notes.
+        Raises
+        ------
+        HTTPException
+            Fetching the patch notes failed.
+        NotFound
+            The patch notes were not found.
+        Forbidden
+            You are not allowed to fetch the patch notes.
+        """
         text = await self.http.text_from_url(url)
         return PatchNoteScraper.from_text(self, text)
 
     # henrikdev
 
     async def fetch_partial_account(self, name: str, tagline: str) -> Optional[PartialUser]:
+        """|coro|
+
+        Fetches a partial account from the given name and tagline.
+
+        Parameters
+        ----------
+        name: :class:`str`
+            The name of the account.
+        tagline: :class:`str`
+            The tagline of the account.
+
+        Returns
+        -------
+        Optional[:class:`PartialUser`]
+            The partial account or ``None`` if not found.
+
+        Raises
+        ------
+        HTTPException
+            Fetching the partial account failed.
+        NotFound
+            The partial account was not found.
+        Forbidden
+            You are not allowed to fetch the partial account.
+        RateLimited
+            You are being rate limited.
+        """
         data = await self.http.get_partial_account(name, tagline)
         if data is None or 'data' not in data:
             return None
@@ -154,7 +202,7 @@ class Client(valorantx.Client):
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
         if riot_auth is None:
             return await super().fetch_storefront()
-        data = await self.http.get_store_storefront_riot_auth(riot_auth)
+        data = await self.http.post_store_storefront_riot_auth(riot_auth)
         return StoreFront(self.valorant_api.cache, data)
 
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
@@ -264,3 +312,10 @@ class Client(valorantx.Client):
                 await self.set_authorize(riot_auth)
             data = await self.http.post_party_invite_by_display_name(party_id, game_name, tag_line)
             return Party(client=self, data=data)
+
+    # cache
+
+    async def cache_clear(self) -> None:
+        for method in self.__dict__.values():
+            if hasattr(method, 'cache_clear'):
+                method.cache_clear()

@@ -44,11 +44,11 @@ class HTTPClient(_HTTPClient):
 
     # test
 
-    def get_store_storefront_riot_auth(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
+    def post_store_storefront_riot_auth(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
-        r = Route('GET', '/store/v2/storefront/{puuid}', region, puuid=riot_auth.puuid)
-        return self.request(r, headers=headers)
+        r = Route('GET', '/store/v3/storefront/{puuid}', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers, json={})
 
     def get_contracts_riot_auth(self, riot_auth: RiotAuth) -> Response[contracts.Contracts]:
         headers = self.get_headers(riot_auth)
