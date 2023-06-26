@@ -21,7 +21,6 @@ class AccountManager:
     def __init__(self, user: User, bot: LatteMaid = MISSING) -> None:
         self.user: User = user
         self.bot: LatteMaid = bot
-        self.first_account: Optional[RiotAuth] = None
         self.main_account: Optional[RiotAuth] = None
         self._riot_accounts: Dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False
@@ -44,7 +43,8 @@ class AccountManager:
         return not self.__eq__(other)
 
     async def init(self) -> None:
-        for index, riot_account in enumerate(sorted(self.user.riot_accounts, key=lambda x: x.created_at)):
+        for riot_account in sorted(self.user.riot_accounts, key=lambda x: x.created_at):
+            # TODO: to_dict method
             payload = {
                 'access_token': riot_account.access_token,
                 'id_token': riot_account.id_token,
@@ -71,8 +71,6 @@ class AccountManager:
                     await riot_auth.reauthorize()
 
             self._riot_accounts[riot_auth.puuid] = riot_auth
-            if index == 0:
-                self.first_account = riot_auth
             if riot_account.main_account:
                 self.main_account = riot_auth
 
