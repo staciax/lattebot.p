@@ -107,9 +107,7 @@ def get_app_command_payload(
 
     if len(command.parameters) > 0:
         payload['options'] = {param.name: get_parameter_payload(param) for param in command.parameters}
-
-    if merge and data is not None:
-        if len(command.parameters) > 0:
+        if merge and data is not None:
             payload['options'] = {
                 param.name: get_parameter_payload(param, data.get('options', {}).get(param.name, {}), merge=True)
                 for param in command.parameters
