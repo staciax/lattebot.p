@@ -124,8 +124,6 @@ def build_error_handle_embed(
         # command = error.command
         # author = error.author
         embed.description = error.message
-    elif isinstance(error, errors.RiotAuthError):
-        embed.description = error.message
     elif isinstance(error, app_commands.errors.AppCommandError):
         if isinstance(error, app_commands.errors.CommandOnCooldown):
             embed.description = _('You are on cooldown. Please try again in {seconds:.2f} seconds.', locale).format(
