@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import datetime
 import random
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from discord.utils import format_dt
 
 import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
+from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from valorantx2.emojis import VALORANT_POINT_EMOJI
 from valorantx2.enums import GameModeURL, Locale as ValorantLocale, MissionType, RelationType, RoundResultCode
@@ -64,6 +66,8 @@ SkinItem = Union[Skin, SkinLevel, SkinChroma]
 SprayItem = Union[Spray, SprayLevel]
 BuddyItem = Union[Buddy, BuddyLevel]
 
+_ = I18n('valorant.ui.embeds', Path(__file__).resolve().parent, read_only=True)
+
 
 def skin_e(
     skin: Union[Skin, SkinLevel, SkinChroma, SkinLevelOffer, SkinLevelBonus],
@@ -106,17 +110,15 @@ def store_e(panel: SkinsPanelLayout, riot_id: str, *, locale: ValorantLocale = V
     return embeds
 
 
-def skin_e_hide(
-    skin: SkinLevelBonus,
-    *,
-    locale: ValorantLocale,
-) -> Embed:
-    embed = Embed(title=' ').dark()
+def skin_e_hide(skin: SkinLevelBonus) -> Embed:
+    embed = Embed().empty_title().dark()
 
-    if skin.rarity is not None:
-        embed.colour = int(skin.rarity.highlight_color[0:6], 16)
-        if skin.rarity.display_icon is not None:
-            embed.title = skin.rarity.emoji  # type: ignore
+    if skin.rarity is None:
+        return embed
+
+    embed.colour = int(skin.rarity.highlight_color[0:6], 16)
+    if skin.rarity.display_icon is not None:
+        embed.title = skin.rarity.emoji  # type: ignore
 
     return embed
 
@@ -654,7 +656,6 @@ def match_history_select_e(
 
 
 # match details embed
-
 # below is so fk ugly code but i don't have any idea to make it better :(
 # but it works so i don't care
 # if only desktop version, i can make it better but both desktop and mobile version is so fk ugly code
@@ -720,8 +721,8 @@ class MatchDetailsEmbed:
         locale: valorantx.Locale,
     ) -> Embed:
         embed = self.__template_e(player, locale=locale)
-        members = match.get_members(player)
-        opponents = match.get_opponents(player)
+        members = sorted(match.get_members(player), key=lambda p: p.stats.acs, reverse=True)
+        opponents = sorted(match.get_opponents(player), key=lambda p: p.stats.acs, reverse=True)
         if match.match_info._game_mode_url != GameModeURL.deathmatch.value:
             # MY TEAM
             myteam = '\n'.join([self.__display_player(player, p) for p in members])
@@ -790,8 +791,8 @@ class MatchDetailsEmbed:
         locale: valorantx.Locale,
     ) -> Embed:
         embed = self.__template_e(player, locale=locale)
-        members = match.get_members(player)
-        opponents = match.get_opponents(player)
+        members = sorted(match.get_members(player), key=lambda p: p.stats.acs, reverse=True)
+        opponents = sorted(match.get_opponents(player), key=lambda p: p.stats.acs, reverse=True)
 
         # MY TEAM
         embed.add_field(
@@ -882,8 +883,8 @@ class MatchDetailsEmbed:
     def __build_page_1_m(self, match: MatchDetails, player: MatchPlayer, *, locale: valorantx.Locale) -> Embed:
         embed = self.__template_e(player, locale=locale)
 
-        members = match.get_members(player)
-        opponents = match.get_opponents(player)
+        members = sorted(match.get_members(player), key=lambda p: p.stats.acs, reverse=True)
+        opponents = sorted(match.get_opponents(player), key=lambda p: p.stats.acs, reverse=True)
 
         if match.match_info._game_mode_url != GameModeURL.deathmatch.value:
             # MY TEAM
@@ -937,8 +938,8 @@ class MatchDetailsEmbed:
     def __build_page_2_m(self, match: MatchDetails, player: MatchPlayer, *, locale: valorantx.Locale) -> Embed:
         embed = self.__template_e(player, locale=locale)
 
-        members = match.get_members(player)
-        opponents = match.get_opponents(player)
+        members = sorted(match.get_members(player), key=lambda p: p.stats.acs, reverse=True)
+        opponents = sorted(match.get_opponents(player), key=lambda p: p.stats.acs, reverse=True)
 
         # MY TEAM
         embed.add_field(name='\u200b', value=chat.bold('MY TEAM'))
@@ -1013,7 +1014,7 @@ class MatchDetailsEmbed:
 
         text = (
             other_player.agent.emoji  # type: ignore
-            + display_tier(player)
+            + display_tier(other_player)
             + ' '
             + (chat.bold(other_player.display_name) if bold and other_player == player else other_player.display_name)
         )
