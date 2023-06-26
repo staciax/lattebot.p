@@ -7,7 +7,6 @@ import discord
 from discord import app_commands
 
 import valorantx2 as valorantx
-from core.errors import UserInputError
 from core.i18n import I18n
 from valorantx2 import valorant_api
 
@@ -22,6 +21,42 @@ _log = logging.getLogger(__name__)
 _ = I18n('valorant.error', __file__, read_only=True)
 
 
+class ValorantError(Exception):
+    """Base exception class for valorant cog."""
+
+
+class RiotAuthAlreadyLinked(ValorantError):
+    """Raised when a user has already linked a Riot account."""
+
+    pass
+
+
+class RiotAuthNotLinked(ValorantError):
+    """Raised when a user has not linked a Riot account."""
+
+    pass
+
+
+class RiotAuthMaxLimitReached(ValorantError):
+    """Raised when a user has reached the max limit of Riot accounts."""
+
+    pass
+
+
+class RiotAuthMultiFactorTimeout(ValorantError):
+    """Raised when a user has reached the max limit of Riot accounts."""
+
+    pass
+
+
+class RiotAuthUnknownError(ValorantError):
+    """Raised when a user has reached the max limit of Riot accounts."""
+
+    def __init__(self, original: Exception) -> None:
+        self.original = original
+        super().__init__(f'Unknown error: {original}')
+
+
 class ErrorHandler(MixinMeta):
     async def cog_app_command_error(
         self,
@@ -31,7 +66,9 @@ class ErrorHandler(MixinMeta):
         if isinstance(error, app_commands.errors.CommandInvokeError):
             error = error.original
 
-        if not isinstance(error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError)):
+        if not isinstance(
+            error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError, ValorantError)
+        ):
             _log.exception('Unhandled exception in command %s:', interaction.command, exc_info=error)
             self.bot.dispatch('app_command_error', interaction, error)
             # return to global error handler
@@ -49,7 +86,9 @@ class ErrorHandler(MixinMeta):
         # auth error
         elif isinstance(error, valorantx.errors.RiotAuthError):
             if isinstance(error, valorantx.errors.RiotAuthenticationError):
-                message = _('Invalid username or password.', locale)  # 'Invalid username or password.'
+                message = _('Invalid username or password.', locale)
+            elif isinstance(error, valorantx.errors.RiotAuthMultiFactorInvalidCode):
+                message = _('Invalid multi factor code: ||{code}||'.format(code=error.mfa_code), locale)
             elif isinstance(error, (valorantx.errors.RiotRatelimitError, valorantx.errors.RiotAuthRateLimitedError)):
                 message = _('Riot Rate Limit Error', locale)
             elif isinstance(
@@ -71,8 +110,24 @@ class ErrorHandler(MixinMeta):
             elif isinstance(error, valorantx.errors.InternalServerError):
                 message = _(f'Internal Server Error from Riot API \n{error.text}', locale)
 
+        elif isinstance(error, ValorantError):
+            if isinstance(error, RiotAuthAlreadyLinked):
+                message = _('You have already linked a Riot account.', locale)
+            elif isinstance(error, RiotAuthNotLinked):
+                message = _('You have not linked a Riot account.', locale)
+            elif isinstance(error, RiotAuthMaxLimitReached):
+                message = _('You have reached the max limit of Riot accounts.', locale)
+            elif isinstance(error, RiotAuthMultiFactorTimeout):
+                message = _('Multi factor timeout.', locale)
+
+            elif isinstance(error, RiotAuthUnknownError):
+                message = _('Unknown error occurred while processing the command.', locale)
+
         # valorant api error
         # elif isinstance(error, valorant_api.errors.ValorantAPIError):
         #     ...
 
-        raise UserInputError(message)
+        if interaction.response.is_done():
+            await interaction.followup.send(message, ephemeral=True)
+        else:
+            await interaction.response.send_message(message, ephemeral=True)
