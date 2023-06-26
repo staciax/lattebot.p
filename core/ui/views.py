@@ -71,6 +71,17 @@ class BaseView(ui.View):
     async def on_error(self, interaction: Interaction, error: Exception, item: ui.Item[Any]) -> None:
         interaction.client.dispatch('view_error', interaction, error, item)
 
+    @staticmethod
+    async def safe_edit_message(
+        message: discord.Message | discord.InteractionMessage, **kwargs: Any
+    ) -> discord.Message | discord.InteractionMessage | None:
+        try:
+            new_message = await message.edit(**kwargs)
+        except (discord.errors.HTTPException, discord.errors.Forbidden):
+            return None
+        else:
+            return new_message
+
     # --- code from pycord ---
 
     async def on_check_failure(self, interaction: Interaction) -> None:
