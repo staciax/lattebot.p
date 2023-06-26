@@ -47,7 +47,7 @@ class Stats(commands.Cog, name='stats'):
             destination = f'#{channel} ({interaction.guild})'
             guild_id = interaction.guild.id
 
-        _log.info(f'/{interaction.created_at}: {interaction.user} in {destination}: /{app_command.qualified_name}')
+        _log.info(f'{interaction.created_at}: {interaction.user} in {destination}: /{app_command.qualified_name}')
 
         await self.bot.db.create_app_command(
             type=app_command_type,
