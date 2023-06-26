@@ -50,43 +50,9 @@ class MissingRequiredArgument(UserInputError):
 
 
 class BadArgument(UserInputError):
-    pass
-
-
-class RiotAuthError(UserInputError):
-    """Base class for all valorant cog Riot auth errors."""
+    """Raised when a bad argument is passed to a command."""
 
     pass
-
-
-class RiotAuthNotLinked(RiotAuthError):
-    """Raised when a user does not have a Riot account linked."""
-
-    pass
-
-
-class RiotAuthAlreadyLinked(RiotAuthError):
-    """Raised when a user already has a Riot account linked."""
-
-    pass
-
-
-class RiotAuthMaxLimitReached(RiotAuthError):
-    """Raised when a user has reached the max limit of Riot accounts."""
-
-    pass
-
-
-class RiotAuthMultiFactorTimeout(RiotAuthError):
-    """Raised when a user has reached the max limit of Riot accounts."""
-
-    pass
-
-
-# class BadArgument(LatteMaidError):
-#     """Raised when a command is called with invalid arguments."""
-
-#     pass
 
 
 # class CommandNotFound(LatteMaidError):
