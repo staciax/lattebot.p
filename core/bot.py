@@ -200,9 +200,11 @@ class LatteMaid(commands.AutoShardedBot):
     async def run_valorant_client(self) -> None:
         username = os.getenv('RIOT_USERNAME')
         password = os.getenv('RIOT_PASSWORD')
+
         if username is None or password is None:
             _log.warning('valorant client is not initialized due to missing credentials.')
             return
+
         try:
             await asyncio.wait_for(self.valorant_client.authorize(username, password), timeout=120)
         except asyncio.TimeoutError:
@@ -214,6 +216,8 @@ class LatteMaid(commands.AutoShardedBot):
             _log.info('valorant client is initialized.')
 
     async def setup_hook(self) -> None:
+        asyncio.get_running_loop().set_debug(self.is_debug_mode())
+
         # session
         if self.session is MISSING:
             self.session = aiohttp.ClientSession()
@@ -238,6 +242,7 @@ class LatteMaid(commands.AutoShardedBot):
 
         # valorant client
         # await self.run_valorant_client()
+        # self.loop.create_task(self.run_valorant_client())
 
     # cogs property
 
