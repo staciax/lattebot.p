@@ -7,8 +7,12 @@ import valorantx
 from async_lru import alru_cache
 from valorantx.client import _authorize_required, _loop
 from valorantx.enums import Locale, QueueType
+from valorantx.models.contracts import Contracts
+from valorantx.models.favorites import Favorites
+from valorantx.models.loadout import Loadout
+from valorantx.models.mmr import MatchmakingRating
 from valorantx.models.party import Party, PartyPlayer
-from valorantx.models.store import StoreFront
+from valorantx.models.store import StoreFront, Wallet
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
@@ -20,12 +24,10 @@ from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
     from typing_extensions import Self
-    from valorantx.models.contracts import Contracts
-    from valorantx.models.loadout import Loadout
     from valorantx.models.match import MatchHistory
     from valorantx.models.patchnotes import PatchNotes
     from valorantx.models.seasons import Season
-    from valorantx.models.store import FeaturedBundle, Wallet
+    from valorantx.models.store import FeaturedBundle
     from valorantx.models.version import Version
 
     from core.bot import LatteMaid
@@ -128,10 +130,13 @@ class Client(valorantx.Client):
             return None
         return PartialUser(state=self.valorant_api.cache, data=data['data'])
 
+    # store
+
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_featured_bundle(self) -> List[FeaturedBundle]:
         # cache re-use
+        # TODO: sort expire time
         for cache in self.fetch_storefront._LRUCacheWrapper__cache.values():  # type: ignore
             if not cache.fut.done():
                 continue
@@ -147,34 +152,62 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     @_authorize_required
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
+        if riot_auth is None:
             return await super().fetch_storefront()
+        data = await self.http.get_store_storefront_riot_auth(riot_auth)
+        return StoreFront(self.valorant_api.cache, data)
 
-    @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
+    @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
     @_authorize_required
-    async def fetch_match_details(self, match_id: str) -> MatchDetails:
-        # async with self.lock:
-        data = await self.http.get_match_details(match_id)
-        # TODO: save data to file or cache?
-        return MatchDetails(client=self, data=data)
+    async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
+        if riot_auth is None:
+            return await super().fetch_wallet()
+        data = await self.http.get_store_wallet_riot_auth(riot_auth)
+        return Wallet(state=self.valorant_api.cache, data=data)
+
+    # contracts
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> Contracts:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
+        if riot_auth is None:
             return await super().fetch_contracts()
+        data = await self.http.get_contracts_riot_auth(riot_auth)
+        return Contracts(state=self.valorant_api.cache, data=data)
 
-    @alru_cache(maxsize=512, ttl=60)  # ttl 1 minute
+    # favorites
+
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
-    async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
-            return await super().fetch_wallet()
+    async def fetch_favorites(self, riot_auth: Optional[RiotAuth] = None) -> Favorites:
+        if riot_auth is None:
+            return await super().fetch_favorites()
+        data = await self.http.get_favorites_riot_auth(riot_auth)
+        return Favorites(state=self.valorant_api.cache, data=data)
+
+    # match
+
+    @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
+    @_authorize_required
+    async def fetch_match_details(self, match_id: str) -> MatchDetails:
+        # TODO: save data to file or cache?
+        data = await self.http.get_match_details(match_id)
+        return MatchDetails(client=self, data=data)
+
+    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
+    @_authorize_required
+    async def fetch_match_history(
+        self,
+        puuid: str,  # required puuid
+        queue: Optional[Union[str, QueueType]] = None,
+        *,
+        start: int = 0,
+        end: int = 15,
+        with_details: bool = True,
+    ) -> MatchHistory:
+        return await super().fetch_match_history(puuid, queue=queue, start=start, end=end, with_details=with_details)
+
+    # mmr
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
@@ -182,45 +215,22 @@ class Client(valorantx.Client):
         self,
         puuid: Optional[str] = None,
         riot_auth: Optional[RiotAuth] = None,
-    ) -> valorantx.MatchmakingRating:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
+    ) -> MatchmakingRating:
+        if riot_auth is None:
             return await super().fetch_mmr(puuid=puuid)
+        data = await self.http.get_mmr_player_riot_auth(puuid, riot_auth=riot_auth)
+        return MatchmakingRating(self, data=data)
+
+    # loudout
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> Loadout:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
+        if riot_auth is None:
             return await super().fetch_loudout()
-
-    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
-    async def fetch_match_history(
-        self,
-        puuid: Optional[str] = None,
-        queue: Optional[Union[str, QueueType]] = None,
-        *,
-        start: int = 0,
-        end: int = 15,
-        with_details: bool = True,
-        riot_auth: Optional[RiotAuth] = None,
-    ) -> MatchHistory:
-        if isinstance(queue, QueueType):
-            queue = queue.value
-
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
-            return await super().fetch_match_history(
-                puuid=puuid,
-                queue=queue,
-                start=start,
-                end=end,
-                with_details=with_details,
-            )
+        favorites = await self.fetch_favorites(riot_auth)
+        data = await self.http.get_personal_player_loadout_riot_auth(riot_auth)
+        return Loadout(self, data, favorites=favorites)
 
     # party
 

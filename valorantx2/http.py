@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 from valorantx.enums import Region
-from valorantx.http import HTTPClient as _HTTPClient, Route
+from valorantx.http import EndpointType, HTTPClient as _HTTPClient, Route
 
 from .auth import RiotAuth
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
 
     from valorantx.http import Response
-    from valorantx.types import store
+    from valorantx.types import contracts, favorites, loadout, mmr, party, store
 
     from .auth import RiotAuth
     from .types import account_henrikdev
@@ -44,7 +44,62 @@ class HTTPClient(_HTTPClient):
 
     # test
 
-    def build_headers(self, riot_auth: RiotAuth) -> Dict[str, str]:
+    def get_store_storefront_riot_auth(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/store/v2/storefront/{puuid}', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_contracts_riot_auth(self, riot_auth: RiotAuth) -> Response[contracts.Contracts]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/contracts/v1/contracts/{puuid}', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_store_wallet_riot_auth(self, riot_auth: RiotAuth) -> Response[store.Wallet]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/store/v1/wallet/{puuid}', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_mmr_player_riot_auth(
+        self,
+        puuid: Optional[str] = None,
+        *,
+        riot_auth: RiotAuth,
+    ) -> Response[mmr.MatchmakingRating]:
+        headers = self.get_headers(riot_auth)
+        puuid = puuid or riot_auth.puuid
+        region = self.get_region(riot_auth)
+        return self.request(Route('GET', '/mmr/v1/players/{puuid}', region, puuid=puuid), headers=headers)
+
+    def get_personal_player_loadout_riot_auth(self, riot_auth: RiotAuth) -> Response[loadout.Loadout]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/personalization/v2/players/{puuid}/playerloadout', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_favorites_riot_auth(self, riot_auth: RiotAuth) -> Response[favorites.Favorites]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/favorites/v1/players/{puuid}/favorites', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_party_player_test(self, *, riot_auth: RiotAuth) -> Response[party.Player]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/parties/v1/players/{puuid}', region, EndpointType.glz, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_party_test(self, party_id: str, *, riot_auth: RiotAuth) -> Response[party.Party]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/parties/v1/parties/{party_id}', region, EndpointType.glz, party_id=party_id)
+        return self.request(r, headers=headers)
+
+    # utils
+
+    def get_headers(self, riot_auth: RiotAuth) -> Dict[str, str]:
         headers = {
             'Authorization': 'Bearer %s' % riot_auth.access_token,
             'X-Riot-Entitlements-JWT': riot_auth.entitlements_token,
@@ -53,10 +108,7 @@ class HTTPClient(_HTTPClient):
         }
         return headers
 
-    def get_store_storefront_test(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
-        headers = self.build_headers(riot_auth)
-        region = Region(riot_auth.region) if riot_auth.region is not None else self.region
-        return self.request(
-            Route('GET', '/store/v2/storefront/{puuid}', region, puuid=riot_auth.puuid),
-            headers=headers,
-        )
+    def get_region(self, riot_auth: RiotAuth, /) -> Region:
+        if riot_auth.region is None:
+            return self.region
+        return Region(riot_auth.region)
