@@ -132,7 +132,7 @@ class I18n:
 
         text = self.get_text(key, locale)
         if text is None:
-            _log.warning(f'not found key {key!r} in {locale}')
+            _log.warning(f'found key:{key!r} locale:{locale}')
             return key
 
         _log.debug(f'returning {text!r} for {key!r} in {locale}')
