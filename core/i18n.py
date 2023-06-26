@@ -132,7 +132,10 @@ class I18n:
 
         text = self.get_text(key, locale)
         if text is None:
+            _log.warning(f'not found key {key!r} in {locale}')
             return key
+
+        _log.debug(f'returning {text!r} for {key!r} in {locale}')
         return text
 
     def __contains__(self, locale: Union[Locale, str]) -> bool:
