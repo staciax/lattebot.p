@@ -14,13 +14,7 @@ import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import Cog
-from core.errors import (
-    RiotAuthAlreadyLinked,
-    RiotAuthMaxLimitReached,
-    RiotAuthMultiFactorTimeout,
-    RiotAuthNotLinked,
-    UserInputError,
-)
+from core.errors import UserInputError
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.database.models import User
@@ -32,7 +26,13 @@ from .account_manager import AccountManager
 from .admin import Admin
 from .auth import RiotAuth
 from .context_menu import ContextMenu
-from .error import ErrorHandler
+from .error import (
+    ErrorHandler,
+    RiotAuthAlreadyLinked,
+    RiotAuthMaxLimitReached,
+    RiotAuthMultiFactorTimeout,
+    RiotAuthNotLinked,
+)
 from .events import Events
 from .notify import Notify
 from .ui import embeds as e
@@ -151,32 +151,42 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
 
         if len(user.riot_accounts) >= 5:
-            raise RiotAuthMaxLimitReached(_('You can only link up to 5 accounts.', interaction.locale))
+            raise RiotAuthMaxLimitReached('You can only link up to 5 accounts.')
 
         riot_auth = RiotAuth()
 
         try:
             await riot_auth.authorize(username.strip(), password.strip(), remember=True)
         except RiotMultifactorError:
-            multi_modal = RiotMultiFactorModal(riot_auth)
+            multi_modal = RiotMultiFactorModal(riot_auth, interaction)
             await interaction.response.send_modal(multi_modal)
             await multi_modal.wait()
-            if multi_modal.code is None:
-                # when timeout
-                raise RiotAuthMultiFactorTimeout(_('You did not enter the code in time.', interaction.locale))
-            await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
-            assert multi_modal.interaction is not None
-            interaction = multi_modal.interaction
-            multi_modal.stop()
 
-        await interaction.response.defer(ephemeral=True)
+            if multi_modal.code is None:
+                raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
+
+            interaction = multi_modal.interaction or interaction
+
+            if multi_modal.interaction is not None:
+                await interaction.response.defer(ephemeral=True, thinking=True)
+
+            try:
+                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
+            except Exception as e:
+                await multi_modal.on_error(interaction, e)
+                return
+            finally:
+                multi_modal.stop()
+
+        else:
+            await interaction.response.defer(ephemeral=True)
 
         # check if already linked
         riot_account = await self.bot.db.get_riot_account_by_puuid_and_owner_id(
             puuid=riot_auth.puuid, owner_id=interaction.user.id
         )
         if riot_account is not None:
-            raise RiotAuthAlreadyLinked(_('You already have this account linked.', interaction.locale))
+            raise RiotAuthAlreadyLinked('You already have this account linked.')
 
         # fetch userinfo and region
         try:
