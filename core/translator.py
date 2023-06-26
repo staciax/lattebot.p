@@ -179,12 +179,10 @@ class Translator(_Translator):
 
         if locale_string is None:
             _log.debug(
-                f'not found: message: {string.message!r}, locale: {locale.value}, tcl: {tcl.name}, type: {type(localizable)}'
+                f'not found:{string.message!r} locale:{locale.value} tcl:{tcl.name} type:{type(localizable).__qualname__}'
             )
 
-        _log.info(
-            f'translated: {string.message!r}, locale: {locale.value}, tcl: {context.location.name} -> {locale_string!r}'
-        )
+        _log.info(f'{string.message!r} locale:{locale.value} tcl:{context.location.name} -> {locale_string!r}')
         return locale_string
 
     def _build_localize_keys(
