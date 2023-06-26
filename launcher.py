@@ -66,6 +66,9 @@ def setup_logging():
         logging.getLogger('valorantx.valorant_api').setLevel(logging.INFO)
         logging.getLogger('valorantx.valorant_api.http').setLevel(logging.WARNING)
 
+        # sqlalchemy
+        logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
+
         log.setLevel(logging.INFO if args.prod else logging.DEBUG)
         handler = RotatingFileHandler(
             filename='_lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
@@ -112,7 +115,7 @@ def main():
 
 async def run_bot():
     async with LatteMaid(
-        debug_mode=args.prod,
+        debug_mode=not args.prod,
         tree_sync_at_startup=args.sync,
     ) as bot:
         await bot.start()
