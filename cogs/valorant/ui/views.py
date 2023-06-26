@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import discord
 from async_lru import alru_cache
@@ -14,7 +14,7 @@ import core.utils.chat_formatting as chat
 from core.errors import AppCommandError
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
-from core.ui.views import BaseView, ViewAuthor
+from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 from valorantx2.enums import Locale as ValorantLocale, RelationType
 from valorantx2.utils import locale_converter
@@ -52,8 +52,6 @@ __all__ = (
     'WalletView',
 )
 
-ViewT = TypeVar('ViewT', bound='BaseView')
-
 _log = logging.getLogger(__name__)
 
 
@@ -83,24 +81,12 @@ class BaseValorantView(ViewAuthor):
         self.disable_buttons()
         await self.safe_edit_message(self.message, view=self)
 
-    @staticmethod
-    async def safe_edit_message(
-        message: discord.Message | discord.InteractionMessage, **kwargs: Any
-    ) -> discord.Message | discord.InteractionMessage | None:
-        try:
-            msg = await message.edit(**kwargs)
-        except (discord.errors.HTTPException, discord.errors.Forbidden) as e:
-            _log.warning('failed to edit message', exc_info=e)
-            return None
-        else:
-            return msg
-
     async def send(self, **kwargs: Any) -> None:
         if self.message is None:
             self.message = await self.interaction.followup.send(**kwargs, view=self)
             return
         else:
-            await self.safe_edit_message(self.message, **kwargs, view=self)
+            self.message = await self.safe_edit_message(self.message, **kwargs, view=self)
 
 
 class ButtonAccountSwitch(ui.Button['BaseSwitchAccountView']):
@@ -186,9 +172,9 @@ class BaseSwitchAccountView(BaseValorantView):
             )
 
     def remove_switch_button(self) -> None:
-        for child in self.children:
-            if isinstance(child, ButtonAccountSwitch):
-                self.remove_item(child)
+        for item in self.children:
+            if isinstance(item, ButtonAccountSwitch):
+                self.remove_item(item)
 
     async def wait_until_ready(self) -> None:
         await self._ready.wait()
@@ -196,7 +182,7 @@ class BaseSwitchAccountView(BaseValorantView):
     def get_riot_auth(self, puuid: Optional[str]) -> Optional[RiotAuth]:
         if puuid is not None:
             return self.account_manager.get_riot_account(puuid)
-        return self.account_manager.first_account
+        return self.account_manager.main_account
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         # if self.check_embeds and not interaction.channel.permissions_for(interaction.guild.me).embed_links:
@@ -211,7 +197,7 @@ class BaseSwitchAccountView(BaseValorantView):
         kwargs = await self._get_kwargs_by_puuid(interaction.extras.get('puuid'))
 
         if self.message is not None:
-            await self.message.edit(**kwargs, view=self)
+            await self.safe_edit_message(**kwargs, view=self)
             return
 
         if interaction.response.is_done():
@@ -279,7 +265,7 @@ class NightMarketView(BaseSwitchAccountView):
                 self.add_buttons()
 
             self.prompt_embeds = [
-                e.skin_e_hide(skin, locale=locale_converter.to_valorant(self.locale))
+                e.skin_e_hide(skin)
                 for skin in storefront.bonus_store.skins
             ]
             embeds2 = []
@@ -333,14 +319,10 @@ class NightMarketView(BaseSwitchAccountView):
         if current_opened == len(self.embeds):
             self.remove_buttons()
 
-        try:
-            await self.message.edit(embeds=embeds, view=self)
-        except (discord.errors.HTTPException, discord.errors.Forbidden, discord.errors.NotFound):
-            pass
-        else:
-            assert self.current_author_puuid is not None
-            assert self.current_author_puuid in self.current_opened
-            self.current_opened[self.current_author_puuid] = current_opened
+        await self.safe_edit_message(self.message, embeds=embeds, view=self)
+        assert self.current_author_puuid is not None
+        assert self.current_author_puuid in self.current_opened
+        self.current_opened[self.current_author_puuid] = current_opened
 
     @ui.button(label='Open All', style=discord.ButtonStyle.primary)
     async def open_all_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
@@ -763,14 +745,15 @@ class CollectionView(BaseSwitchAccountView):
 
 
 class SelectMatchHistory(ui.Select['CarrierView']):
-    def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], carrier_view: CarrierView) -> None:
         super().__init__(
             placeholder=_('Select Match to see details', interaction.locale), max_values=1, min_values=1, row=1
         )
         self.interaction = interaction
+        self.carrier_view = carrier_view
         self._source: Dict[str, MatchDetails] = {}
         self.puuid: str = ''
-        self.match_details_view = MatchDetailsView(interaction, self.view)
+        self.match_details_view = MatchDetailsView(interaction, carrier_view)
 
     def build_selects(
         self,
@@ -872,6 +855,7 @@ class CarrierPageSource(ListPageSource):
             child.build_selects(entries, self.puuid, locale_converter.to_valorant(menu.locale))
             break
 
+        menu.embeds = embeds
         return embeds
 
 
@@ -884,12 +868,13 @@ class CarrierView(BaseSwitchAccountView, LattePages):
     ) -> None:
         super().__init__(interaction, account_manager, 2)
         self.queue_id: Optional[str] = queue_id
+        self.embeds: List[Embed] = []
 
     def fill_items(self) -> None:
         super().fill_items()
         self.remove_item(self.stop_pages)
         self.remove_item(self.numbered_page)
-        self.add_item(SelectMatchHistory(self.interaction))
+        self.add_item(SelectMatchHistory(self.interaction, self))
 
     # def __init__(self, interaction: Interaction, v_user: ValorantUser, client: ValorantClient) -> None:
     #     super().__init__(interaction, v_user, client, row=2)
@@ -945,7 +930,6 @@ class CarrierView(BaseSwitchAccountView, LattePages):
             puuid=riot_auth.puuid,
             queue=self.queue_id,
             with_details=True,
-            riot_auth=riot_auth,
         )
         # mmr = await client.fetch_mmr(riot_auth)
         self.source = CarrierPageSource(puuid=riot_auth.puuid, data=match_history.match_details)  # type: ignore
@@ -986,22 +970,32 @@ class MatchDetailsPageSource(ListPageSource):
         return mobiles if menu.is_on_mobile() else desktops
 
 
-class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
+class MatchDetailsView(ViewAuthor, LattePages):
     __view_on_mobile__: bool = False
 
     def __init__(
         self,
         # source: MatchDetailsPageSource,
         interaction: discord.Interaction[LatteMaid],
-        other_view: Optional[ViewT] = None,
+        carrier_view: Optional[CarrierView] = None,
     ) -> None:
         super().__init__(interaction)
+        self.compact = True
         # self.source = source
-        self.other_view: Optional[ViewT] = other_view
+        self.carrier_view: Optional[CarrierView] = carrier_view
         self.valorant_locale: ValorantLocale = locale_converter.to_valorant(interaction.locale)
-        if self.other_view is None:
-            self.remove_item(self.back_to_home)
-        self.back_to_home.label = _('Back to Home', self.locale)
+        self.back_to_home.label = _('Back', self.locale)
+
+    def fill_items(self) -> None:
+        if self.carrier_view is not None:
+            self.add_item(self.back_to_home)
+        super().fill_items()
+        self.remove_item(self.go_to_last_page)
+        self.remove_item(self.go_to_first_page)
+        self.remove_item(self.stop_pages)
+        self.go_to_next_page.label = self.go_to_last_page.label
+        self.go_to_previous_page.label = self.go_to_first_page.label
+        self.add_item(self.toggle_ui)
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
         if await super().interaction_check(interaction):
@@ -1012,20 +1006,23 @@ class MatchDetailsView(ViewAuthor, LattePages, Generic[ViewT]):
     def is_on_mobile(self) -> bool:
         return self.__view_on_mobile__
 
-    @ui.button(emoji='🖥️', style=ButtonStyle.green, custom_id='mobile', row=0)
+    @ui.button(emoji='📱', style=ButtonStyle.green)
     async def toggle_ui(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
-        button.emoji = '🖥️' if self.is_on_mobile() else '📱'
+        button.emoji = '📱' if self.is_on_mobile() else '💻'
         self.__view_on_mobile__ = not self.is_on_mobile()
-        await self.show_checked_page(interaction, 0)
+        await self.show_checked_page(interaction, self.current_page)
 
-    @ui.button(label=_('Home'), style=ButtonStyle.green, custom_id='home_button')
+    @ui.button(label=_('Back'), style=ButtonStyle.gray, custom_id='home_button')
     async def back_to_home(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+        # assert self.carrier_view is not None
         await interaction.response.defer()
+
+        if self.carrier_view is None:
+            return
 
         if self.message is None:
             return
 
-        if self.other_view is not None:
-            self.other_view.reset_timeout()
+        self.carrier_view.reset_timeout()
 
-        # await self.message.edit(embeds=self.other_view.current_embeds, view=self.other_view)
+        await self.safe_edit_message(self.message, embeds=self.carrier_view.embeds, view=self.carrier_view)
