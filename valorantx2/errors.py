@@ -1,3 +1,6 @@
+from typing import Any, Dict, Optional, Union
+
+from aiohttp import ClientResponse
 from valorantx.errors import (
     BadRequest as BadRequest,
     Forbidden as Forbidden,
@@ -39,3 +42,11 @@ class RiotAuthRateLimitedError(ValorantXError):
     def __init__(self, retry_after: int) -> None:
         self.retry_after: int = retry_after
         super().__init__(f'Rate limited. Retry after {retry_after} seconds.')
+
+
+class RiotAuthMultiFactorInvalidCode(RiotAuthError):
+    """Raised when a user has reached the max limit of Riot accounts."""
+
+    def __init__(self, response: ClientResponse, message: Optional[Union[str, Dict[str, Any]]], mfa_code: str) -> None:
+        self.mfa_code: str = mfa_code
+        super().__init__(response, message)

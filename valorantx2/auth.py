@@ -4,7 +4,7 @@ import aiohttp
 import yarl
 from valorantx import RiotAuth as RiotAuth_
 
-from .errors import RiotAuthRateLimitedError
+from .errors import RiotAuthMultiFactorInvalidCode, RiotAuthRateLimitedError, RiotUnknownResponseTypeError
 
 # fmt: off
 __all__ = (
@@ -65,6 +65,15 @@ class RiotAuth(RiotAuth_):
                 headers=headers,
             ) as resp:
                 data = await resp.json()
+                resp_type = data['type']
+                if resp_type == 'response':
+                    ...
+                elif resp_type == 'multifactor':
+                    raise RiotAuthMultiFactorInvalidCode(resp, 'The code you entered is invalid.', code)
+                else:
+                    raise RiotUnknownResponseTypeError(
+                        resp, f'Got unknown response type `{resp_type}` during authentication.'
+                    )
 
             self._cookie_jar = session.cookie_jar
             self.__set_tokens_from_uri(data)
