@@ -9,7 +9,7 @@ from ...emojis import get_ability_emoji, get_agent_emoji
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.agents import Agent as AgentPayload
 
-    from ..valorant_api_cache import Cache
+    from ...valorant_api_cache import Cache
 
 __all__ = (
     'Ability',
@@ -34,9 +34,7 @@ class Ability(ValorantAPIAbility):
 class Agent(ValorantAPIAgent):
     def __init__(self, *, state: Cache, data: AgentPayload) -> None:
         super().__init__(state=state, data=data)
-        self._abilities: List[Ability] = [
-            Ability(state=state, data=ability, agent=self) for ability in data['abilities']
-        ]
+        self._abilities: List[Ability] = [Ability(state=state, data=ability, agent=self) for ability in data['abilities']]
 
     @property
     def emoji(self) -> str:

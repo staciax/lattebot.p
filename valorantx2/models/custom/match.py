@@ -20,6 +20,4 @@ class RoundResult(ValorantXRoundResult):
 class MatchDetails(ValorantXMatchDetails):
     def __init__(self, client: Client, data: MatchDetailsPayload) -> None:
         super().__init__(client, data)
-        self.round_results: List[RoundResult] = [
-            RoundResult(self, round_result) for round_result in data['roundResults']
-        ]
+        self.round_results: List[RoundResult] = [RoundResult(self, round_result) for round_result in data['roundResults']]
