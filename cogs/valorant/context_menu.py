@@ -60,16 +60,18 @@ class ContextMenu(MixinMeta):
             raise BadArgument('Invalid Riot ID.')
 
         try:
-            party_player = await self.valorant_client.fetch_party_player(riot_auth=account_manager.first_account)
+            party_player = await self.valorant_client.fetch_party_player(riot_auth=account_manager.main_account)
         except valorantx.errors.NotFound:
             await interaction.followup.send('You are not in a party.', ephemeral=True, silent=True)
             return
         else:
+            if account_manager.main_account is None:
+                raise RuntimeError('main_account is None')
             party = await self.valorant_client.party_invite_by_riot_id(
                 party_player.current_party_id,
                 game_name,
                 tag_line,
-                riot_auth=account_manager.first_account,
+                riot_auth=account_manager.main_account,
             )
             if party.version == 0:
                 raise BadArgument(f'Not found: {game_name}#{tag_line}')
