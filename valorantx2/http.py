@@ -33,7 +33,7 @@ class HTTPClient(_HTTPClient):
         self._puuid = self.riot_auth.puuid
         await self.__build_headers()
 
-    def get_partial_account(self, game_name: str, tag_line: str) -> Response[account_henrikdev.Response]:
+    def get_account(self, game_name: str, tag_line: str) -> Response[account_henrikdev.Response]:
         r = Route.from_url(
             'GET',
             'https://api.henrikdev.xyz/valorant/v1/account/{game_name}/{tag_line}',
@@ -47,7 +47,7 @@ class HTTPClient(_HTTPClient):
     def post_store_storefront_riot_auth(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
-        r = Route('GET', '/store/v3/storefront/{puuid}', region, puuid=riot_auth.puuid)
+        r = Route('POST', '/store/v3/storefront/{puuid}', region, puuid=riot_auth.puuid)
         return self.request(r, headers=headers, json={})
 
     def get_contracts_riot_auth(self, riot_auth: RiotAuth) -> Response[contracts.Contracts]:
@@ -95,6 +95,41 @@ class HTTPClient(_HTTPClient):
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('GET', '/parties/v1/parties/{party_id}', region, EndpointType.glz, party_id=party_id)
+        return self.request(r, headers=headers)
+
+    # party
+
+    def get_party_player_riot_auth(self, *, riot_auth: RiotAuth) -> Response[party.Player]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/parties/v1/players/{puuid}', region, EndpointType.glz, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    def get_party_riot_auth(self, party_id: str, *, riot_auth: RiotAuth) -> Response[party.Party]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/parties/v1/parties/{party_id}', region, EndpointType.glz, party_id=party_id)
+        return self.request(r, headers=headers)
+
+    def post_party_invite_by_riot_id_riot_auth(
+        self,
+        party_id: str,
+        name: str,
+        tag: str,
+        *,
+        riot_auth: RiotAuth,
+    ) -> Response[party.Party]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route(
+            'POST',
+            '/parties/v1/parties/{party_id}/invites/name/{name}/tag/{tag}',
+            region,
+            EndpointType.glz,
+            party_id=party_id,
+            name=name,
+            tag=tag,
+        )
         return self.request(r, headers=headers)
 
     # utils
