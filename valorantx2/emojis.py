@@ -1,23 +1,24 @@
 VALORANT_POINT_EMOJI = '<:currency_valorant:1042817047953952849>'
 RADIANITE_POINT_EMOJI = '<:currency_radianite:1042817896398737417>'
+KINGDOM_CREDIT_EMOJI = '<:currency_kingdom_credit:1123270099323850863>'
 
 # content tiers emojis
 
 
 def get_content_tier_emoji(key: str, *, old: bool = False) -> str:
     # NOTE: uuid better than name?
-    key = f'old_{key}' if old else key
+    key = f'{key}_old' if old else key
     emojis = {
-        'deluxe': '<:new_content_tier_deluxe:1083077781295992902>',
-        'exclusive': '<:new_content_tier_exclusive:1083077759586283614>',
-        'premium': '<:new_content_tier_premium:1083077743945728132>',
-        'select': '<:new_content_tier_select:1083077724022788166>',
-        'ultra': '<:new_content_tier_ultra:1083077703638458400>',
-        'old_deluxe': '<:content_tier_deluxe:1042810257426108557>',
-        'old_exclusive': '<:content_tier_exclusive:1042810259317735434>',
-        'old_premium': '<:content_tier_premium:1042810261289050224>',
-        'old_select': '<:content_tier_select:1042810263361036360>',
-        'old_ultra': '<:content_tier_ultra:1042810265906991104>',
+        'deluxe': '<:content_tier_deluxe_new:1083077781295992902>',
+        'exclusive': '<:content_tier_exclusive_new:1083077759586283614>',
+        'premium': '<:content_tier_premium_new:1083077743945728132>',
+        'select': '<:content_tier_select_new:1083077724022788166>',
+        'ultra': '<:content_tier_ultra_new:1083077703638458400>',
+        'deluxe_old': '<:content_tier_deluxe:1042810257426108557>',
+        'exclusive_old': '<:content_tier_exclusive:1042810259317735434>',
+        'premium_old': '<:content_tier_premium:1042810261289050224>',
+        'select_old': '<:content_tier_select:1042810263361036360>',
+        'ultra_old': '<:content_tier_ultra:1042810265906991104>',
     }
     return emojis.get(key.lower(), '')
 
@@ -86,8 +87,9 @@ def get_agent_emoji(key: str) -> str:
         'sova': '<:agent_sova:1042813570846576660>',
         'viper': '<:agent_viper:1042813580409585704>',
         'yoru': '<:agent_yoru:1042813595710410833>',
+        'deadlock': '<:agent_deadlock:1123253536835256471>',
     }
-    return emojis.get(key.replace("/", "_").replace(" ", "_").lower(), '')
+    return emojis.get(key.replace('/', '_').replace(' ', '_').lower(), '')
 
 
 def get_ability_emoji(key: str) -> str:
@@ -113,6 +115,10 @@ def get_ability_emoji(key: str) -> str:
         'cypher_neural_theft': '<:cypher_neural_theft:1042933752206204938>',
         'cypher_spycam': '<:cypher_spycam:1042933748246782052>',
         'cypher_trapwire': '<:cypher_trapwire:1042933750167773205>',
+        'deadlock_sonic_sensor': '<:deadlock_sonic_sensor:1123249611641979010>',
+        'deadlock_barrier_mesh': '<:deadlock_barrier_mesh:1123249687554699384>',
+        'deadlock_gravnet': '<:deadlock_gravnet:1123249712439504906>',
+        'deadlock_annihilation': '<:deadlock_annihilation:1123249733549424691>',
         'fade_haunt': '<:fade_haunt:1042934633538519100>',
         'fade_nightfall': '<:fade_nightfall:1042934638198394880>',
         'fade_prowler': '<:fade_prowler:1042934636193517628>',
@@ -190,6 +196,7 @@ def get_currency_emoji(key: str) -> str:
         '85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741': VALORANT_POINT_EMOJI,
         'f08d4ae3-939c-4576-ab26-09ce1f23bb37': '<:currency_free_agents:1042817043965165580>',
         'e59aa87c-4cbf-517a-5983-6e81511be9b7': RADIANITE_POINT_EMOJI,
+        '85ca954a-41f2-ce94-9b45-8ca3dd39a00d': KINGDOM_CREDIT_EMOJI,
     }
     return emojis.get(key.lower(), '')
 
@@ -206,6 +213,7 @@ def get_game_mode_emoji(key: str) -> str:
         'escalation': '<:gamemode_escalation:1042834180691738655>',
         'replication': '<:gamemode_replication:1042834178535862282>',
         'snowball_fight': '<:gamemode_snowball_fight:1042834176606486558>',
+        'team_deathmatch': '<:gamemode_team_deathmatch:1123254476132843641>',
     }
     if key in ['unrated', 'competitive', 'swiftplay']:
         return emojis['standard']
