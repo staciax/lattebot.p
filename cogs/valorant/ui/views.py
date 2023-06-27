@@ -197,13 +197,13 @@ class BaseSwitchAccountView(BaseValorantView):
         kwargs = await self._get_kwargs_by_puuid(interaction.extras.get('puuid'))
 
         if self.message is not None:
-            await self.safe_edit_message(**kwargs, view=self)
+            await self.safe_edit_message(self.message, view=self, **kwargs)
             return
 
         if interaction.response.is_done():
             self.message = await interaction.followup.send(**kwargs, view=self)
         else:
-            self.message = await interaction.response.send_message(**kwargs, view=self)
+            await interaction.response.send_message(**kwargs, view=self)
 
 
 class StoreFrontView(BaseSwitchAccountView):
@@ -215,15 +215,13 @@ class StoreFrontView(BaseSwitchAccountView):
         embeds = e.store_e(
             storefront.skins_panel_layout,
             riot_id=riot_auth.display_name,
-            locale=locale_converter.to_valorant(self.locale),
+            locale=self.locale,
         )
         return embeds
 
 
 class NightMarketView(BaseSwitchAccountView):
-    def __init__(
-        self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager, hide: bool
-    ) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager, hide: bool) -> None:
         super().__init__(interaction, account_manager, row=1)
         self.hide: bool = hide
         self.front_embed: Optional[Embed] = None
@@ -239,12 +237,8 @@ class NightMarketView(BaseSwitchAccountView):
         if storefront.bonus_store is None:
             raise AppCommandError(f'{chat.bold("Nightmarket")} is not available.')
 
-        self.front_embed = e.nightmarket_front_e(
-            storefront.bonus_store, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale)
-        )
-        self.embeds = embeds = [
-            e.skin_e(skin, locale=locale_converter.to_valorant(self.locale)) for skin in storefront.bonus_store.skins
-        ]
+        self.front_embed = e.nightmarket_front_e(storefront.bonus_store, riot_auth.display_name, locale=self.locale)
+        self.embeds = embeds = [e.skin_e(skin, locale=self.locale) for skin in storefront.bonus_store.skins]
 
         if self.hide:
             self.remove_buttons()
@@ -264,10 +258,7 @@ class NightMarketView(BaseSwitchAccountView):
             if self.__button_is_removed and current_opened < len(self.embeds):
                 self.add_buttons()
 
-            self.prompt_embeds = [
-                e.skin_e_hide(skin)
-                for skin in storefront.bonus_store.skins
-            ]
+            self.prompt_embeds = [e.skin_e_hide(skin) for skin in storefront.bonus_store.skins]
             embeds2 = []
             embeds2.extend(self.embeds[:current_opened])
             embeds2.extend(self.prompt_embeds[current_opened:])
@@ -353,7 +344,7 @@ class WalletView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         wallet = await self.valorant_client.fetch_wallet(riot_auth)
-        embed = e.wallet_e(wallet, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale))
+        embed = e.wallet_e(wallet, riot_auth.display_name, locale=self.locale)
         return embed
 
 
@@ -398,13 +389,11 @@ class FeaturedBundleView(ViewAuthor):
             self.build_buttons(list(self.bundles.values()))
             embeds = e.select_featured_bundles_e(
                 list(self.bundles.values()),
-                locale=locale_converter.to_valorant(self.locale),
+                locale=self.locale,
             )
             self.message = await self.interaction.followup.send(embeds=embeds, view=self)
         elif len(self.bundles) == 1:
-            source = FeaturedBundlePageSource(
-                self.bundles[list(self.bundles.keys())[0]], locale=self.interaction.locale
-            )
+            source = FeaturedBundlePageSource(self.bundles[list(self.bundles.keys())[0]], locale=self.interaction.locale)
             view = FeaturedBundlePageView(source, interaction=self.interaction)
             await view.start()
         else:
@@ -418,7 +407,7 @@ class FeaturedBundlePageSource(ListPageSource['Embed']):
     def __init__(self, bundle: FeaturedBundle, locale: discord.Locale) -> None:
         self.bundle: FeaturedBundle = bundle
         self.locale: discord.Locale = locale
-        self.bundle_embed = e.BundleEmbed(bundle, locale=locale_converter.to_valorant(locale))
+        self.bundle_embed = e.BundleEmbed(bundle, locale=self.locale)
         self.embed: Embed = self.bundle_embed.build_banner_embed()
         super().__init__(self.bundle_embed.build_items_embeds(), per_page=5)
 
@@ -429,7 +418,7 @@ class FeaturedBundlePageSource(ListPageSource['Embed']):
     def rebuild(self, locale: discord.Locale) -> None:
         _log.debug(f'rebuilding bundle embeds with locale {locale}')
         self.locale = locale
-        self.bundle_embed.locale = locale_converter.to_valorant(locale)
+        self.bundle_embed.locale = self.locale
         self.entries = self.bundle_embed.build_items_embeds()
         self.embed = self.bundle_embed.build_banner_embed()
 
@@ -479,13 +468,13 @@ class FeaturedBundlePageView(LattePages):
 
 
 class GamePassPageSource(ListPageSource['RewardValorantAPI']):
-    def __init__(self, contract: Contract, riot_id: str, locale: ValorantLocale) -> None:
+    def __init__(self, contract: Contract, riot_id: str, locale: discord.Locale) -> None:
         self.embed = e.GamePassEmbed(contract, riot_id, locale=locale)
         super().__init__(contract.content.get_all_rewards(), per_page=1)
 
     async def format_page(self, menu: GamePassView, page: Any):
         reward = self.entries[menu.current_page]
-        return self.embed.build_page_embed(menu.current_page, reward, locale=locale_converter.to_valorant(menu.locale))
+        return self.embed.build_page_embed(menu.current_page, reward, locale=menu.locale)
 
 
 class GamePassView(BaseSwitchAccountView, LattePages):
@@ -516,9 +505,7 @@ class GamePassView(BaseSwitchAccountView, LattePages):
         if contract is None:
             raise AppCommandError(f'{chat.bold(self.relation_type.value)} is not available.')
 
-        self.source = GamePassPageSource(
-            contract, riot_auth.display_name, locale=locale_converter.to_valorant(interaction.locale)
-        )
+        self.source = GamePassPageSource(contract, riot_auth.display_name, locale=self.locale)
         self.compact = True
         await self.start(page_number=contract.current_level)
 
@@ -530,7 +517,7 @@ class MissionView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         contracts = await self.valorant_client.fetch_contracts(riot_auth)
-        embed = e.mission_e(contracts, riot_auth.display_name, locale=locale_converter.to_valorant(self.locale))
+        embed = e.mission_e(contracts, riot_auth.display_name, locale=self.locale)
         return embed
 
 
@@ -597,9 +584,7 @@ class SkinCollectionSource(ListPageSource):
         view: SkinCollectionView,
         entries: List[Gun],
     ) -> List[discord.Embed]:
-        return [
-            e.skin_loadout_e(skin, locale=locale_converter.to_valorant(view.collection_view.locale)) for skin in entries
-        ]
+        return [e.skin_loadout_e(skin, locale=locale_converter.to_valorant(view.collection_view.locale)) for skin in entries]
 
 
 class SkinCollectionView(ViewAuthor, LattePages):
@@ -635,6 +620,8 @@ class SkinCollectionView(ViewAuthor, LattePages):
     async def start_view(self) -> None:
         loadout = self.collection_view.loadout
         if loadout is None:
+            return
+        if loadout.guns is None:
             return
         self.source = SkinCollectionSource(loadout.guns)
         self.message = self.collection_view.message
@@ -685,6 +672,8 @@ class SprayCollectionView(ViewAuthor):
         if self.collection_view.message is None:
             return
         if self.collection_view.loadout is None:
+            return
+        if self.collection_view.loadout.sprays is None:
             return
         self.embeds = await self.build_embeds(self.collection_view.loadout.sprays)
         await self.collection_view.message.edit(embeds=self.embeds, view=self)
@@ -746,9 +735,7 @@ class CollectionView(BaseSwitchAccountView):
 
 class SelectMatchHistory(ui.Select['CarrierView']):
     def __init__(self, interaction: discord.Interaction[LatteMaid], carrier_view: CarrierView) -> None:
-        super().__init__(
-            placeholder=_('Select Match to see details', interaction.locale), max_values=1, min_values=1, row=1
-        )
+        super().__init__(placeholder=_('Select Match to see details', interaction.locale), max_values=1, min_values=1, row=1)
         self.interaction = interaction
         self.carrier_view = carrier_view
         self._source: Dict[str, MatchDetails] = {}
@@ -813,9 +800,7 @@ class SelectMatchHistory(ui.Select['CarrierView']):
                 return
 
             # build source
-            source = MatchDetailsPageSource(
-                self._source[value], self.puuid, locale_converter.to_valorant(self.view.locale)
-            )
+            source = MatchDetailsPageSource(self._source[value], self.puuid, locale_converter.to_valorant(self.view.locale))
             self.match_details_view.source = source
 
             # set message
@@ -845,9 +830,7 @@ class CarrierPageSource(ListPageSource):
                 return Embed(description=_('No Match History', menu.locale)).warning()
             # build pages
             for match in entries:
-                embeds.append(
-                    e.match_history_select_e(match, self.puuid, locale=locale_converter.to_valorant(menu.locale))
-                )
+                embeds.append(e.match_history_select_e(match, self.puuid, locale=locale_converter.to_valorant(menu.locale)))
 
             # build select menu
             child.clear()
