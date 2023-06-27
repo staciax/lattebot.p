@@ -14,6 +14,7 @@ from core import errors
 from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
+from core.ui.views import BaseView
 from core.utils import database
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ async def application_error_handler(
     client = interaction.client
     locale = interaction.locale
 
-    embed = interaction.extras.get('embed') or build_error_handle_embed(interaction.user, error, locale)
+    embed = build_error_handle_embed(interaction.user, error, locale)  # interaction.extras.get('embed')
     view = guild_support_view(locale)
 
     with contextlib.suppress(discord.HTTPException):
@@ -84,13 +85,7 @@ async def application_error_handler(
 
 
 def guild_support_view(locale: discord.Locale) -> ui.View:
-    view = ui.View().add_item(
-        discord.ui.Button(
-            label=_('Support Server', locale),
-            url='https://discord.gg/4N2YkXbM',
-            # emoji='',
-        )
-    )
+    view = BaseView().url_button(_('Support Server', locale), 'https://discord.gg/4N2YkXbM')
     return view
 
 
