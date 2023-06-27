@@ -50,6 +50,18 @@ class MiadEmbed(DiscordEmbed):
         self.title = '\u200b'
         return self
 
+    def move_image_to_thumbnail(self) -> Self:
+        if self.image and not self.thumbnail:
+            self.set_thumbnail(url=self.image.url)
+            self.set_image(url=None)
+        return self
+
+    def move_thumbnail_to_image(self) -> Self:
+        if self.thumbnail and not self.image:
+            self.set_image(url=self.thumbnail.url)
+            self.set_thumbnail(url=None)
+        return self
+
     def secondary(self) -> Self:
         self.colour = 0x111111
         return self
