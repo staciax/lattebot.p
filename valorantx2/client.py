@@ -23,7 +23,6 @@ from .models.custom.match import MatchDetails
 from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
     from valorantx.models.match import MatchHistory
     from valorantx.models.patchnotes import PatchNotes
     from valorantx.models.seasons import Season
@@ -59,8 +58,6 @@ class Client(valorantx.Client):
         self.me: ClientUser = MISSING
         self._tasks: Dict[str, asyncio.Task[None]] = {}
         self.lock: asyncio.Lock = asyncio.Lock()
-        # client users
-        # self._users: Dict[str, User] = {}
 
     # auth related
 
@@ -87,28 +84,6 @@ class Client(valorantx.Client):
     @act.setter
     def act(self, value: Season) -> None:
         self._act = value
-
-    async def set_authorize(self, riot_auth: RiotAuth) -> Self:
-        # set riot auth
-        self.http.riot_auth = riot_auth
-
-        # payload = dict(
-        #     puuid=riot_auth.puuid,
-        #     game_name=riot_auth.game_name,
-        #     tag_line=riot_auth.tag_line,
-        #     region=riot_auth.region, # type: ignore
-        # )
-        # user = User(client=self, data=payload)
-        # if user.puuid not in self._users:
-        # self._users[user.puuid] = user
-        # self.loop.create_task(user.update_identities())
-
-        # rebuild headers
-        await self.http.re_build_headers()
-        return self
-
-    # def get_user(self, puuid: str) -> Optional[User]:
-    #     return self._users.get(puuid)
 
     # patch note
 
@@ -145,35 +120,35 @@ class Client(valorantx.Client):
 
     # henrikdev
 
-    async def fetch_partial_account(self, name: str, tagline: str) -> Optional[PartialUser]:
+    async def fetch_partial_user(self, name: str, tagline: str) -> Optional[PartialUser]:
         """|coro|
 
-        Fetches a partial account from the given name and tagline.
+        Fetches a partial user from the given name and tagline.
 
         Parameters
         ----------
         name: :class:`str`
-            The name of the account.
+            The name of the user.
         tagline: :class:`str`
-            The tagline of the account.
+            The tagline of the user.
 
         Returns
         -------
         Optional[:class:`PartialUser`]
-            The partial account or ``None`` if not found.
+            The partial user or ``None`` if not found.
 
         Raises
         ------
         HTTPException
-            Fetching the partial account failed.
+            Fetching the partial user failed.
         NotFound
-            The partial account was not found.
+            The partial user was not found.
         Forbidden
-            You are not allowed to fetch the partial account.
+            You are not allowed to fetch the partial user.
         RateLimited
             You are being rate limited.
         """
-        data = await self.http.get_partial_account(name, tagline)
+        data = await self.http.get_account(name, tagline)
         if data is None or 'data' not in data:
             return None
         return PartialUser(state=self.valorant_api.cache, data=data['data'])
@@ -181,7 +156,7 @@ class Client(valorantx.Client):
     # store
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
-    @_authorize_required
+    # @_authorize_required
     async def fetch_featured_bundle(self) -> List[FeaturedBundle]:
         # cache re-use
         # TODO: sort expire time
@@ -198,7 +173,6 @@ class Client(valorantx.Client):
         return storefront.bundles
 
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
-    @_authorize_required
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
         if riot_auth is None:
             return await super().fetch_storefront()
@@ -206,7 +180,6 @@ class Client(valorantx.Client):
         return StoreFront(self.valorant_api.cache, data)
 
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
-    @_authorize_required
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
         if riot_auth is None:
             return await super().fetch_wallet()
@@ -216,7 +189,6 @@ class Client(valorantx.Client):
     # contracts
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> Contracts:
         if riot_auth is None:
             return await super().fetch_contracts()
@@ -226,7 +198,6 @@ class Client(valorantx.Client):
     # favorites
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
     async def fetch_favorites(self, riot_auth: Optional[RiotAuth] = None) -> Favorites:
         if riot_auth is None:
             return await super().fetch_favorites()
@@ -236,14 +207,12 @@ class Client(valorantx.Client):
     # match
 
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
-    @_authorize_required
     async def fetch_match_details(self, match_id: str) -> MatchDetails:
         # TODO: save data to file or cache?
         data = await self.http.get_match_details(match_id)
         return MatchDetails(client=self, data=data)
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
     async def fetch_match_history(
         self,
         puuid: str,  # required puuid
@@ -282,36 +251,33 @@ class Client(valorantx.Client):
 
     # party
 
-    @_authorize_required
     async def fetch_party_player(self, *, riot_auth: Optional[RiotAuth] = None) -> PartyPlayer:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
-            data = await self.http.get_party_player()
-            return PartyPlayer(client=self, data=data)
+        if riot_auth is None:
+            return await super().fetch_party_player()
+        data = await self.http.get_party_player_riot_auth(riot_auth=riot_auth)
+        return PartyPlayer(client=self, data=data)
 
-    @_authorize_required
     async def fetch_party(self, party_id: str, *, riot_auth: Optional[RiotAuth] = None) -> Party:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
-            data = await self.http.get_party(party_id=party_id)
-            return Party(client=self, data=data)
+        if riot_auth is None:
+            return await super().fetch_party(party_id)
+        data = await self.http.get_party_riot_auth(party_id, riot_auth=riot_auth)
+        return Party(client=self, data=data)
 
-    @_authorize_required
     async def party_invite_by_riot_id(
         self,
         party_id: str,
         game_name: str,
         tag_line: str,
         *,
-        riot_auth: Optional[RiotAuth] = None,
+        riot_auth: RiotAuth,
     ) -> Party:
-        async with self.lock:
-            if riot_auth is not None:
-                await self.set_authorize(riot_auth)
-            data = await self.http.post_party_invite_by_display_name(party_id, game_name, tag_line)
-            return Party(client=self, data=data)
+        data = await self.http.post_party_invite_by_riot_id_riot_auth(
+            party_id,
+            game_name,
+            tag_line,
+            riot_auth=riot_auth,
+        )
+        return Party(client=self, data=data)
 
     # cache
 
