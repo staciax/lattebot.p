@@ -77,12 +77,12 @@ def setup_logging():
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)
         log.addHandler(handler)
-        if not args.prod:
-            handler = logging.StreamHandler()
-            if isinstance(handler, logging.StreamHandler) and utils.stream_supports_colour(handler.stream):
-                fmt = utils._ColourFormatter()
-            handler.setFormatter(fmt)
-            log.addHandler(handler)
+        # if not args.prod:
+        handler = logging.StreamHandler()
+        if isinstance(handler, logging.StreamHandler) and utils.stream_supports_colour(handler.stream):
+            fmt = utils._ColourFormatter()
+        handler.setFormatter(fmt)
+        log.addHandler(handler)
         yield
     finally:
         # __exit__
