@@ -10,7 +10,7 @@ from ...emojis import get_game_mode_emoji
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.gamemodes import GameMode as GameModePayload
 
-    from ..valorant_api_cache import Cache
+    from ...valorant_api_cache import Cache
 
 # fmt: off
 __all__ = (
@@ -65,11 +65,11 @@ class GameMode(ValorantAPIGameMode):
                     "ko-KR": "일반전",
                     "pl-PL": "Nierankingowa",
                     "pt-BR": "Sem classificação",
-                    "ru-RU": "БЕЗ Рaнгa",
+                    "ru-RU": "Без ранга",
                     "th-TH": "Unrated",
-                    "tr-TR": "Derecesiz",
-                    "vi-VN": "Đấu Thường",
-                    "zh-CN": "一般模式",
+                    "tr-TR": "DERECESİZ",
+                    "vi-VN": "Đấu thường",
+                    "zh-CN": "普通模式",
                     "zh-TW": "一般模式",
                 }
             self._display_name_localized = Localization(self._display_name, locale=self._state.locale)
