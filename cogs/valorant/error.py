@@ -44,13 +44,19 @@ class RiotAuthMaxLimitReached(ValorantError):
 
 
 class RiotAuthMultiFactorTimeout(ValorantError):
-    """Raised when a user has reached the max limit of Riot accounts."""
+    """Raised when a user has not entered the multi factor code in time."""
+
+    pass
+
+
+class RiotAuthNotFound(ValorantError):
+    """Raised when riot auth is not found."""
 
     pass
 
 
 class RiotAuthUnknownError(ValorantError):
-    """Raised when a user has reached the max limit of Riot accounts."""
+    """Raised when an unknown error occurred while authenticating."""
 
     def __init__(self, original: Exception) -> None:
         self.original = original
@@ -66,9 +72,7 @@ class ErrorHandler(MixinMeta):
         if isinstance(error, app_commands.errors.CommandInvokeError):
             error = error.original
 
-        if not isinstance(
-            error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError, ValorantError)
-        ):
+        if not isinstance(error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError, ValorantError)):
             _log.exception('Unhandled exception in command %s:', interaction.command, exc_info=error)
             self.bot.dispatch('app_command_error', interaction, error)
             # return to global error handler
