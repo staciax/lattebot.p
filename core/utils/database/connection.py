@@ -95,13 +95,19 @@ class DatabaseConnection:
             async for user in User.read_all(session):
                 yield user
 
-    async def update_user(self, id: int, *, locale: str) -> bool:
+    async def update_user(
+        self,
+        id: int,
+        *,
+        locale: Optional[str] = None,
+        main_account_id: Optional[int] = None,
+    ) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(id)
             try:
-                await user.update(session, locale)
+                await user.update(session, locale, main_account_id)
             except SQLAlchemyError as e:
                 await session.rollback()
                 self._log.error(f'failed to update user with id {id!r} due to {e!r}')
@@ -213,7 +219,6 @@ class DatabaseConnection:
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        main_account: bool = False,
         notify: bool = False,
     ) -> RiotAccount:
         async with self._async_session() as session:
@@ -234,7 +239,6 @@ class DatabaseConnection:
                 access_token=access_token,
                 entitlements_token=entitlements_token,
                 ssid=ssid,
-                main_account=main_account,
                 notify=notify,
             )
             await session.commit()
@@ -272,7 +276,6 @@ class DatabaseConnection:
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
-        main_account: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> bool:
         async with self._async_session() as session:
@@ -292,7 +295,6 @@ class DatabaseConnection:
                     access_token=access_token,
                     entitlements_token=entitlements_token,
                     ssid=ssid,
-                    main_account=main_account,
                     notify=notify,
                 )
             except SQLAlchemyError as e:
@@ -313,9 +315,7 @@ class DatabaseConnection:
             try:
                 await RiotAccount.delete(session, riot_account)
             except SQLAlchemyError as e:
-                self._log.error(
-                    f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}'
-                )
+                self._log.error(f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}')
                 await session.rollback()
                 return False
             else:

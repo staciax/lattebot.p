@@ -47,21 +47,35 @@ class User(Base):
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='selectin',
     )
+    main_riot_account_id: Mapped[Optional[int]] = mapped_column('main_riot_account_id')
 
     @hybrid_method
     def is_blacklisted(self) -> bool:
         return self.blacklist is not None
 
     @hybrid_method
-    def get_riot_account(self, puuid: str) -> Optional[RiotAccount]:
+    def get_riot_account(self, puuid: str, /) -> Optional[RiotAccount]:
         for account in self.riot_accounts:
             if account.puuid == puuid:
                 return account
         return None
 
-    async def update(self, session: AsyncSession, locale: str) -> None:
-        self.locale = locale
+    async def update(
+        self,
+        session: AsyncSession,
+        locale: Optional[str] = None,
+        main_riot_account_id: Optional[int] = None,
+    ) -> Self:
+        if locale is not None:
+            self.locale = locale
+        if main_riot_account_id is not None:
+            self.main_riot_account_id = main_riot_account_id
         await session.flush()
+        # To fetch the new object
+        new = await self.read_by_id(session, self.id)
+        if not new:
+            raise RuntimeError()
+        return new
 
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:

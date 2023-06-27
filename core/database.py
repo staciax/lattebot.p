@@ -85,10 +85,19 @@ class DatabaseConnection(_DatabaseConnection):
                 self._store_user(user)
             yield user
 
-    async def update_user(self, id: int, locale: str) -> None:
-        await super().update_user(id, locale=locale)
+    async def update_user(
+        self,
+        id: int,
+        *,
+        locale: Optional[str] = None,
+        main_account_id: Optional[int] = None,
+    ) -> None:
+        await super().update_user(id, locale=locale, main_account_id=main_account_id)
         if id in self._users:
-            self._users[id].locale = locale
+            if locale is not None:
+                self._users[id].locale = locale
+            if main_account_id is not None:
+                self._users[id].main_riot_account_id = main_account_id
 
     async def delete_user(self, id: int) -> None:
         await super().delete_user(id)
@@ -153,7 +162,6 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        main_account: bool = False,
         notify: bool = True,
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
@@ -169,7 +177,6 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
-            main_account=main_account,
             notify=notify,
         )
 
@@ -217,7 +224,6 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
-        main_account: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> bool:
         update = await super().update_riot_account(
@@ -233,7 +239,6 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
-            main_account=main_account,
             notify=notify,
         )
         if update:

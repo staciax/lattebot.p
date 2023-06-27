@@ -206,24 +206,23 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
                 _log.error('riot auth error fetching region', exc_info=e)
         assert riot_auth.region is not None
 
-        self.bot.loop.create_task(
-            self.bot.db.create_riot_account(
-                interaction.user.id,
-                puuid=riot_auth.puuid,
-                game_name=riot_auth.game_name,
-                tag_line=riot_auth.tag_line,
-                region=riot_auth.region,
-                scope=riot_auth.scope,  # type: ignore
-                token_type=riot_auth.token_type,  # type: ignore
-                expires_at=riot_auth.expires_at,
-                id_token=riot_auth.id_token,  # type: ignore
-                access_token=riot_auth.access_token,  # type: ignore
-                entitlements_token=riot_auth.entitlements_token,  # type: ignore
-                ssid=riot_auth.get_ssid(),
-                main_account=len(user.riot_accounts) == 0,
-                notify=False,
-            )
+        riot_account = await self.bot.db.create_riot_account(
+            interaction.user.id,
+            puuid=riot_auth.puuid,
+            game_name=riot_auth.game_name,
+            tag_line=riot_auth.tag_line,
+            region=riot_auth.region,
+            scope=riot_auth.scope,  # type: ignore
+            token_type=riot_auth.token_type,  # type: ignore
+            expires_at=riot_auth.expires_at,
+            id_token=riot_auth.id_token,  # type: ignore
+            access_token=riot_auth.access_token,  # type: ignore
+            entitlements_token=riot_auth.entitlements_token,  # type: ignore
+            ssid=riot_auth.get_ssid(),
+            notify=False,
         )
+        if len(user.riot_accounts) == 0:
+            await self.bot.db.update_user(user.id, main_account_id=riot_account.id)
 
         _log.info(
             f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) - {riot_auth.region}'
@@ -302,6 +301,12 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         await interaction.response.defer()
         view = NightMarketView(interaction, AccountManager(user, self.bot), hide)
         await view.callback(interaction)
+
+    # @app_commands.command(name=_T('agent_store'), description=_T('Show the current featured agents'))
+    # @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_short)
+    # async def agent_store(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    #     ...
 
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
     @app_commands.guild_only()

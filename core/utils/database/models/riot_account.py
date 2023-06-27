@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, AsyncIterator, Optional
 from dotenv import load_dotenv
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..encryption import FernetEngine
@@ -42,22 +43,17 @@ class RiotAccount(Base):
     scope: Mapped[str] = mapped_column('scope', String(length=64), nullable=False)
     token_type: Mapped[str] = mapped_column('token_type', String(length=64), nullable=False)
     expires_at: Mapped[int] = mapped_column('expires_at', nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     _id_token: Mapped[str] = mapped_column('id_token', String(length=4096), nullable=False)
     _access_token: Mapped[str] = mapped_column('access_token', String(length=4096), nullable=False)
     _entitlements_token: Mapped[str] = mapped_column('entitlements_token', String(length=4096), nullable=False)
     _ssid: Mapped[str] = mapped_column('ssid', String(length=4096), nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        'created_at',
-        nullable=False,
-        default=datetime.datetime.utcnow,
-    )
+    notify: Mapped[bool] = mapped_column('notify', nullable=False, default=False)
+    hide_name: Mapped[bool] = mapped_column('hide_name', nullable=False, default=False)
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
-    main_account: Mapped[bool] = mapped_column('main_account', nullable=False, default=False)
-    notify: Mapped[bool] = mapped_column('notify', nullable=False, default=False)
 
     # NOTE: that there is no point in using a hybrid_property in this case, as your database can't encrypt and decrypt on the server side.
-
     @property
     def id_token(self) -> str:
         return fernet.decrypt(self._id_token.encode())
@@ -89,6 +85,14 @@ class RiotAccount(Base):
     @ssid.setter
     def ssid(self, value: str) -> None:
         self._ssid = fernet.encrypt(value.encode())
+
+    @hybrid_method
+    def is_main_account(self) -> bool:
+        if self.owner is None:
+            return False
+        if self.owner.main_riot_account_id is None:
+            return False
+        return self.owner.main_riot_account_id == self.id
 
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
@@ -130,7 +134,6 @@ class RiotAccount(Base):
         access_token: str,
         entitlements_token: str,
         ssid: str,
-        main_account: bool = False,
         notify: bool = False,
     ) -> Self:
         riot_account = cls(
@@ -146,7 +149,6 @@ class RiotAccount(Base):
             entitlements_token=entitlements_token,
             ssid=ssid,
             owner_id=owner_id,
-            main_account=main_account,
             notify=notify,
         )
         session.add(riot_account)
@@ -170,7 +172,6 @@ class RiotAccount(Base):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
-        main_account: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> Self:
         if game_name is not None:
@@ -193,8 +194,6 @@ class RiotAccount(Base):
             self.entitlements_token = entitlements_token
         if ssid is not None:
             self.ssid = ssid
-        if main_account is not None:
-            self.main_account = main_account
         if notify is not None:
             self.notify = notify
         await session.flush()

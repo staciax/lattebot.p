@@ -71,7 +71,7 @@ class AccountManager:
                     await riot_auth.reauthorize()
 
             self._riot_accounts[riot_auth.puuid] = riot_auth
-            if riot_account.main_account:
+            if self.user.main_riot_account_id == riot_account.id:
                 self.main_account = riot_auth
 
         self._ready.set()
