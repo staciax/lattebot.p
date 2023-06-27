@@ -124,6 +124,22 @@ class BaseView(ui.View):
                 child.disabled = False
         return self
 
+    def url_button(self, label: str, url: str, *, disabled: bool = False) -> Self:
+        """
+        Adds a url button to the view.
+
+        Parameters
+        ----------
+        label: str
+            The label of the button.
+        url: str
+            The url of the button.
+        disabled: bool
+            Whether the button is disabled or not.
+        """
+        self.add_item(ui.Button(label=label, url=url, disabled=disabled))
+        return self
+
     # --- end of code from pycord ---
 
     def disable_items(self) -> Self:
