@@ -212,7 +212,7 @@ class StoreFrontView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> List[Embed]:
         storefront = await self.valorant_client.fetch_storefront(riot_auth)
-        embeds = e.store_e(
+        embeds = e.store_featured_e(
             storefront.skins_panel_layout,
             riot_id=riot_auth.display_name,
             locale=self.locale,
@@ -825,7 +825,7 @@ class CarrierPageSource(ListPageSource):
                 continue
 
             # no match history
-            if len(entries) == 0:
+            if not len(entries):
                 child.add_dummy()
                 return Embed(description=_('No Match History', menu.locale)).warning()
             # build pages
