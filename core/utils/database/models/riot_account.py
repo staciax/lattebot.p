@@ -49,7 +49,7 @@ class RiotAccount(Base):
     _entitlements_token: Mapped[str] = mapped_column('entitlements_token', String(length=4096), nullable=False)
     _ssid: Mapped[str] = mapped_column('ssid', String(length=4096), nullable=False)
     notify: Mapped[bool] = mapped_column('notify', nullable=False, default=False)
-    hide_name: Mapped[bool] = mapped_column('hide_name', nullable=False, default=False)
+    incognito: Mapped[bool] = mapped_column('incognito', nullable=False, default=False)
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
 
@@ -134,6 +134,7 @@ class RiotAccount(Base):
         access_token: str,
         entitlements_token: str,
         ssid: str,
+        incognito: bool = False,
         notify: bool = False,
     ) -> Self:
         riot_account = cls(
@@ -149,6 +150,7 @@ class RiotAccount(Base):
             entitlements_token=entitlements_token,
             ssid=ssid,
             owner_id=owner_id,
+            incognito=incognito,
             notify=notify,
         )
         session.add(riot_account)
@@ -172,6 +174,7 @@ class RiotAccount(Base):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        incognito: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> Self:
         if game_name is not None:
@@ -194,6 +197,8 @@ class RiotAccount(Base):
             self.entitlements_token = entitlements_token
         if ssid is not None:
             self.ssid = ssid
+        if incognito is not None:
+            self.incognito = incognito
         if notify is not None:
             self.notify = notify
         await session.flush()

@@ -162,6 +162,7 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: str,
         entitlements_token: str,
         ssid: str,
+        incognito: bool = False,
         notify: bool = True,
     ) -> RiotAccount:
         riot_account = await super().create_riot_account(
@@ -177,6 +178,7 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
+            incognito=incognito,
             notify=notify,
         )
 
@@ -224,6 +226,7 @@ class DatabaseConnection(_DatabaseConnection):
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        incognito: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> bool:
         update = await super().update_riot_account(
@@ -239,6 +242,7 @@ class DatabaseConnection(_DatabaseConnection):
             access_token=access_token,
             entitlements_token=entitlements_token,
             ssid=ssid,
+            incognito=incognito,
             notify=notify,
         )
         if update:

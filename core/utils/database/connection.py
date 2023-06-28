@@ -219,6 +219,7 @@ class DatabaseConnection:
         access_token: str,
         entitlements_token: str,
         ssid: str,
+        incognito: bool = False,
         notify: bool = False,
     ) -> RiotAccount:
         async with self._async_session() as session:
@@ -239,6 +240,7 @@ class DatabaseConnection:
                 access_token=access_token,
                 entitlements_token=entitlements_token,
                 ssid=ssid,
+                incognito=incognito,
                 notify=notify,
             )
             await session.commit()
@@ -276,6 +278,7 @@ class DatabaseConnection:
         access_token: Optional[str] = None,
         entitlements_token: Optional[str] = None,
         ssid: Optional[str] = None,
+        incognito: Optional[bool] = None,
         notify: Optional[bool] = None,
     ) -> bool:
         async with self._async_session() as session:
@@ -295,6 +298,7 @@ class DatabaseConnection:
                     access_token=access_token,
                     entitlements_token=entitlements_token,
                     ssid=ssid,
+                    incognito=incognito,
                     notify=notify,
                 )
             except SQLAlchemyError as e:
