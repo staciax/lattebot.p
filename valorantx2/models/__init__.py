@@ -1,4 +1,6 @@
 from valorantx.models import (
+    AccessoryStore as AccessoryStore,
+    AccessoryStoreOffer as AccessoryStoreOffer,
     Agent as Agent,
     BonusStore as BonusStore,
     Buddy as Buddy,
