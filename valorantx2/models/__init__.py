@@ -2,6 +2,8 @@ from valorantx.models import (
     AccessoryStore as AccessoryStore,
     AccessoryStoreOffer as AccessoryStoreOffer,
     Agent as Agent,
+    AgentStore as AgentStore,
+    AgentStoreOffer as AgentStoreOffer,
     BonusStore as BonusStore,
     Buddy as Buddy,
     BuddyLevel as BuddyLevel,
@@ -76,6 +78,7 @@ from valorantx.models import (
     version as version,
     weapons as weapons,
 )
+from valorantx.models.contracts import RecruitmentProgressUpdate as RecruitmentProgressUpdate
 from valorantx.models.party import Party as Party, PartyPlayer as PartyPlayer
 
 from .account_henrikdev import *
