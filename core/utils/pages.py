@@ -289,9 +289,7 @@ class LattePages(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user and interaction.user.id in (self.interaction.client.owner_id, self.interaction.user.id):
             return True
-        await interaction.response.send_message(
-            'This pagination menu cannot be controlled by you, sorry!', ephemeral=True
-        )
+        await interaction.response.send_message('This pagination menu cannot be controlled by you, sorry!', ephemeral=True)
         return False
 
     async def on_timeout(self) -> None:
@@ -321,6 +319,7 @@ class LattePages(discord.ui.View):
 
     async def start(self, page_number: int = 0, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
         if self.check_embeds and not self.interaction.channel.permissions_for(self.interaction.guild.me).embed_links:  # type: ignore
+            # TODO: handle this case better send or followup
             await self.interaction.response.send_message(
                 'Bot does not have embed links permission in this channel.', ephemeral=True
             )
