@@ -3,8 +3,6 @@ from __future__ import annotations
 import datetime
 import itertools
 import platform
-
-# from functools import lru_cache
 from typing import TYPE_CHECKING, Optional
 
 import discord
@@ -12,15 +10,15 @@ import psutil
 import pygit2
 
 # import pkg_resources
-from discord import Interaction, app_commands, ui
+from discord import Interaction, app_commands
 from discord.app_commands import locale_str as _T
-from discord.app_commands.checks import bot_has_permissions  # , dynamic_cooldown
+from discord.app_commands.checks import bot_has_permissions
 from discord.utils import format_dt
 
-# from core.checks import cooldown_short
 from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
+from core.ui.views import BaseView
 from core.utils.useful import count_python
 
 if TYPE_CHECKING:
@@ -69,7 +67,6 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    # @dynamic_cooldown(cooldown_short)
     async def invite(self, interaction: Interaction[LatteMaid]) -> None:
         embed = MiadEmbed().secondary()
         embed.set_author(
@@ -80,14 +77,12 @@ class About(Cog, name='about'):
         embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')  # type: ignore
         # embed.set_image(url=str(self.cdn.invite_banner))
 
-        view = ui.View()
-        view.add_item(ui.Button(label='ɪɴᴠɪᴛᴇ ᴍᴇ', url=self.bot.get_invite_url(), emoji=str(self.bot.emoji.latte_icon)))
+        view = BaseView().url_button('ɪɴᴠɪᴛᴇ ᴍᴇ', self.bot.get_invite_url(), emoji=str(self.bot.emoji.latte_icon))
 
         await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(name=_T('about'), description=_T('Shows bot information'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    # @dynamic_cooldown(cooldown_short)
     async def about(self, interaction: Interaction[LatteMaid]) -> None:
         # await interaction.response.defer()
 
@@ -139,8 +134,7 @@ class About(Cog, name='about'):
         )
         embed.add_field(
             name='ᴜᴘᴛɪᴍᴇ:',
-            value=f'ʙᴏᴛ: <t:{round(self.bot.launch_time.timestamp())}:R>\n'
-            + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
+            value=f'ʙᴏᴛ: <t:{round(self.bot.launch_time.timestamp())}:R>\n' + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
             inline=True,
         )
         embed.add_empty_field(inline=True)
@@ -149,43 +143,22 @@ class About(Cog, name='about'):
             icon_url=core_dev.avatar,
         )
 
-        view = ui.View()
-        view.add_item(
-            ui.Button(
-                label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ',
-                url=self.bot.support_invite_url,
-                emoji=str(e.latte_icon),
-            )
-        )
-        view.add_item(
-            ui.Button(
-                label='ᴅᴇᴠᴇʟᴏᴘᴇʀ',
-                url=f'https://discord.com/users/{core_dev.id}',
-                emoji=str(e.stacia_dev),
-            )
-        )
+        view = BaseView()
+        view.url_button('ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', self.bot.support_invite_url, emoji=str(e.latte_icon))
+        view.url_button('ᴅᴇᴠᴇʟᴏᴘᴇʀ', f'https://discord.com/users/{core_dev.id}', emoji=str(e.stacia_dev))
 
         await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(name=_T('support'), description=_T('Sends the support server of the bot.'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    # @dynamic_cooldown(cooldown_short)
     async def support(self, interaction: Interaction[LatteMaid]) -> None:
         embed = MiadEmbed()
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
         embed.set_thumbnail(url=self.bot.user.avatar)  # type: ignore
 
-        view = ui.View()
-        view.add_item(
-            ui.Button(label='ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', url=self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
-        )
-        view.add_item(
-            ui.Button(
-                label='ᴅᴇᴠᴇʟᴏᴘᴇʀ',
-                url=f'https://discord.com/users/{self.bot.owner_id}',
-                emoji=str(self.bot.emoji.stacia_dev),
-            )
-        )
+        view = BaseView()
+        view.url_button('ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
+        view.url_button('ᴅᴇᴠᴇʟᴏᴘᴇʀ', f'https://discord.com/users/{self.bot.owner_id}', emoji=str(self.bot.emoji.stacia_dev))
 
         await interaction.response.send_message(embed=embed, view=view)
 
