@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import valorantx
@@ -37,6 +38,8 @@ __all__ = (
     'Client',
 )
 # fmt: on
+
+_log = logging.getLogger(__name__)
 
 # https://valorant.dyn.riotcdn.net/x/content-catalog/PublicContentCatalog-{branch}.zip
 
@@ -282,6 +285,11 @@ class Client(valorantx.Client):
     # cache
 
     async def cache_clear(self) -> None:
-        for method in self.__dict__.values():
-            if hasattr(method, 'cache_clear'):
+        for method_name in dir(self):
+            if method_name.startswith('_'):
+                continue
+            method = getattr(self, method_name)
+            if hasattr(method, 'cache_clear') and callable(method.cache_clear):
                 method.cache_clear()
+
+        _log.info('cache cleared')
