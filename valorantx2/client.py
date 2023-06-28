@@ -13,7 +13,7 @@ from valorantx.models.favorites import Favorites
 from valorantx.models.loadout import Loadout
 from valorantx.models.mmr import MatchmakingRating
 from valorantx.models.party import Party, PartyPlayer
-from valorantx.models.store import StoreFront, Wallet
+from valorantx.models.store import AgentStore, StoreFront, Wallet
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
@@ -182,6 +182,13 @@ class Client(valorantx.Client):
         data = await self.http.post_store_storefront_riot_auth(riot_auth)
         return StoreFront(self.valorant_api.cache, data)
 
+    @_authorize_required
+    async def fetch_agent_store(self, riot_auth: Optional[RiotAuth] = None) -> AgentStore:
+        if riot_auth is None:
+            return await super().fetch_agent_store()
+        data = await self.http.get_store_storefronts_agent()
+        return AgentStore(self, data['AgentStore'])
+
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
         if riot_auth is None:
@@ -196,7 +203,7 @@ class Client(valorantx.Client):
         if riot_auth is None:
             return await super().fetch_contracts()
         data = await self.http.get_contracts_riot_auth(riot_auth)
-        return Contracts(state=self.valorant_api.cache, data=data)
+        return Contracts(client=self, data=data)
 
     # favorites
 
