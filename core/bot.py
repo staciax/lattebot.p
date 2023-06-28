@@ -216,7 +216,7 @@ class LatteMaid(commands.AutoShardedBot):
             _log.info('valorant client is initialized.')
 
     async def setup_hook(self) -> None:
-        asyncio.get_running_loop().set_debug(self.is_debug_mode())
+        # asyncio.get_running_loop().set_debug(self.is_debug_mode())
 
         # session
         if self.session is MISSING:

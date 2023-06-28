@@ -284,7 +284,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
         sf = await self.valorant_client.fetch_storefront()
-        view = NewStoreFrontView(interaction, sf)
+        ags = await self.valorant_client.fetch_agent_store()
+        view = NewStoreFrontView(interaction, sf, ags)
         await view.start()
 
         # user = await self.get_or_create_user(interaction.user.id, interaction.locale)
