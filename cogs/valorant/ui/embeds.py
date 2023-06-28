@@ -45,10 +45,12 @@ from . import utils
 if TYPE_CHECKING:
     from valorantx2.models import (
         Agent,
+        AgentStore,
         BonusStore,
         Contract,
         Loadout,
         MatchPlayer,
+        RecruitmentProgressUpdate,
         RewardValorantAPI,
         SkinsPanelLayout,
         Wallet,
@@ -165,6 +167,29 @@ def store_accessories_e(
         embeds.append(accessory_e(offer, locale=locale))
 
     return embeds
+
+
+def store_agents_e(
+    agent_store: AgentStore,
+    recruitment_progress: Optional[RecruitmentProgressUpdate],
+    riot_id: str,
+    *,
+    locale: DiscordLocale = DiscordLocale.american_english,
+) -> Embed:
+    valorant_locale = locale_converter.to_valorant(locale)
+    embed = Embed().purple()
+    embed.set_author(name='Agent Recruiment Event')
+    if agent_store.featured_agent is not None:
+        embed.title = (
+            f'UNLOCK {agent_store.featured_agent.display_name_localized(valorant_locale)}\n{KINGDOM_CREDIT_EMOJI} 8000'
+        )
+        embed.set_thumbnail(url=agent_store.featured_agent.display_icon)
+        embed.set_image(url=agent_store.featured_agent.full_portrait_v2)
+
+    if recruitment_progress is not None:
+        embed.description = f'{recruitment_progress.progress_after}/{recruitment_progress.milestone_threshold} XP'
+
+    return embed
 
 
 def skin_e_hide(skin: SkinLevelBonus) -> Embed:
