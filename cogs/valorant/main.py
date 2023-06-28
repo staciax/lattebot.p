@@ -47,6 +47,7 @@ from .ui.views import (
     StoreFrontView,
     WalletView,
 )
+from .ui.views_7 import NewStoreFrontView
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -221,7 +222,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             ssid=riot_auth.get_ssid(),
             notify=False,
         )
-        if len(user.riot_accounts) == 0:
+        if not len(user.riot_accounts):
             await self.bot.db.update_user(user.id, main_account_id=riot_account.id)
 
         _log.info(
@@ -265,7 +266,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         if user is None:
             return []
 
-        if len(user.riot_accounts) == 0:
+        if not len(user.riot_accounts):
             return [app_commands.Choice(name=_('You have no accounts linked.', interaction.locale), value="-")]
 
         return [
@@ -282,10 +283,14 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
-        await interaction.response.defer()
-        view = StoreFrontView(interaction, AccountManager(user, self.bot))
-        await view.callback(interaction)
+        sf = await self.valorant_client.fetch_storefront()
+        view = NewStoreFrontView(interaction, sf)
+        await view.start()
+
+        # user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        # await interaction.response.defer()
+        # view = StoreFrontView(interaction, AccountManager(user, self.bot))
+        # await view.callback(interaction)
 
         # source = StoreFrontPageSource(user)
         # view = ValorantSwitchAccountView(source, interaction)
@@ -406,6 +411,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             Choice(name=_T('SwiftPlay'), value='swiftplay'),
             Choice(name=_T('Deathmatch'), value='deathmatch'),
             Choice(name=_T('Spike Rush'), value='spikerush'),
+            Choice(name=_T('Team Deathmatch'), value='hurm'),
             Choice(name=_T('Escalation'), value='ggteam'),
             Choice(name=_T('Replication'), value='onefa'),
             Choice(name=_T('Snowball Fight'), value='snowball'),
@@ -436,6 +442,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             Choice(name=_T('SwiftPlay'), value='swiftplay'),
             Choice(name=_T('Deathmatch'), value='deathmatch'),
             Choice(name=_T('Spike Rush'), value='spikerush'),
+            Choice(name=_T('Team Deathmatch'), value='hurm'),
             Choice(name=_T('Escalation'), value='ggteam'),
             Choice(name=_T('Replication'), value='onefa'),
             Choice(name=_T('Snowball Fight'), value='snowball'),
