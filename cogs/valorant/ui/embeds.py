@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import random
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
@@ -12,9 +13,11 @@ import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
-from valorantx2.emojis import VALORANT_POINT_EMOJI
+from valorantx2.emojis import KINGDOM_CREDIT_EMOJI, VALORANT_POINT_EMOJI
 from valorantx2.enums import GameModeURL, MissionType, RelationType, RoundResultCode
 from valorantx2.models import (
+    AccessoryStore,
+    AccessoryStoreOffer,
     Buddy,
     BuddyLevel,
     BuddyLevelBundle,
@@ -55,7 +58,7 @@ if TYPE_CHECKING:
 __all__ = (
     'BundleEmbed',
     'skin_e',
-    'store_e',
+    'store_featured_e',
     'select_featured_bundle_e',
     'select_featured_bundles_e',
     'bundle_item_e',
@@ -69,6 +72,7 @@ SprayItem = Union[Spray, SprayLevel]
 BuddyItem = Union[Buddy, BuddyLevel]
 
 _ = I18n('valorant.ui.embeds', Path(__file__).resolve().parent, read_only=True)
+_log = logging.getLogger(__name__)
 
 
 def skin_e(
@@ -99,16 +103,66 @@ def skin_e(
     return embed
 
 
-def store_e(panel: SkinsPanelLayout, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english) -> List[Embed]:
+def store_featured_e(
+    panel: SkinsPanelLayout, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
+) -> List[Embed]:
     embeds = [
         Embed(
             description='Daily store for {user}\n'.format(user=chat.bold(riot_id))
-            + f"Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style='R')}",
+            + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
         ).purple(),
     ]
 
     for skin in panel.skins:
         embeds.append(skin_e(skin, locale=locale))
+
+    return embeds
+
+
+def accessory_e(store_offer: AccessoryStoreOffer, *, locale: DiscordLocale = DiscordLocale.american_english) -> Embed:
+    valorant_locale = locale_converter.to_valorant(locale)
+
+    accessory = store_offer.offer
+
+    embed = Embed()
+    embed.description = f'{KINGDOM_CREDIT_EMOJI} {chat.bold(str(accessory.cost))}'
+
+    for reward in accessory.rewards:
+        if reward.item is None:
+            _log.warning(f'No item for reward id: {reward.id} type: {reward.type}')
+            continue
+
+        embed.title = reward.item.display_name_localized(valorant_locale)
+
+        if isinstance(reward.item, (Spray, BuddyLevel)):
+            if reward.item.display_icon is not None:
+                embed.url = reward.item.display_icon.url
+                embed.set_thumbnail(url=reward.item.display_icon)
+        elif isinstance(reward.item, PlayerCard):
+            if reward.item.large_art is not None:
+                embed.url = reward.item.large_art.url
+                embed.set_thumbnail(url=reward.item.large_art)
+        elif isinstance(reward.item, PlayerTitle):
+            player_title_icon_url = 'https://cdn.discordapp.com/attachments/417245049315655690/1123541013072457728/valorant_player_title_icon.png'
+            embed.url = player_title_icon_url
+            embed.set_thumbnail(url=player_title_icon_url)
+
+    if store_offer.contract is not None:
+        embed.set_footer(text=store_offer.contract.display_name_localized(valorant_locale))
+    return embed
+
+
+def store_accessories_e(
+    store: AccessoryStore, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
+) -> List[Embed]:
+    embeds = [
+        Embed(
+            description='Weekly Accessories for {user}\n'.format(user=chat.bold(riot_id))
+            + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
+        ).purple(),
+    ]
+    for offer in store.offers:
+        embeds.append(accessory_e(offer, locale=locale))
 
     return embeds
 
@@ -227,10 +281,10 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
         rad_display_name = rad.display_name.from_locale(valorant_locale)
         rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Points', '').replace('Point', '')  # type: ignore
 
-    # knd_display_name = 'Kingdom'
-    # if knd := wallet.get_kingdom_currency():
-    #     knd_display_name = knd.display_name.from_locale(locale)
-    #     knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')
+    knd_display_name = 'Kingdom'
+    if knd := wallet.get_kingdom_currency():
+        knd_display_name = knd.display_name.from_locale(valorant_locale)
+        knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')  # type: ignore
 
     embed.add_field(
         name=vp_display_name,
@@ -240,10 +294,10 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
         name=rad_display_name,
         value=f'{wallet.radiant_points}',
     )
-    # embed.add_field(
-    #     name=knd_display_name,
-    #     value=f'{wallet.kingdom_points}',
-    # )
+    embed.add_field(
+        name=knd_display_name,
+        value=f'{wallet.kingdom_points}',
+    )
     return embed
 
 
