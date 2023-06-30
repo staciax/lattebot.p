@@ -6,6 +6,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 
 from core.database.connection import DatabaseConnection as _DatabaseConnection
 from core.database.models.blacklist import BlackList
+from core.database.models.notification_settings import NotificationSettings
 from core.database.models.riot_account import RiotAccount
 from core.database.models.user import User
 
@@ -22,6 +23,7 @@ class DatabaseConnection(_DatabaseConnection):
         self._log = logging.getLogger(__name__)
         self._users: Dict[int, User] = {}  # TODO: key to string
         self._blacklist: Dict[int, BlackList] = {}
+        self.lock = asyncio.Lock()
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.initialize())
 
@@ -58,6 +60,17 @@ class DatabaseConnection(_DatabaseConnection):
 
     def _store_user(self, user: User) -> None:
         self._users[user.id] = user
+        self._log.debug('stored user %d in cache', user.id)
+
+    async def _refresh_user_by_id(self, id: int, /) -> None:
+        async with self.lock:
+            try:
+                del self._users[id]
+            except KeyError:
+                pass
+            else:
+                await self.get_user(id)
+                self._log.debug('refreshed user %d in cache', id)
 
     async def create_user(self, id: int, *, locale: Any = 'en-US') -> User:
         user = await super().create_user(id, locale=str(locale))
@@ -88,16 +101,14 @@ class DatabaseConnection(_DatabaseConnection):
     async def update_user(
         self,
         id: int,
+        /,
         *,
         locale: Optional[str] = None,
         main_account_id: Optional[int] = None,
     ) -> None:
         await super().update_user(id, locale=locale, main_account_id=main_account_id)
-        if id in self._users:
-            if locale is not None:
-                self._users[id].locale = locale
-            if main_account_id is not None:
-                self._users[id].main_riot_account_id = main_account_id
+        # refresh user cache
+        self.loop.create_task(self._refresh_user_by_id(id))
 
     async def delete_user(self, id: int) -> None:
         await super().delete_user(id)
@@ -114,7 +125,7 @@ class DatabaseConnection(_DatabaseConnection):
 
     def _store_blacklist(self, blacklist: BlackList) -> None:
         self._blacklist[blacklist.id] = blacklist
-        self._log.info('stored blacklist %d in cache', blacklist.id)
+        self._log.debug('stored blacklist %d in cache', blacklist.id)
 
     async def create_blacklist(self, id: int, /) -> BlackList:
         blacklist = await super().create_blacklist(id=id)
@@ -182,34 +193,22 @@ class DatabaseConnection(_DatabaseConnection):
             notify=notify,
         )
 
-        # validate cache
-        try:
-            self._users.pop(owner_id)
-        except KeyError:
-            pass
-        else:
-            # refresh user from database
-            self.loop.create_task(self.get_user(owner_id))
+        # refresh user cache
+        self.loop.create_task(self._refresh_user_by_id(owner_id))
 
         return riot_account
 
     async def delete_riot_account(self, puuid: str, owner_id: int) -> None:
         await super().delete_riot_account(puuid, owner_id)
 
-        # validate cache
-        try:
-            self._users.pop(owner_id)
-        except KeyError:
-            pass
+        # refresh user cache
+        self.loop.create_task(self._refresh_user_by_id(owner_id))
 
     async def delete_all_riot_accounts(self, owner_id: int) -> None:
         await super().delete_all_riot_accounts(owner_id)
 
-        # validate cache
-        try:
-            self._users.pop(owner_id)
-        except KeyError:
-            pass
+        # refresh user cache
+        self.loop.create_task(self._refresh_user_by_id(owner_id))
 
     async def update_riot_account(
         self,
@@ -246,13 +245,56 @@ class DatabaseConnection(_DatabaseConnection):
             notify=notify,
         )
         if update:
-            # validate cache
-            try:
-                self._users.pop(owner_id)
-            except KeyError:
-                pass
-            else:
-                # refresh user from database
-                self.loop.create_task(self.get_user(owner_id))
+            # refresh user cache
+            self.loop.create_task(self._refresh_user_by_id(owner_id))
 
         return update
+
+    # notification settings
+
+    async def create_notification_settings(
+        self,
+        owner_id: int,
+        *,
+        channel_id: int,
+        mode: int,
+        enabled: bool,
+    ) -> NotificationSettings:
+        notification_settings = await super().create_notification_settings(
+            owner_id,
+            channel_id=channel_id,
+            mode=mode,
+            enabled=enabled,
+        )
+
+        # refresh user cache
+        self.loop.create_task(self._refresh_user_by_id(owner_id))
+
+        return notification_settings
+
+    async def update_notification_settings(
+        self,
+        owner_id: int,
+        *,
+        channel_id: Optional[int] = None,
+        mode: Optional[int] = None,
+        enabled: Optional[bool] = None,
+    ) -> Optional[NotificationSettings]:
+        notification_settings = await super().update_notification_settings(
+            owner_id,
+            channel_id=channel_id,
+            mode=mode,
+            enabled=enabled,
+        )
+        if notification_settings:
+            # refresh user cache
+            self.loop.create_task(self._refresh_user_by_id(owner_id))
+
+        return notification_settings
+
+    async def delete_notification_settings(self, owner_id: int, /) -> bool:
+        delete = await super().delete_notification_settings(owner_id)
+        if delete:
+            # refresh user cache
+            self.loop.create_task(self._refresh_user_by_id(owner_id))
+        return delete
