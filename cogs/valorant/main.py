@@ -243,11 +243,12 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     async def logout(self, interaction: discord.Interaction[LatteMaid], puuid: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        e = Embed(description=f'Successfully logged out all accounts')
-
         user = await self.get_user(interaction.user.id, check_linked=False)
         if user is None:
             raise RiotAuthNotLinked('You do not have any accounts linked.')
+
+        e = Embed(description=f'Successfully logged out all accounts')
+        view = discord.utils.MISSING
 
         if puuid is None:
             await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
@@ -272,7 +273,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
             # TODO: view to select main account
 
-        await interaction.followup.send(embed=e, ephemeral=True)
+        await interaction.followup.send(embed=e, view=view, ephemeral=True)
 
         # # invalidate cache
         # self.fetch_user.invalidate(self, id=interaction.user.id)
