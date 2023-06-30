@@ -256,16 +256,21 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             e.description = f'Successfully logged out account {chat.bold(riot_id)}'
             delete = await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
 
-            if delete is not None and delete.id == user.main_riot_account_id:
-                for riot_acc in sorted(user.riot_accounts, key=lambda x: x.created_at):
-                    if riot_acc.puuid == puuid:
-                        continue
-                    await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
-                    e.description += f'\n{chat.bold(riot_acc.game_name)} is now your main account.'  # type: ignore
-                    # _log.info(
-                    #     f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
-                    # )
-                    break
+            # if delete is None:
+            #     raise Exception(f'Failed to delete account {riot_id} from database')
+
+            # if delete.id == user.main_riot_account_id:
+            #     for riot_acc in sorted(user.riot_accounts, key=lambda x: x.created_at):
+            #         if riot_acc.puuid == puuid:
+            #             continue
+            #         await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
+            #         e.description += f'\n{chat.bold(riot_acc.riot_id)} is now your main account.'  # type: ignore
+            #         _log.info(
+            #             f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
+            #         )
+            #         break
+
+            # TODO: view to select main account
 
         await interaction.followup.send(embed=e, ephemeral=True)
 
