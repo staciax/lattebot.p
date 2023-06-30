@@ -1,0 +1,144 @@
+{
+    "agents": {
+        "name": "agents",
+        "description": "แสดงสัญญาของเอเจนท์"
+    },
+    "battlepass": {
+        "name": "battlepass",
+        "description": "ดูระดับปัจจุบันของ แบทเทิลพาส ของคุณ",
+        "options": {
+            "season": {
+                "display_name": "ซีซั่น",
+                "description": "เลือกซีซั่น"
+            }
+        }
+    },
+    "bundles": {
+        "name": "bundles",
+        "description": "แสดงบันเดิลเด่นปัจจุบัน"
+    },
+    "carrier": {
+        "name": "carrier",
+        "description": "แสดงประวัติการเล่น",
+        "options": {
+            "mode": {
+                "display_name": "โหมด",
+                "description": "เลือกโหมดที่ต้องการแสดงประวัติการเล่น",
+                "choices": {
+                    "unrated": "Unrated",
+                    "competitive": "Competitive",
+                    "swiftplay": "SwiftPlay",
+                    "deathmatch": "Deathmatch",
+                    "spikerush": "Spike Rush",
+                    "hurm": "Team Deathmatch",
+                    "ggteam": "Escalation",
+                    "onefa": "Replication",
+                    "snowball": "Snowball Fight",
+                    "custom": "Custom"
+                }
+            }
+        }
+    },
+    "collection": {
+        "name": "collection",
+        "description": "แสดงคอลเลคชันของคุณ"
+    },
+    "eventpass": {
+        "name": "eventpass",
+        "description": "ดูระดับปัจจุบันของ อีเว้นท์พาส ของคุณ",
+        "options": {
+            "event": {
+                "display_name": "อีเว้นท์",
+                "description": "เลือกอีเว้นท์ที่ต้องการดู"
+            }
+        }
+    },
+    "login": {
+        "name": "login",
+        "description": "เข้าสู่ระบบด้วยบัญชี riot games",
+        "options": {
+            "username": {
+                "display_name": "ชื่อผู้ใช้",
+                "description": "ป้อนชื่อผู้ใช้"
+            },
+            "password": {
+                "display_name": "รหัสผ่าน",
+                "description": "ใส่รหัสผ่าน"
+            },
+            "region": {
+                "display_name": "ภูมิภาค",
+                "description": "เลือกภูมิภาค",
+                "choices": {
+                    "ap": "Asia Pacific (เอเชียแปซิฟิก)",
+                    "eu": "Europe (ยุโรป)",
+                    "na": "North America / Latin America / Brazil (อเมริกาเหนือ / ละตินอเมริกา / บราซิล)",
+                    "kr": "Korea (เกาหลี)"
+                }
+            }
+        }
+    },
+    "logout": {
+        "name": "logout",
+        "description": "ออกจากระบบและลบบัญชีของคุณจากฐานข้อมูล",
+        "options": {
+            "puuid": {
+                "display_name": "บัญชี",
+                "description": "เลือกบัญชีที่จะออกจากระบบ"
+            }
+        }
+    },
+    "match": {
+        "name": "match",
+        "description": "แสดงข้อมูลแมตช์ล่าสุด",
+        "options": {
+            "mode": {
+                "display_name": "โหมด",
+                "description": "เลือกโหมดที่ต้องการแสดงประวัติการเล่น",
+                "choices": {
+                    "unrated": "Unrated",
+                    "competitive": "Competitive",
+                    "swiftplay": "SwiftPlay",
+                    "deathmatch": "Deathmatch",
+                    "spikerush": "Spike Rush",
+                    "hurm": "Team Deathmatch",
+                    "ggteam": "Escalation",
+                    "onefa": "Replication",
+                    "snowball": "Snowball Fight",
+                    "custom": "Custom"
+                }
+            }
+        }
+    },
+    "mission": {
+        "name": "mission",
+        "description": "ดูความคืบหน้าของภารกิจรายวัน/รายสัปดาห์ของคุณ"
+    },
+    "nightmarket": {
+        "name": "nightmarket",
+        "description": "แสดงข้อเสนอเกี่ยวกับสกินในตลาดกลางคืน",
+        "options": {
+            "hide": {
+                "display_name": "ซ่อน",
+                "description": "ไม่แสดงทันทีเมื่อเปิด"
+            }
+        }
+    },
+    "patchnote": {
+        "name": "patchnote",
+        "description": "แสดงแพทช์โน้ตล่าสุด"
+    },
+    "point": {
+        "name": "point",
+        "description": "แสดงพอยท์ที่เหลืออยู่ของคุณ",
+        "options": {
+            "private": {
+                "display_name": "ส่วนตัว",
+                "description": "แสดงข้อความเฉพาะคุณเท่านั้น"
+            }
+        }
+    },
+    "store": {
+        "name": "store",
+        "description": "แสดงร้านค้าของเสนอรายวัน"
+    }
+}

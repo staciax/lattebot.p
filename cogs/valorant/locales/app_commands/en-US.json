@@ -1,0 +1,144 @@
+{
+    "agents": {
+        "name": "agents",
+        "description": "Agent Contracts"
+    },
+    "battlepass": {
+        "name": "battlepass",
+        "description": "View your battlepass current tier",
+        "options": {
+            "season": {
+                "display_name": "season",
+                "description": "Select season to view"
+            }
+        }
+    },
+    "bundles": {
+        "name": "bundles",
+        "description": "Show the current featured bundles"
+    },
+    "carrier": {
+        "name": "carrier",
+        "description": "Shows your carrier",
+        "options": {
+            "mode": {
+                "display_name": "mode",
+                "description": "The queue to show your carrier for",
+                "choices": {
+                    "unrated": "Unrated",
+                    "competitive": "Competitive",
+                    "swiftplay": "SwiftPlay",
+                    "deathmatch": "Deathmatch",
+                    "spikerush": "Spike Rush",
+                    "hurm": "Team Deathmatch",
+                    "ggteam": "Escalation",
+                    "onefa": "Replication",
+                    "snowball": "Snowball Fight",
+                    "custom": "Custom"
+                }
+            }
+        }
+    },
+    "collection": {
+        "name": "collection",
+        "description": "Shows your collection"
+    },
+    "eventpass": {
+        "name": "eventpass",
+        "description": "View your Eventpass current tier",
+        "options": {
+            "event": {
+                "display_name": "event",
+                "description": "Select event to view"
+            }
+        }
+    },
+    "login": {
+        "name": "login",
+        "description": "Log in with your Riot accounts",
+        "options": {
+            "username": {
+                "display_name": "username",
+                "description": "Input username"
+            },
+            "password": {
+                "display_name": "password",
+                "description": "Input password"
+            },
+            "region": {
+                "display_name": "region",
+                "description": "Select region",
+                "choices": {
+                    "ap": "Asia Pacific",
+                    "eu": "Europe",
+                    "na": "North America / Latin America / Brazil",
+                    "kr": "Korea"
+                }
+            }
+        }
+    },
+    "logout": {
+        "name": "logout",
+        "description": "Logout and Delete your accounts from database",
+        "options": {
+            "puuid": {
+                "display_name": "account",
+                "description": "Select account to logout"
+            }
+        }
+    },
+    "match": {
+        "name": "match",
+        "description": "Shows latest match details",
+        "options": {
+            "mode": {
+                "display_name": "mode",
+                "description": "The queue to show your latest match for",
+                "choices": {
+                    "unrated": "Unrated",
+                    "competitive": "Competitive",
+                    "swiftplay": "SwiftPlay",
+                    "deathmatch": "Deathmatch",
+                    "spikerush": "Spike Rush",
+                    "hurm": "Team Deathmatch",
+                    "ggteam": "Escalation",
+                    "onefa": "Replication",
+                    "snowball": "Snowball Fight",
+                    "custom": "Custom"
+                }
+            }
+        }
+    },
+    "mission": {
+        "name": "mission",
+        "description": "View your daily/weekly mission progress"
+    },
+    "nightmarket": {
+        "name": "nightmarket",
+        "description": "Show skin offers on the nightmarket",
+        "options": {
+            "hide": {
+                "display_name": "hide",
+                "description": "Hide the skin offers"
+            }
+        }
+    },
+    "patchnote": {
+        "name": "patchnote",
+        "description": "Patch notes"
+    },
+    "point": {
+        "name": "point",
+        "description": "View your remaining Valorant and Riot Points (VP/RP)",
+        "options": {
+            "private": {
+                "display_name": "private",
+                "description": "Show the message only to you"
+            }
+        }
+    },
+    "store": {
+        "name": "store",
+        "description": "Shows your daily store in your accounts"
+    }
+}
