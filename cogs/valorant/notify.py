@@ -31,6 +31,13 @@ class Notify(MixinMeta):
             if len(user.riot_accounts) <= 0:
                 continue
 
+            if user.notification_settings is not None:
+                if not user.notification_settings.is_enabled():
+                    continue
+
+                if user.notification_settings.is_empty():
+                    continue
+
             account_manager = AccountManager(user, self.bot)
             await account_manager.wait_until_ready()
 
