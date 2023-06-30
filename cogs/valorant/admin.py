@@ -18,8 +18,6 @@ from .abc import MixinMeta
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
-load_dotenv()
-
 
 _log = logging.getLogger(__name__)
 _ = I18n('valorant.admin', __file__, read_only=True)
@@ -28,6 +26,8 @@ SUPPORT_GUILD_ID = 1097859504906965042
 
 
 class Admin(MixinMeta):
+    load_dotenv()
+
     vcm = app_commands.Group(
         name=_T('valorant'),
         description=_T('Valorant client manager'),
@@ -102,32 +102,3 @@ class Admin(MixinMeta):
             _log.info('valorant client cache is cleared.')
 
         await interaction.followup.send('successfully cleared valorant client cache.', silent=True)
-
-    # @app_commands.command(name=_T('valorant_client'), description=_T('Run valorant client'))  # type: ignore
-    # @app_commands.choices(
-    #     do=[
-    #         app_commands.Choice(name='run', value='run'),
-    #         app_commands.Choice(name='close', value='close'),
-    #         app_commands.Choice(name='clear', value='clear'),
-    #         app_commands.Choice(name='cache_clear', value='cache_clear'),
-    #     ]
-    # )
-    # @app_commands.describe(do='Choose what to do with valorant client')
-    # @app_commands.guilds(SUPPORT_GUILD_ID)
-    # @app_commands.default_permissions(administrator=True)
-    # @owner_only()
-    # async def valorant_client_manager(
-    #     self,
-    #     interaction: discord.Interaction[LatteMaid],
-    #     do: app_commands.Choice[str],
-    # ) -> None:
-    #     await interaction.response.defer(ephemeral=True)
-
-    # @app_commands.command(name=_T('close_valorant'), description=_T('Close valorant client'))  # type: ignore
-    # @app_commands.guilds(SUPPORT_GUILD_ID)
-    # @app_commands.default_permissions(administrator=True)
-    # @owner_only()
-    # async def close_valorant(self, interaction: discord.Interaction[LatteMaid]) -> None:
-    #     await interaction.response.defer(ephemeral=True)
-    #     await self.bot.valorant_client.close()
-    #     await interaction.followup.send(_('close_valorant', interaction.locale))
