@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import discord
 from discord import Interaction, ui
-
-# from discord.app_commands import CheckFailure
 from discord.ext import commands
 
 from core.bot import LatteMaid
