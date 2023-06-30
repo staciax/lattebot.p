@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, AsyncIterator, Optional
 
-from sqlalchemy import ForeignKey, String, select
+from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -67,5 +67,7 @@ class BlackList(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, blacklist: Self) -> None:
-        await session.delete(blacklist)
+        stmt = delete(cls).where(cls.id == blacklist.id)
+        # await session.delete(blacklist)
+        await session.execute(stmt)
         await session.flush()
