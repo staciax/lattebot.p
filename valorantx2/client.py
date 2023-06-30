@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, overload
 
 import valorantx
 from async_lru import alru_cache
@@ -13,7 +13,7 @@ from valorantx.models.favorites import Favorites
 from valorantx.models.loadout import Loadout
 from valorantx.models.mmr import MatchmakingRating
 from valorantx.models.party import Party, PartyPlayer
-from valorantx.models.store import AgentStore, StoreFront, Wallet
+from valorantx.models.store import AgentStore as _AgentStore, StoreFront, Wallet
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
@@ -21,6 +21,7 @@ from .auth import RiotAuth
 from .http import HTTPClient
 from .models import PartialUser, PatchNoteScraper
 from .models.custom.match import MatchDetails
+from .models.custom.store import AgentStore
 from .valorant_api_client import Client as ValorantAPIClient
 
 if TYPE_CHECKING:
@@ -152,8 +153,6 @@ class Client(valorantx.Client):
             You are being rate limited.
         """
         data = await self.http.get_account(name, tagline)
-        if data is None or 'data' not in data:
-            return None
         return PartialUser(state=self.valorant_api.cache, data=data['data'])
 
     # store
@@ -182,11 +181,19 @@ class Client(valorantx.Client):
         data = await self.http.post_store_storefront_riot_auth(riot_auth)
         return StoreFront(self.valorant_api.cache, data)
 
+    @overload
+    async def fetch_agent_store(self, riot_auth: RiotAuth) -> AgentStore:
+        ...
+
+    @overload
+    async def fetch_agent_store(self) -> _AgentStore:
+        ...
+
     @_authorize_required
-    async def fetch_agent_store(self, riot_auth: Optional[RiotAuth] = None) -> AgentStore:
+    async def fetch_agent_store(self, riot_auth: Optional[RiotAuth] = None) -> Union[AgentStore, _AgentStore]:
         if riot_auth is None:
             return await super().fetch_agent_store()
-        data = await self.http.get_store_storefronts_agent()
+        data = await self.http.get_store_storefronts_agent_riot_auth(riot_auth=riot_auth)
         return AgentStore(self, data['AgentStore'])
 
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds

@@ -4,11 +4,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import discord
-
-# from async_lru import alru_cache
-from discord import app_commands, ui
+from discord import ui
 
 from core.i18n import I18n
+from core.ui.modal import Modal
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -18,12 +17,11 @@ if TYPE_CHECKING:
 _ = I18n('valorant.ui.modal', Path(__file__).resolve().parent, read_only=True)
 
 
-#  TODO: from base Modal
-class RiotMultiFactorModal(ui.Modal, title=_('Two-factor authentication')):
+class RiotMultiFactorModal(Modal, title=_('Two-factor authentication')):
     """Modal for riot login with multifactorial authentication"""
 
     def __init__(self, try_auth: RiotAuth, interaction: discord.Interaction[LatteMaid]) -> None:
-        super().__init__(timeout=120, custom_id='wait_for_modal')
+        super().__init__(interaction=interaction, timeout=180.0, custom_id=f'wait_for_modal_{try_auth.puuid}')
         self.try_auth: RiotAuth = try_auth
         self.code: Optional[str] = None
         self.original_interaction: discord.Interaction[LatteMaid] = interaction
@@ -40,7 +38,6 @@ class RiotMultiFactorModal(ui.Modal, title=_('Two-factor authentication')):
                 else _('Riot sent a code to ') + self.try_auth.multi_factor_email
             ),
         )
-
         self.add_item(self.two2fa)
 
     async def on_submit(self, interaction: discord.Interaction[LatteMaid]) -> None:
@@ -57,15 +54,3 @@ class RiotMultiFactorModal(ui.Modal, title=_('Two-factor authentication')):
         self.code = code
         self.interaction = interaction
         self.stop()
-
-    async def on_error(self, interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
-        command = interaction.command or self.original_interaction.command
-        if command is None:
-            interaction.client.dispatch('modal_error', interaction, error, self)
-            return
-        if command._has_any_error_handlers():
-            if isinstance(command, app_commands.Command):
-                await command._invoke_error_handlers(interaction, error)  # type: ignore
-
-        # Make sure we know what the error actually is
-        # traceback.print_tb(error.__traceback__)

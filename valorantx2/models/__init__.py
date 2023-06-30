@@ -23,6 +23,8 @@ from valorantx.models import (
     MatchHistory as MatchHistory,
     MatchmakingRating as MatchmakingRating,
     MatchPlayer as MatchPlayer,
+    Party as Party,
+    PartyPlayer as PartyPlayer,
     PatchNote as PatchNote,
     PatchNotes as PatchNotes,
     PlayerCard as PlayerCard,
@@ -79,7 +81,6 @@ from valorantx.models import (
     weapons as weapons,
 )
 from valorantx.models.contracts import RecruitmentProgressUpdate as RecruitmentProgressUpdate
-from valorantx.models.party import Party as Party, PartyPlayer as PartyPlayer
 
 from .account_henrikdev import *
 from .patchnote_scraper import *

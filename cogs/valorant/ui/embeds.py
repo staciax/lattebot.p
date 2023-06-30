@@ -43,9 +43,8 @@ from valorantx2.utils import locale_converter
 from . import utils
 
 if TYPE_CHECKING:
-    from valorantx2.models import (
+    from valorantx2.models import (  # AgentStore,
         Agent,
-        AgentStore,
         BonusStore,
         Contract,
         Loadout,
@@ -75,6 +74,10 @@ BuddyItem = Union[Buddy, BuddyLevel]
 
 _ = I18n('valorant.ui.embeds', Path(__file__).resolve().parent, read_only=True)
 _log = logging.getLogger(__name__)
+
+# ShooterGame/Content/RecruitmentData/Cable_RecruitmentData.uasset
+RECRUITMENT_END_DATE_TICKS = 638259156000000000
+RECRUITMENT_MILESTONE_THRESHOLD = 200_000
 
 
 def skin_e(
@@ -110,7 +113,7 @@ def store_featured_e(
 ) -> List[Embed]:
     embeds = [
         Embed(
-            description='Daily store for {user}\n'.format(user=chat.bold(riot_id))
+            description='Daily store // {user}\n'.format(user=chat.bold(riot_id))
             + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
         ).purple(),
     ]
@@ -159,7 +162,7 @@ def store_accessories_e(
 ) -> List[Embed]:
     embeds = [
         Embed(
-            description='Weekly Accessories for {user}\n'.format(user=chat.bold(riot_id))
+            description='Weekly Accessories // {user}\n'.format(user=chat.bold(riot_id))
             + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
         ).purple(),
     ]
@@ -169,25 +172,54 @@ def store_accessories_e(
     return embeds
 
 
-def store_agents_e(
-    agent_store: AgentStore,
+def store_agents_recruitment_e(
+    agent: Agent,
     recruitment_progress: Optional[RecruitmentProgressUpdate],
     riot_id: str,
     *,
     locale: DiscordLocale = DiscordLocale.american_english,
 ) -> Embed:
     valorant_locale = locale_converter.to_valorant(locale)
-    embed = Embed().purple()
-    embed.set_author(name='Agent Recruiment Event')
-    if agent_store.featured_agent is not None:
-        embed.title = (
-            f'UNLOCK {agent_store.featured_agent.display_name_localized(valorant_locale)}\n{KINGDOM_CREDIT_EMOJI} 8000'
-        )
-        embed.set_thumbnail(url=agent_store.featured_agent.display_icon)
-        embed.set_image(url=agent_store.featured_agent.full_portrait_v2)
+    embed = Embed(
+        colour=int(random.choice(agent.background_gradient_colors)[:-2], 16),
+        # description=chat.bold(f'{agent.display_name_localized(valorant_locale)}\n'),
+    ).purple()
+    embed.set_author(name=f'Agent Recruiment Event')
+    embed.set_thumbnail(url=agent.display_icon)
+    embed.set_image(url=agent.full_portrait_v2)
+    embed.set_footer(text=riot_id)
 
-    if recruitment_progress is not None:
-        embed.description = f'{recruitment_progress.progress_after}/{recruitment_progress.milestone_threshold} XP'
+    # unlock
+
+    if recruitment_progress is None:
+        unlock_value = '0 / {0:,} XP'.format(RECRUITMENT_MILESTONE_THRESHOLD)
+    else:
+        unlock_value = '{0.progress_after:,} / {0.milestone_threshold:,} XP'.format(recruitment_progress)
+
+    end_date = datetime.datetime(1, 1, 1) + datetime.timedelta(microseconds=RECRUITMENT_END_DATE_TICKS / 10)
+    if datetime.datetime.now() < end_date:
+        unlock_value += f'\nEnds {format_dt(end_date.replace(tzinfo=datetime.timezone.utc), style="R")}\n'
+
+    embed.add_field(
+        name='UNLOCK: ' + chat.bold(f'{agent.display_name_localized(valorant_locale)}\n'),
+        value=unlock_value,
+    )
+
+    # recruit
+
+    new_agent_note = (
+        chat.bold('NOTE: ')
+        + ' '
+        + chat.italics(
+            'For the first 28 days, new Agents can only be unlocked using VP or you can unlock them by earning XP during the Agent Recruitment Event.'
+        )
+    )
+
+    embed.add_field(
+        name='RECRUIT',
+        value=f'{VALORANT_POINT_EMOJI} 1,000\n{KINGDOM_CREDIT_EMOJI} 8,000\n{new_agent_note}',
+        inline=False,
+    )
 
     return embed
 
@@ -207,7 +239,7 @@ def skin_e_hide(skin: SkinLevelBonus) -> Embed:
 
 def nightmarket_front_e(bonus: BonusStore, riot_id: str, *, locale: DiscordLocale) -> Embed:
     embed = Embed(
-        description=f'NightMarket for {chat.bold(riot_id)}\n'
+        description=f'NightMarket // {chat.bold(riot_id)}\n'
         f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
     ).purple()
 
@@ -309,7 +341,6 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
     knd_display_name = 'Kingdom'
     if knd := wallet.get_kingdom_currency():
         knd_display_name = knd.display_name.from_locale(valorant_locale)
-        knd_display_name = knd.emoji + ' ' + knd_display_name.replace('Point', '')  # type: ignore
 
     embed.add_field(
         name=vp_display_name,
@@ -663,7 +694,7 @@ class GamePassEmbed:
 
         valorant_locale = locale_converter.to_valorant(locale)
 
-        embed = Embed(title=f'{self.title} for {self.riot_id}')
+        embed = Embed(title=f'{self.title} // {self.riot_id}')
         embed.set_footer(text=f'TIER {page + 1} | {self.contract.display_name_localized(valorant_locale)}')
         item = reward.get_item()
         if item is not None:
@@ -736,8 +767,7 @@ def match_history_select_e(
         embed.set_thumbnail(url=match_map.splash)
 
         if gamemode_name_override := getattr(match.match_info.game_mode, 'display_name_override', None):
-            if callable(gamemode_name_override):
-                gamemode_name_override(match.match_info.is_ranked())
+            gamemode_name_override(match.match_info.is_ranked())
 
         embed.set_footer(
             text=f'{game_mode.display_name.from_locale(locale)} • {match_map.display_name.from_locale(locale)}',
@@ -772,7 +802,7 @@ class MatchDetailsEmbed:
         result = utils.get_match_result_by_player(match, player)
 
         embed = Embed(
-            title='{mode} {map} - {won}:{lose}'.format(
+            title='{mode} {map} // {won}:{lose}'.format(
                 mode=gamemode.emoji if gamemode is not None else '',  # type: ignore
                 map=match_map.display_name.from_locale(locale) if match_map is not None else match.match_info.map_id,
                 won=left_team_score,
@@ -782,7 +812,7 @@ class MatchDetailsEmbed:
         )
 
         embed.set_author(
-            name='{author} - {page}'.format(
+            name='{author} // {page}'.format(
                 author=player.display_name,
                 page=(
                     gamemode.display_name.from_locale(locale) if gamemode is not None and not performance else 'Performance'

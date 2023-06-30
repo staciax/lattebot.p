@@ -44,9 +44,10 @@ from .ui.views import (
     GamePassView,
     MissionView,
     NightMarketView,
-    StoreFrontView,
     WalletView,
 )
+
+#     StoreFrontView,
 from .ui.views_7 import NewStoreFrontView
 
 if TYPE_CHECKING:

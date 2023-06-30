@@ -42,7 +42,7 @@ class HTTPClient(_HTTPClient):
         )
         return self.request(r, headers={})
 
-    # test
+    # store
 
     def post_store_storefront_riot_auth(self, riot_auth: RiotAuth) -> Response[store.StoreFront]:
         headers = self.get_headers(riot_auth)
@@ -50,10 +50,10 @@ class HTTPClient(_HTTPClient):
         r = Route('POST', '/store/v3/storefront/{puuid}', region, puuid=riot_auth.puuid)
         return self.request(r, headers=headers, json={})
 
-    def get_contracts_riot_auth(self, riot_auth: RiotAuth) -> Response[contracts.Contracts]:
+    def get_store_storefronts_agent_riot_auth(self, riot_auth: RiotAuth) -> Response[store.AgentStoreFront]:
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
-        r = Route('GET', '/contracts/v1/contracts/{puuid}', region, puuid=riot_auth.puuid)
+        r = Route('GET', '/store/v1/storefronts/agent', region, EndpointType.pd)
         return self.request(r, headers=headers)
 
     def get_store_wallet_riot_auth(self, riot_auth: RiotAuth) -> Response[store.Wallet]:
@@ -61,6 +61,16 @@ class HTTPClient(_HTTPClient):
         region = self.get_region(riot_auth)
         r = Route('GET', '/store/v1/wallet/{puuid}', region, puuid=riot_auth.puuid)
         return self.request(r, headers=headers)
+
+    # contracts
+
+    def get_contracts_riot_auth(self, riot_auth: RiotAuth) -> Response[contracts.Contracts]:
+        headers = self.get_headers(riot_auth)
+        region = self.get_region(riot_auth)
+        r = Route('GET', '/contracts/v1/contracts/{puuid}', region, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers)
+
+    # mmr
 
     def get_mmr_player_riot_auth(
         self,
@@ -73,28 +83,20 @@ class HTTPClient(_HTTPClient):
         region = self.get_region(riot_auth)
         return self.request(Route('GET', '/mmr/v1/players/{puuid}', region, puuid=puuid), headers=headers)
 
+    # loadout
+
     def get_personal_player_loadout_riot_auth(self, riot_auth: RiotAuth) -> Response[loadout.Loadout]:
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('GET', '/personalization/v2/players/{puuid}/playerloadout', region, puuid=riot_auth.puuid)
         return self.request(r, headers=headers)
 
+    # favorites
+
     def get_favorites_riot_auth(self, riot_auth: RiotAuth) -> Response[favorites.Favorites]:
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('GET', '/favorites/v1/players/{puuid}/favorites', region, puuid=riot_auth.puuid)
-        return self.request(r, headers=headers)
-
-    def get_party_player_test(self, *, riot_auth: RiotAuth) -> Response[party.Player]:
-        headers = self.get_headers(riot_auth)
-        region = self.get_region(riot_auth)
-        r = Route('GET', '/parties/v1/players/{puuid}', region, EndpointType.glz, puuid=riot_auth.puuid)
-        return self.request(r, headers=headers)
-
-    def get_party_test(self, party_id: str, *, riot_auth: RiotAuth) -> Response[party.Party]:
-        headers = self.get_headers(riot_auth)
-        region = self.get_region(riot_auth)
-        r = Route('GET', '/parties/v1/parties/{party_id}', region, EndpointType.glz, party_id=party_id)
         return self.request(r, headers=headers)
 
     # party
