@@ -89,7 +89,7 @@ class User(Base):
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls).options()
         stream = await session.stream_scalars(stmt.order_by(cls.id))
-        async for row in stream:
+        async for row in stream:  # .unique()
             yield row
 
     @classmethod
