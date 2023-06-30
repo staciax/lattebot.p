@@ -9,16 +9,16 @@ from core.database.models.blacklist import BlackList
 from core.database.models.riot_account import RiotAccount
 from core.database.models.user import User
 
+# fmt: off
 __all__ = (
     'DatabaseConnection',
-    'User',
-    'BlackList',
 )
+# fmt: on
 
 
 class DatabaseConnection(_DatabaseConnection):
-    def __init__(self, uri: str) -> None:
-        super().__init__(uri, echo=False)
+    def __init__(self, uri: str, echo: bool = False) -> None:
+        super().__init__(uri, echo=echo)
         self._log = logging.getLogger(__name__)
         self._users: Dict[int, User] = {}  # TODO: key to string
         self._blacklist: Dict[int, BlackList] = {}
