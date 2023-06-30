@@ -5,8 +5,8 @@ import contextlib
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+from core.database.models import User
 from core.i18n import I18n
-from core.utils.database.models import User
 from valorantx2.utils import MISSING
 
 from .auth import RiotAuth

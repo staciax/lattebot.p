@@ -10,12 +10,11 @@ import discord
 from discord import app_commands, ui
 from jishaku.paginators import PaginatorInterface, WrappedPaginator
 
-from core import errors
+from core import database, errors
 from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
 from core.ui.views import BaseView
-from core.utils import database
 
 if TYPE_CHECKING:
     from discord.ui import Item, Modal

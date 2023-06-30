@@ -14,10 +14,10 @@ import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import Cog
+from core.database.models import User
 from core.errors import UserInputError
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
-from core.utils.database.models import User
 from valorantx2.client import Client as ValorantClient
 from valorantx2.errors import RiotMultifactorError
 from valorantx2.utils import locale_converter
