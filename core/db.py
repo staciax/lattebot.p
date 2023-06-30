@@ -4,10 +4,10 @@ import asyncio
 import logging
 from typing import Any, AsyncIterator, Dict, List, Optional
 
-from core.utils.database.connection import DatabaseConnection as _DatabaseConnection
-from core.utils.database.models.blacklist import BlackList
-from core.utils.database.models.riot_account import RiotAccount
-from core.utils.database.models.user import User
+from core.database.connection import DatabaseConnection as _DatabaseConnection
+from core.database.models.blacklist import BlackList
+from core.database.models.riot_account import RiotAccount
+from core.database.models.user import User
 
 __all__ = (
     'DatabaseConnection',
