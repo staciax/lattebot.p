@@ -16,7 +16,7 @@ from discord.utils import MISSING
 from dotenv import load_dotenv
 
 import valorantx2 as valorantx
-from core.utils.enums import Emoji
+from core.enums import Emoji
 
 from .database import DatabaseConnection
 from .translator import Translator
