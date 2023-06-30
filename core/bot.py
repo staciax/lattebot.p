@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 import valorantx2 as valorantx
 from core.enums import Emoji
 
-from .database import DatabaseConnection
+from .db import DatabaseConnection
 from .translator import Translator
 from .tree import LatteMaidTree
 from .utils.colorthief import ColorThief
