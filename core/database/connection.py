@@ -120,7 +120,12 @@ class DatabaseConnection:
                 return False
             else:
                 await session.commit()
-                self._log.info(f'updated user with id {id!r} to locale {locale!r}')
+                log_msg = f'updated user with id {id!r}'
+                if locale is not None:
+                    log_msg += f' locale {locale!r}'
+                if main_account_id is not None:
+                    log_msg += f' main_account_id {main_account_id!r}'
+                self._log.info(log_msg)
                 return True
 
     async def delete_user(self, id: int, /) -> bool:
@@ -316,7 +321,7 @@ class DatabaseConnection:
                 self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
                 return True
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> bool:
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
@@ -327,11 +332,11 @@ class DatabaseConnection:
             except SQLAlchemyError as e:
                 self._log.error(f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}')
                 await session.rollback()
-                return False
+                return None
             else:
                 await session.commit()
                 self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
-                return True
+                return riot_account
 
     async def delete_all_riot_accounts(self, owner_id: int) -> bool:
         async with self._async_session() as session:
