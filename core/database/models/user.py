@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING, AsyncIterator, List, Optional
 
 from sqlalchemy import String, delete, select
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 
     from .app_command import AppCommand
     from .blacklist import BlackList
+    from .notification_settings import NotificationSettings
     from .riot_account import RiotAccount
 
 # fmt: off
@@ -28,18 +30,18 @@ class User(Base):
 
     id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True)
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
+    created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     blacklist: Mapped[Optional[BlackList]] = relationship(
         'BlackList',
-        back_populates='maybe_user',
-        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='joined',
+        viewonly=True,
     )
     app_command_uses: Mapped[List[AppCommand]] = relationship(
         'AppCommand',
         back_populates='author',
         order_by='AppCommand.used',
-        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='selectin',
+        viewonly=True,
     )
     riot_accounts: Mapped[List[RiotAccount]] = relationship(
         'RiotAccount',
@@ -48,6 +50,12 @@ class User(Base):
         lazy='selectin',
     )
     main_riot_account_id: Mapped[Optional[int]] = mapped_column('main_riot_account_id')
+    notification_settings: Mapped[Optional[NotificationSettings]] = relationship(
+        'NotificationSettings',
+        back_populates='owner',
+        lazy='joined',
+        viewonly=True,
+    )
 
     @hybrid_method
     def is_blacklisted(self) -> bool:

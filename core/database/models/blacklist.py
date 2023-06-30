@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING, AsyncIterator, Optional
 
 from sqlalchemy import ForeignKey, String, select
@@ -25,9 +26,10 @@ class BlackList(Base):
 
     id: Mapped[int] = mapped_column('id', ForeignKey('users.id'), nullable=False, unique=True, primary_key=True)
     reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
+    banned_at: Mapped[datetime.datetime] = mapped_column('banned_at', nullable=False, default=datetime.datetime.utcnow)
     maybe_user: Mapped[Optional[User]] = relationship(
         'User',
-        back_populates='blacklist',
+        # back_populates='blacklist',
         lazy='joined',
     )
 

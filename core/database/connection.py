@@ -11,6 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from .errors import (
     BlacklistAlreadyExists,
     BlacklistDoesNotExist,
+    NotificationAlreadyExists,
+    NotificationDoesNotExist,
+    NotificationSettingsAlreadyExists,
+    NotificationSettingsDoesNotExist,
     RiotAccountAlreadyExists,
     RiotAccountDoesNotExist,
     UserAlreadyExists,
@@ -19,6 +23,8 @@ from .errors import (
 from .models.app_command import AppCommand
 from .models.base import Base
 from .models.blacklist import BlackList
+from .models.notification import Notification
+from .models.notification_settings import NotificationSettings
 from .models.riot_account import RiotAccount
 from .models.user import User
 
@@ -338,4 +344,160 @@ class DatabaseConnection:
             else:
                 await session.commit()
                 self._log.info(f'deleted all riot accounts for user with id {owner_id!r}')
+                return True
+
+    # notification
+
+    async def create_notification(
+        self,
+        owner_id: int,
+        *,
+        item_id: str,
+        type: str,
+    ) -> Notification:
+        async with self._async_session() as session:
+            existing_notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            if existing_notification:
+                raise NotificationAlreadyExists(owner_id, item_id)
+            notification = await Notification.create(
+                session=session,
+                owner_id=owner_id,
+                item_id=item_id,
+                type=type,
+            )
+            await session.commit()
+            self._log.info(f'created notification for user with id {owner_id}')
+            return notification
+
+    async def get_notifications_by_owner_id(self, owner_id: int, /) -> AsyncIterator[Notification]:
+        async with self._async_session() as session:
+            async for notification in Notification.read_all_by_owner_id(session, owner_id):
+                yield notification
+
+    async def get_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Optional[Notification]:
+        async with self._async_session() as session:
+            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            return notification
+
+    async def get_notifications_by_owner_id_and_type(self, owner_id: int, /, *, type: str) -> AsyncIterator[Notification]:
+        async with self._async_session() as session:
+            async for notification in Notification.read_all_by_owner_id_and_type(session, owner_id, type):
+                yield notification
+
+    async def delete_notification(self, owner_id: int, /, *, item_id: str, type: str) -> bool:
+        async with self._async_session() as session:
+            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            if not notification:
+                raise NotificationDoesNotExist(owner_id, item_id)
+
+            try:
+                await Notification.delete(session, notification)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to delete notification for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted notification for user with id {owner_id!r}')
+                return True
+
+    async def delete_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> bool:
+        async with self._async_session() as session:
+            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            if not notification:
+                raise NotificationDoesNotExist(owner_id, item_id)
+
+            try:
+                await Notification.delete(session, notification)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to delete notification for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted notification for user with id {owner_id!r}')
+                return True
+
+    async def delete_all_notifications(self, owner_id: int, /) -> bool:
+        async with self._async_session() as session:
+            try:
+                await Notification.delete_all_by_owner_id(session, owner_id)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to delete all notifications for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted all notifications for user with id {owner_id!r}')
+                return True
+
+    # notification settings
+
+    async def create_notification_settings(
+        self,
+        owner_id: int,
+        *,
+        channel_id: int,
+        mode: int,
+        enabled: bool,
+    ) -> NotificationSettings:
+        async with self._async_session() as session:
+            existing_settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            if existing_settings:
+                raise NotificationSettingsAlreadyExists(owner_id)
+            settings = await NotificationSettings.create(
+                session=session,
+                owner_id=owner_id,
+                channel_id=channel_id,
+                mode=mode,
+                enabled=enabled,
+            )
+            await session.commit()
+            self._log.info(f'created notification settings for user with id {owner_id}')
+            return settings
+
+    async def get_notification_settings_by_owner_id(self, owner_id: int, /) -> Optional[NotificationSettings]:
+        async with self._async_session() as session:
+            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            return settings
+
+    async def update_notification_settings(
+        self,
+        owner_id: int,
+        *,
+        channel_id: Optional[int] = None,
+        mode: Optional[int] = None,
+        enabled: Optional[bool] = None,
+    ) -> Optional[NotificationSettings]:
+        async with self._async_session() as session:
+            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            if not settings:
+                raise NotificationSettingsDoesNotExist(owner_id)
+
+            try:
+                await settings.update(session, channel_id=channel_id, mode=mode, enabled=enabled)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to update notification settings for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return None
+            else:
+                await session.commit()
+                self._log.info(f'updated notification settings for user with id {owner_id!r}')
+                return settings
+
+    async def delete_notification_settings(self, owner_id: int, /) -> bool:
+        async with self._async_session() as session:
+            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            if not settings:
+                raise NotificationSettingsDoesNotExist(owner_id)
+
+            try:
+                await NotificationSettings.delete(session, settings)
+            except SQLAlchemyError as e:
+                self._log.error(f'failed to delete notification settings for user with id {owner_id!r}: {e!r}')
+                await session.rollback()
+                return False
+            else:
+                await session.commit()
+                self._log.info(f'deleted notification settings for user with id {owner_id!r}')
                 return True
