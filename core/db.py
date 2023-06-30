@@ -198,17 +198,19 @@ class DatabaseConnection(_DatabaseConnection):
 
         return riot_account
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> None:
-        await super().delete_riot_account(puuid, owner_id)
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
+        delete = await super().delete_riot_account(puuid, owner_id)
 
         # refresh user cache
         self.loop.create_task(self._refresh_user_by_id(owner_id))
+        return delete
 
-    async def delete_all_riot_accounts(self, owner_id: int) -> None:
-        await super().delete_all_riot_accounts(owner_id)
+    async def delete_all_riot_accounts(self, owner_id: int) -> bool:
+        delete = await super().delete_all_riot_accounts(owner_id)
 
         # refresh user cache
         self.loop.create_task(self._refresh_user_by_id(owner_id))
+        return delete
 
     async def update_riot_account(
         self,
