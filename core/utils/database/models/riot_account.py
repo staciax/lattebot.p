@@ -43,7 +43,6 @@ class RiotAccount(Base):
     scope: Mapped[str] = mapped_column('scope', String(length=64), nullable=False)
     token_type: Mapped[str] = mapped_column('token_type', String(length=64), nullable=False)
     expires_at: Mapped[int] = mapped_column('expires_at', nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     _id_token: Mapped[str] = mapped_column('id_token', String(length=4096), nullable=False)
     _access_token: Mapped[str] = mapped_column('access_token', String(length=4096), nullable=False)
     _entitlements_token: Mapped[str] = mapped_column('entitlements_token', String(length=4096), nullable=False)
@@ -52,6 +51,7 @@ class RiotAccount(Base):
     incognito: Mapped[bool] = mapped_column('incognito', nullable=False, default=False)
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
+    created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
 
     # NOTE: that there is no point in using a hybrid_property in this case, as your database can't encrypt and decrypt on the server side.
     @property
