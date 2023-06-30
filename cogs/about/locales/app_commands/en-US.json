@@ -1,0 +1,14 @@
+{
+    "about": {
+        "name": "about",
+        "description": "Shows bot information"
+    },
+    "invite": {
+        "name": "invite",
+        "description": "Invite bot"
+    },
+    "support": {
+        "name": "support",
+        "description": "Sends the support server of the bot."
+    }
+}

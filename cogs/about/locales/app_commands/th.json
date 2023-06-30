@@ -1,0 +1,14 @@
+{
+    "about": {
+        "name": "about",
+        "description": "เกี่ยวกับบอท"
+    },
+    "invite": {
+        "name": "invite",
+        "description": "เชิญบอทไปยังเซิฟเวอร์"
+    },
+    "support": {
+        "name": "support",
+        "description": "เซิฟเวอร์สอบถามปัญหาของบอท."
+    }
+}
