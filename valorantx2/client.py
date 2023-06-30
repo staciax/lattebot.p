@@ -124,7 +124,7 @@ class Client(valorantx.Client):
 
     # henrikdev
 
-    async def fetch_partial_user(self, name: str, tagline: str) -> Optional[PartialUser]:
+    async def fetch_partial_user(self, name: str, tagline: str) -> PartialUser:
         """|coro|
 
         Fetches a partial user from the given name and tagline.
@@ -138,8 +138,8 @@ class Client(valorantx.Client):
 
         Returns
         -------
-        Optional[:class:`PartialUser`]
-            The partial user or ``None`` if not found.
+        :class:`PartialUser`
+            The partial user that was fetched.
 
         Raises
         ------
