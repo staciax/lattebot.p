@@ -245,14 +245,27 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
         e = Embed(description=f'Successfully logged out all accounts')
 
+        user = await self.get_user(interaction.user.id, check_linked=False)
+        if user is None:
+            raise RiotAuthNotLinked('You do not have any accounts linked.')
+
         if puuid is None:
             await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
-            _log.info(f'{interaction.user} logged out all accounts')
         else:
             puuid, riot_id = puuid.split(';')
             e.description = f'Successfully logged out account {chat.bold(riot_id)}'
-            await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
-            _log.info(f'{interaction.user}({interaction.user.id}) logged out account {riot_id}({puuid})')
+            delete = await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
+
+            if delete is not None and delete.id == user.main_riot_account_id:
+                for riot_acc in sorted(user.riot_accounts, key=lambda x: x.created_at):
+                    if riot_acc.puuid == puuid:
+                        continue
+                    await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
+                    e.description += f'\n{chat.bold(riot_acc.game_name)} is now your main account.'  # type: ignore
+                    # _log.info(
+                    #     f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
+                    # )
+                    break
 
         await interaction.followup.send(embed=e, ephemeral=True)
 
