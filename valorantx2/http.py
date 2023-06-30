@@ -136,7 +136,7 @@ class HTTPClient(_HTTPClient):
 
     # utils
 
-    def get_headers(self, riot_auth: RiotAuth) -> Dict[str, str]:
+    def get_headers(self, riot_auth: RiotAuth, /) -> Dict[str, str]:
         headers = {
             'Authorization': 'Bearer %s' % riot_auth.access_token,
             'X-Riot-Entitlements-JWT': riot_auth.entitlements_token,
