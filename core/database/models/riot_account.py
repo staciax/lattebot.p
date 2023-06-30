@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, AsyncIterator, Optional
 from dotenv import load_dotenv
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..encryption import FernetEngine
@@ -52,6 +52,10 @@ class RiotAccount(Base):
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
+
+    @hybrid_property
+    def riot_id(self) -> str:
+        return f'{self.game_name}#{self.tag_line}'
 
     # NOTE: that there is no point in using a hybrid_property in this case, as your database can't encrypt and decrypt on the server side.
     @property
@@ -210,8 +214,9 @@ class RiotAccount(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, riot_account: Self) -> None:
-        await session.delete(riot_account)
-        # stmt = delete(cls).where(cls.id == riot_account.id)
+        # await session.delete(riot_account)
+        stmt = delete(cls).where(cls.id == riot_account.id)
+        await session.execute(stmt)
         await session.flush()
 
     @classmethod
