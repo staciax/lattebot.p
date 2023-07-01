@@ -38,8 +38,8 @@ class AppCommandError(LatteMaidError):
 class UserInputError(AppCommandError):
     """Base class for errors that involve errors regarding user input."""
 
-    def __init__(self, message: Optional[str] = None) -> None:
-        self.message: Optional[str] = message
+    def __init__(self, message: str) -> None:
+        self.message: str = message
         super().__init__(message)
 
 
@@ -108,11 +108,4 @@ class CheckFailure(LatteMaidError):
     ) -> None:
         self.command: Optional[Union[Command[Any, ..., Any], ContextMenu, AppCommand, AppCommandGroup]] = command
         self.author: Optional[Union[discord.User, discord.Member]] = author
-        message = f'You are not allowed to use this.'
-        fmt = 'Only {author} can use this command. If you want to use it, use {command}'
-        if isinstance(command, (Command, ContextMenu)) and author is not None:
-            message = fmt.format(author=author.mention, command=command.qualified_name)
-        elif isinstance(command, (AppCommand, AppCommandGroup)) and author is not None:
-            message = fmt.format(author=author.mention, command=command.mention)
-        self.message = message
-        super().__init__(message)
+        super().__init__('You are not allowed to use this.')
