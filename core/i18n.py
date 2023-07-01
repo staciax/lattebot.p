@@ -109,7 +109,7 @@ class I18n:
         self._data[locale] = {}
         await self.save()
 
-    def get_text(self, key: str, locale: Union[Locale, str]) -> Union[str, Optional[str]]:
+    def get_text(self, key: str, locale: Union[Locale, str], default: Any = None) -> Union[str, Any]:
         if isinstance(locale, Locale):
             locale = locale.value
 
@@ -117,7 +117,7 @@ class I18n:
         if locale_data is None:
             return None
 
-        return locale_data.get(key)
+        return locale_data.get(key, default)
 
     def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
         if locale is None:
