@@ -52,7 +52,9 @@ class HelpPageSource(ListPageSource):
         embed = self.default(self.cog)
         for command in entries:
             assert embed.description is not None
-            embed.description += f'\n{command.mention} - {command.description}'
+            embed.description += (
+                f'\n{command.mention} - {command.description_localizations.get(menu.locale, command.description)}'
+            )
 
         return embed
 
@@ -114,10 +116,10 @@ class HelpCommand(ViewAuthor, LattePages):
         assert self.bot.user is not None
         embed = Embed().secondary()
         embed.set_author(
-            name=f'{self.bot.user.global_name} - Help',
+            name=f'{self.bot.user.display_name} - Help',
             icon_url=self.bot.user.display_avatar,
         )
-        # embed.set_image(url=str(self.bot.cdn.help_banner))
+        embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
         return embed
 
     @ui.button(emoji='🏘️', style=discord.ButtonStyle.primary, disabled=True)
