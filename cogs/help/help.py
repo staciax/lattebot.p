@@ -95,12 +95,19 @@ class CogButton(ui.Button['HelpCommand']):
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
+
         self.view.source = HelpPageSource(self.cog, self.get_cog_app_commands(list(self.cog.walk_app_commands())))
+
         max_pages = self.view.source.get_max_pages()
         if max_pages is not None and max_pages > 1:
             self.view.add_nav_buttons()
         else:
             self.view.remove_nav_buttons()
+
+        self.disabled = True
+        for child in self.view.children:
+            if isinstance(child, CogButton) and child != self:
+                child.disabled = False
         self.view.home_button.disabled = False
         await self.view.show_page(interaction, 0)
 
@@ -122,6 +129,11 @@ class HelpCommand(ViewAuthor, LattePages):
         self.cooldown = commands.CooldownMapping.from_cooldown(5.0, 15.0, key)
         self.clear_items()
 
+    def _update_labels(self, page_number: int) -> None:
+        super()._update_labels(page_number)
+        self.go_to_next_page.label = 'next'
+        self.go_to_previous_page.label = 'previous'
+
     def front_help_command_embed(self) -> Embed:
         assert self.bot.user is not None
         embed = Embed().secondary()
@@ -136,6 +148,9 @@ class HelpCommand(ViewAuthor, LattePages):
     async def home_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         await interaction.response.defer()
         self.home_button.disabled = True
+        for child in self.children:
+            if isinstance(child, CogButton):
+                child.disabled = False
         self.remove_nav_buttons()
         if self.message is not None:
             await self.message.edit(embed=self.embed, view=self)
@@ -153,8 +168,10 @@ class HelpCommand(ViewAuthor, LattePages):
         self.remove_item(self.go_to_last_page)
 
     def add_cog_buttons(self) -> None:
-        for cog in sorted(self.bot.cogs.values(), key=lambda c: c.qualified_name):
-            if cog.qualified_name not in self.cogs or len(list(cog.walk_app_commands())) <= 0:
+        for cog in sorted(self.bot.cogs.values(), key=lambda c: c.qualified_name.lower()):
+            if cog.qualified_name.lower() not in self.cogs:
+                continue
+            if not len(list(cog.walk_app_commands())):
                 continue
             self.add_item(CogButton(cog=cog))
 
@@ -176,7 +193,7 @@ class Help(Cog, name='help'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @dynamic_cooldown(cooldown_short)
     async def help_command(self, interaction: discord.Interaction[LatteMaid]):
-        cogs = ['About', 'Valorant']
+        cogs = ['about', 'valorant']
         help_command = HelpCommand(interaction, cogs)
         await help_command.callback()
 
