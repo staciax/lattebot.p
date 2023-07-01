@@ -75,9 +75,7 @@ class Events(MixinMeta):
             self.valorant_client.version = version
             # TODO: make method to update version
             await self.valorant_client.valorant_api.cache.init()
-            RiotAuth.RIOT_CLIENT_USER_AGENT = (
-                f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
-            )
+            RiotAuth.RIOT_CLIENT_USER_AGENT = f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
             _log.info(f'valorant client version updated to {version}')
 
     @tasks.loop(time=times)
