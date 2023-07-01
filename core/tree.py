@@ -105,3 +105,32 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         commands = self._get_all_commands(guild=guild)
         for command in commands:
             await command.get_translated_payload(self.translator)
+
+    # wait for discord adding this feature
+    # fetch_commands with localizations
+
+    async def fetch_commands(self, *, guild: Optional[discord.abc.Snowflake] = None) -> List[app_commands.AppCommand]:
+        if self.client.application_id is None:
+            raise app_commands.errors.MissingApplicationID
+
+        application_id = self.client.application_id
+
+        from discord.http import Route
+
+        if guild is None:
+            commands = await self._http.request(
+                Route('GET', '/applications/{application_id}/commands', application_id=application_id),
+                params={'with_localizations': 1},
+            )
+        else:
+            commands = await self._http.request(
+                Route(
+                    'GET',
+                    '/applications/{application_id}/guilds/{guild_id}/commands',
+                    application_id=application_id,
+                    guild_id=guild.id,
+                ),
+                params={'with_localizations': 1},
+            )
+
+        return [app_commands.AppCommand(data=data, state=self._state) for data in commands]
