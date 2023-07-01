@@ -79,8 +79,8 @@ class ErrorHandler(MixinMeta):
             return
 
         locale = interaction.locale
-        # embed = Embed().error()
 
+        title = _('Valorant Error', locale)
         message = _('An error occurred while processing the command.', locale)
 
         # valorant auth required error
@@ -89,6 +89,7 @@ class ErrorHandler(MixinMeta):
 
         # auth error
         elif isinstance(error, valorantx.errors.RiotAuthError):
+            title = _('Riot Authentication Error', locale)
             if isinstance(error, valorantx.errors.RiotAuthenticationError):
                 message = _('Invalid username or password.', locale)
             elif isinstance(error, valorantx.errors.RiotAuthMultiFactorInvalidCode):
@@ -102,6 +103,7 @@ class ErrorHandler(MixinMeta):
 
         # valorant http error
         elif isinstance(error, valorantx.errors.InGameAPIError):
+            title = _('Valorant In Game API Error', locale)
             # valorant in game api error
             if isinstance(error, valorantx.errors.BadRequest):
                 message = _(f'Bad Request from Riot API\n{error.text}', locale)
@@ -115,6 +117,7 @@ class ErrorHandler(MixinMeta):
                 message = _(f'Internal Server Error from Riot API \n{error.text}', locale)
 
         elif isinstance(error, ValorantError):
+            title = _('Valorant Error', locale)
             if isinstance(error, RiotAuthAlreadyLinked):
                 message = _('You have already linked a Riot account.', locale)
             elif isinstance(error, RiotAuthNotLinked):
@@ -127,11 +130,5 @@ class ErrorHandler(MixinMeta):
             elif isinstance(error, RiotAuthUnknownError):
                 message = _('Unknown error occurred while processing the command.', locale)
 
-        # valorant api error
-        # elif isinstance(error, valorant_api.errors.ValorantAPIError):
-        #     ...
-
-        if interaction.response.is_done():
-            await interaction.followup.send(message, ephemeral=True)
-        else:
-            await interaction.response.send_message(message, ephemeral=True)
+        # interaction.extras['error'] = {'title': title, 'message': message}
+        self.bot.dispatch('app_command_error', interaction, error)
