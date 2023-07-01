@@ -114,7 +114,7 @@ class HelpCommand(ViewAuthor, LattePages):
         self.go_to_first_page.row = 1
         self.go_to_previous_page.row = 1
         self.go_to_next_page.row = 1
-        self.cooldown = commands.CooldownMapping.from_cooldown(10.0, 20.0, key)
+        self.cooldown = commands.CooldownMapping.from_cooldown(5.0, 15.0, key)
         self.clear_items()
 
     def front_help_command_embed(self) -> Embed:
