@@ -39,9 +39,9 @@ class HelpPageSource(ListPageSource):
     def default(cog: commands.Cog, locale: discord.Locale) -> Embed:
         emoji = getattr(cog, 'display_emoji', '')
 
-        description = ''
+        description = cog.description
         if i18n := getattr(cog, '__i18n__', None):
-            description = i18n.get_text('cog.description', locale, '')
+            description = i18n.get_text('cog.description', locale, description)
 
         embed = Embed(
             title=f'{emoji} {cog.qualified_name}',
