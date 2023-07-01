@@ -5,11 +5,10 @@ import itertools
 import platform
 from typing import TYPE_CHECKING, Optional
 
+# import pkg_resources
 import discord
 import psutil
 import pygit2
-
-# import pkg_resources
 from discord import Interaction, app_commands
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import bot_has_permissions
@@ -75,7 +74,9 @@ class About(Cog, name='about'):
             icon_url=self.bot.user.avatar,  # type: ignore
         )
         embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')  # type: ignore
-        # embed.set_image(url=str(self.cdn.invite_banner))
+        embed.set_image(
+            url='https://cdn.discordapp.com/attachments/1001848697316987009/1001858419990478909/invite_banner.png'
+        )
 
         view = BaseView().url_button('ɪɴᴠɪᴛᴇ ᴍᴇ', self.bot.get_invite_url(), emoji=str(self.bot.emoji.latte_icon))
 
@@ -94,7 +95,7 @@ class About(Cog, name='about'):
         channel_count = len(list(self.bot.get_all_channels()))
         member_count = sum(guild.member_count for guild in self.bot.guilds if guild.member_count is not None)
         total_commands = len(self.bot.tree.get_commands())
-        # dpy_version = pkg_resources.get_distribution("discord.py").version
+        # dpy_version = pkg_resources.get_distribution('discord.py').version
         memory_usage = self.process.memory_full_info().uss / 1024**2
         cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
 
@@ -121,7 +122,7 @@ class About(Cog, name='about'):
             value=f'{e.cursor} ʟɪɴᴇ ᴄᴏᴜɴᴛ: `{count_python(".")}`\n'
             + f'{e.latte_icon} ʟᴀᴛᴛᴇ_ᴍᴀɪᴅ: `{self.bot._version}`\n'
             + f'{e.python} ᴘʏᴛʜᴏɴ: `{platform.python_version()}`\n'
-            + f'{e.discord_py} ᴅɪꜱᴄᴏʀᴅ.ᴘʏ: `{discord.__version__}`',  # dpy_version[:dpy_version.find('+')]
+            + f'{e.discord_py} ᴅɪꜱᴄᴏʀᴅ.ᴘʏ: `{discord.__version__}`',
             inline=True,
         )
         embed.add_empty_field(inline=True)
@@ -161,12 +162,6 @@ class About(Cog, name='about'):
         view.url_button('ᴅᴇᴠᴇʟᴏᴘᴇʀ', f'https://discord.com/users/{self.bot.owner_id}', emoji=str(self.bot.emoji.stacia_dev))
 
         await interaction.response.send_message(embed=embed, view=view)
-
-    # @app_commands.command(name=_T("i18n"), description=_T("Shows the current language of the bot."))
-    # @app_commands.guild_only()
-    # @dynamic_cooldown(cooldown_5s)
-    # async def i18n(self, interaction: Interaction) -> None:
-    #     await interaction.response.send_message('')
 
     # @app_commands.command(name=_T('source'), description=_T('Shows the source code of the bot.'))
     # @app_commands.describe(command=_T('The command to show the source code of.'))
