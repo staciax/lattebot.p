@@ -36,11 +36,11 @@ class HelpPageSource(ListPageSource):
         )
 
     @staticmethod
-    def default(cog: commands.Cog) -> Embed:
+    def default(cog: commands.Cog, locale: discord.Locale) -> Embed:
         emoji = getattr(cog, 'display_emoji', '')
         embed = Embed(
             title=f'{emoji} {cog.qualified_name}',
-            description=cog.description + '\n' or _('No description provided') + '\n',
+            description=_(f'cogs.{cog.qualified_name.lower()}.description', locale) + '\n',
         )
         return embed
 
@@ -49,7 +49,7 @@ class HelpPageSource(ListPageSource):
         menu: HelpCommand,
         entries: List[Union[AppCommand, AppCommandGroup]],
     ) -> Embed:
-        embed = self.default(self.cog)
+        embed = self.default(self.cog, menu.locale)
         for command in entries:
             assert embed.description is not None
             embed.description += (
@@ -100,6 +100,10 @@ class CogButton(ui.Button['HelpCommand']):
         await self.view.show_page(interaction, 0)
 
 
+def key(interaction: discord.Interaction) -> Union[discord.User, discord.Member]:
+    return interaction.user
+
+
 class HelpCommand(ViewAuthor, LattePages):
     def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: List[str]) -> None:
         super().__init__(interaction, timeout=600.0)
@@ -110,6 +114,7 @@ class HelpCommand(ViewAuthor, LattePages):
         self.go_to_first_page.row = 1
         self.go_to_previous_page.row = 1
         self.go_to_next_page.row = 1
+        self.cooldown = commands.CooldownMapping.from_cooldown(10.0, 20.0, key)
         self.clear_items()
 
     def front_help_command_embed(self) -> Embed:
