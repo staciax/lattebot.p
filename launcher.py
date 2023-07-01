@@ -71,7 +71,7 @@ def setup_logging():
 
         log.setLevel(logging.INFO if args.prod else logging.DEBUG)
         handler = RotatingFileHandler(
-            filename='_lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
+            filename='lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
         )
         dt_fmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')

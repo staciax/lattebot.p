@@ -28,7 +28,7 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True)
+    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True, unique=True)
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     blacklist: Mapped[Optional[BlackList]] = relationship(
@@ -88,8 +88,8 @@ class User(Base):
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls).options()
-        stream = await session.stream_scalars(stmt.order_by(cls.id))
-        async for row in stream:  # .unique()
+        stream = await session.stream_scalars(stmt.order_by(cls.id).distinct())
+        async for row in stream.unique():
             yield row
 
     @classmethod

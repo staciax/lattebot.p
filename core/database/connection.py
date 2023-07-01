@@ -107,26 +107,26 @@ class DatabaseConnection:
         *,
         locale: Optional[str] = None,
         main_account_id: Optional[int] = None,
-    ) -> bool:
+    ) -> Optional[User]:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(id)
             try:
-                await user.update(session, locale, main_account_id)
+                new = await user.update(session, locale, main_account_id)
             except SQLAlchemyError as e:
                 await session.rollback()
                 self._log.error(f'failed to update user with id {id!r} due to {e!r}')
-                return False
+                return None
             else:
                 await session.commit()
                 log_msg = f'updated user with id {id!r}'
                 if locale is not None:
-                    log_msg += f' locale {locale!r}'
+                    log_msg += f' locale to {locale!r}'
                 if main_account_id is not None:
-                    log_msg += f' main_account_id {main_account_id!r}'
+                    log_msg += f' main_account_id to {main_account_id!r}'
                 self._log.info(log_msg)
-                return True
+                return new
 
     async def delete_user(self, id: int, /) -> bool:
         async with self._async_session() as session:

@@ -25,7 +25,7 @@ __all__ = (
 class NotificationSettings(Base):
     __tablename__ = 'notification_settings'
 
-    owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False, primary_key=True)
+    owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False, primary_key=True, unique=True)
     owner: Mapped[User] = relationship('User', lazy='joined')
     channel_id: Mapped[int] = mapped_column('channel_id', nullable=False, default=0)
     mode: Mapped[int] = mapped_column('mode', nullable=False, default=0)
