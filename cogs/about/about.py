@@ -67,9 +67,10 @@ class About(Cog, name='about'):
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     async def invite(self, interaction: Interaction[LatteMaid]) -> None:
+        locale = interaction.locale
         embed = MiadEmbed().secondary()
         embed.set_author(
-            name=f'{self.bot.user.name} ɪɴᴠɪᴛᴇ',  # type: ignore
+            name=f'{self.bot.user.name} ' + _('invite.bot', locale),  # type: ignore
             url=self.bot.get_invite_url(),
             icon_url=self.bot.user.avatar,  # type: ignore
         )
@@ -105,12 +106,12 @@ class About(Cog, name='about'):
             icon_url=self.bot.user.avatar if self.bot.user else None,
         )
         embed.add_field(
-            name='ʟᴀᴛᴇꜱᴛ ᴜᴘᴅᴀᴛᴇꜱ:',
+            name=_('latest.update', locale) + ':',
             value=get_latest_commits(limit=5),
             inline=False,
         )
         embed.add_field(
-            name='ꜱᴛᴀᴛꜱ:',
+            name=_('stats', locale) + ':',
             value=f'{e.latte_icon} ꜱᴇʀᴠᴇʀꜱ: `{guild_count}`\n'
             + f'{e.member_icon} ᴜꜱᴇʀꜱ: `{member_count}`\n'
             + f'{e.slash_command} ᴄᴏᴍᴍᴀɴᴅꜱ: `{total_commands}`\n'
@@ -118,7 +119,7 @@ class About(Cog, name='about'):
             inline=True,
         )
         embed.add_field(
-            name='ʙᴏᴛ ɪɴꜰᴏ:',
+            name=_('bot.info', locale) + ':',
             value=f'{e.cursor} ʟɪɴᴇ ᴄᴏᴜɴᴛ: `{count_python(".")}`\n'
             + f'{e.latte_icon} ʟᴀᴛᴛᴇ_ᴍᴀɪᴅ: `{self.bot._version}`\n'
             + f'{e.python} ᴘʏᴛʜᴏɴ: `{platform.python_version()}`\n'
@@ -127,39 +128,42 @@ class About(Cog, name='about'):
         )
         embed.add_empty_field(inline=True)
         embed.add_field(
-            name='ᴘʀᴏᴄᴇꜱꜱ:',
+            name=_('process', locale) + ':',
             value=f'ᴏꜱ: `{platform.system()}`\n'
             + f'ᴄᴘᴜ ᴜꜱᴀɢᴇ: `{cpu_usage:.2f}%`\n'
             + f'ᴍᴇᴍᴏʀʏ ᴜꜱᴀɢᴇ: `{round(memory_usage, 2)} MB`',
             inline=True,
         )
         embed.add_field(
-            name='ᴜᴘᴛɪᴍᴇ:',
+            name=_('uptime', locale) + ':',
             value=f'ʙᴏᴛ: <t:{round(self.bot.launch_time.timestamp())}:R>\n' + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
             inline=True,
         )
         embed.add_empty_field(inline=True)
         embed.set_footer(
-            text=f'ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ {core_dev}',
+            text=_('developed.by', locale) + f' {core_dev}',
             icon_url=core_dev.avatar,
         )
 
         view = BaseView()
-        view.url_button('ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', self.bot.support_invite_url, emoji=str(e.latte_icon))
-        view.url_button('ᴅᴇᴠᴇʟᴏᴘᴇʀ', f'https://discord.com/users/{core_dev.id}', emoji=str(e.stacia_dev))
+        view.url_button(_('support.server', locale), self.bot.support_invite_url, emoji=str(e.latte_icon))
+        view.url_button(_('developer', locale), f'https://discord.com/users/{core_dev.id}', emoji=str(e.stacia_dev))
 
         await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(name=_T('support'), description=_T('Sends the support server of the bot.'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     async def support(self, interaction: Interaction[LatteMaid]) -> None:
+        locale = interaction.locale
         embed = MiadEmbed()
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
         embed.set_thumbnail(url=self.bot.user.avatar)  # type: ignore
 
         view = BaseView()
-        view.url_button('ꜱᴜᴘᴘᴏʀᴛ ꜱᴇʀᴠᴇʀ', self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
-        view.url_button('ᴅᴇᴠᴇʟᴏᴘᴇʀ', f'https://discord.com/users/{self.bot.owner_id}', emoji=str(self.bot.emoji.stacia_dev))
+        view.url_button(_('support.server', locale), self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
+        view.url_button(
+            _('developer', locale), f'https://discord.com/users/{self.bot.owner_id}', emoji=str(self.bot.emoji.stacia_dev)
+        )
 
         await interaction.response.send_message(embed=embed, view=view)
 

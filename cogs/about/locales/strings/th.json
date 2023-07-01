@@ -1,1 +1,12 @@
-{}
+{
+    "about.me": "เกี่ยวกับบอท",
+    "latest.update": "อัพเดทล่าสุด",
+    "stats": "สถิติ",
+    "bot.info": "ข้อมูลบอท",
+    "process": "กระบวนการ",
+    "uptime": "ออนไลน์",
+    "developed.by": "พัฒนาโดย",
+    "support.server": "เซิฟเวอร์สนับสนุน",
+    "developer": "นักพัฒนา",
+    "invite.bot": "เชิญบอท"
+}
