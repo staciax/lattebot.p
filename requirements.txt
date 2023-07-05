@@ -13,7 +13,7 @@ discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
 jishaku @ git+https://github.com/Gorialis/jishaku.git
 
 # valorantx
-# valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.0
+valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.0
 
 # caching
 async_lru==2.0.*
@@ -33,5 +33,8 @@ lxml==4.9.*
 # other
 cchardet==2.1.7; python_version < '3.10'
 chardet; python_version >= '3.10'
+
+# http
+requests==2.31.*
 
 # ---
