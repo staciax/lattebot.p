@@ -44,23 +44,7 @@ class AccountManager:
 
     async def init(self) -> None:
         for riot_account in sorted(self.user.riot_accounts, key=lambda x: x.created_at):
-            # TODO: to_dict method
-            payload = {
-                'access_token': riot_account.access_token,
-                'id_token': riot_account.id_token,
-                'entitlements_token': riot_account.entitlements_token,
-                'token_type': riot_account.token_type,
-                'expires_at': riot_account.expires_at,
-                'user_id': riot_account.puuid,
-                'game_name': riot_account.game_name,
-                'tag_line': riot_account.tag_line,
-                'region': riot_account.region,
-                'ssid': riot_account.ssid,
-                'owner_id': riot_account.owner_id,
-                'notify': riot_account.notify,
-            }
-
-            riot_auth = RiotAuth.from_data(payload)
+            riot_auth = RiotAuth.from_database(riot_account)
 
             # for dispatching events to the bot when reauthorizing
             if self.bot is not MISSING:
@@ -69,6 +53,10 @@ class AccountManager:
             if time.time() > riot_auth.expires_at:
                 with contextlib.suppress(Exception):
                     await riot_auth.reauthorize()
+
+            # if not riot_auth.is_available():
+            #     _log.warning(f'failed to authorize {riot_auth.game_name}#{riot_auth.tag_line}({riot_auth.puuid})')
+            #     continue
 
             self._riot_accounts[riot_auth.puuid] = riot_auth
             if self.user.main_riot_account_id == riot_account.id:
@@ -79,8 +67,8 @@ class AccountManager:
     async def wait_until_ready(self) -> None:
         await self._ready.wait()
 
-    def get_riot_account(self, puuid: Optional[str]) -> Optional[RiotAuth]:
-        return self._riot_accounts.get(puuid)  # type: ignore
+    def get_riot_account(self, puuid: str, /) -> Optional[RiotAuth]:
+        return self._riot_accounts.get(puuid)
 
     @property
     def hide_display_name(self) -> bool:
