@@ -13,7 +13,7 @@ if DATABASE_URI_TEST is None:
 
 
 async def main():
-    db = DatabaseConnection(DATABASE_URI_TEST)
+    db = DatabaseConnection(DATABASE_URI_TEST, echo=True)
     await db.initialize(drop_table=True)
 
 
