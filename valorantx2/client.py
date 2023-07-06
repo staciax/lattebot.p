@@ -176,9 +176,7 @@ class Client(valorantx.Client):
 
     @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
     async def fetch_storefront(self, riot_auth: Optional[RiotAuth] = None) -> StoreFront:
-        if riot_auth is None:
-            return await super().fetch_storefront()
-        data = await self.http.post_store_storefront_riot_auth(riot_auth)
+        data = await self.http.post_store_storefront(riot_auth=riot_auth)
         return StoreFront(self.valorant_api.cache, data)
 
     @overload
@@ -191,34 +189,26 @@ class Client(valorantx.Client):
 
     @_authorize_required
     async def fetch_agent_store(self, riot_auth: Optional[RiotAuth] = None) -> Union[AgentStore, _AgentStore]:
-        if riot_auth is None:
-            return await super().fetch_agent_store()
-        data = await self.http.get_store_storefronts_agent_riot_auth(riot_auth=riot_auth)
+        data = await self.http.get_store_storefronts_agent(riot_auth=riot_auth)
         return AgentStore(self, data['AgentStore'])
 
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
-        if riot_auth is None:
-            return await super().fetch_wallet()
-        data = await self.http.get_store_wallet_riot_auth(riot_auth)
+        data = await self.http.get_store_wallet(riot_auth=riot_auth)
         return Wallet(state=self.valorant_api.cache, data=data)
 
     # contracts
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> Contracts:
-        if riot_auth is None:
-            return await super().fetch_contracts()
-        data = await self.http.get_contracts_riot_auth(riot_auth)
+        data = await self.http.get_contracts(riot_auth=riot_auth)
         return Contracts(client=self, data=data)
 
     # favorites
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     async def fetch_favorites(self, riot_auth: Optional[RiotAuth] = None) -> Favorites:
-        if riot_auth is None:
-            return await super().fetch_favorites()
-        data = await self.http.get_favorites_riot_auth(riot_auth)
+        data = await self.http.get_favorites(riot_auth=riot_auth)
         return Favorites(state=self.valorant_api.cache, data=data)
 
     # match
@@ -250,9 +240,7 @@ class Client(valorantx.Client):
         puuid: Optional[str] = None,
         riot_auth: Optional[RiotAuth] = None,
     ) -> MatchmakingRating:
-        if riot_auth is None:
-            return await super().fetch_mmr(puuid=puuid)
-        data = await self.http.get_mmr_player_riot_auth(puuid, riot_auth=riot_auth)
+        data = await self.http.get_mmr_player(puuid, riot_auth=riot_auth)
         return MatchmakingRating(self, data=data)
 
     # loudout
@@ -260,24 +248,18 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     @_authorize_required
     async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> Loadout:
-        if riot_auth is None:
-            return await super().fetch_loudout()
         favorites = await self.fetch_favorites(riot_auth)
-        data = await self.http.get_personal_player_loadout_riot_auth(riot_auth)
+        data = await self.http.get_personal_player_loadout(riot_auth=riot_auth)
         return Loadout(self, data, favorites=favorites)
 
     # party
 
     async def fetch_party_player(self, *, riot_auth: Optional[RiotAuth] = None) -> PartyPlayer:
-        if riot_auth is None:
-            return await super().fetch_party_player()
-        data = await self.http.get_party_player_riot_auth(riot_auth=riot_auth)
+        data = await self.http.get_party_player(riot_auth=riot_auth)
         return PartyPlayer(client=self, data=data)
 
     async def fetch_party(self, party_id: str, *, riot_auth: Optional[RiotAuth] = None) -> Party:
-        if riot_auth is None:
-            return await super().fetch_party(party_id)
-        data = await self.http.get_party_riot_auth(party_id, riot_auth=riot_auth)
+        data = await self.http.get_party(party_id=party_id, riot_auth=riot_auth)
         return Party(client=self, data=data)
 
     async def party_invite_by_riot_id(
@@ -288,7 +270,7 @@ class Client(valorantx.Client):
         *,
         riot_auth: RiotAuth,
     ) -> Party:
-        data = await self.http.post_party_invite_by_riot_id_riot_auth(
+        data = await self.http.post_party_invite_by_riot_id(
             party_id,
             game_name,
             tag_line,
