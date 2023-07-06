@@ -24,7 +24,7 @@ class PartialUser(ClientUser):
     _last_update: str
     _last_update_raw: int
 
-    def __init__(self, *, state: Cache, data: AccountPayload) -> None:
+    def __init__(self, state: Cache, data: AccountPayload) -> None:
         self._update(state, data)
 
     def __repr__(self) -> str:

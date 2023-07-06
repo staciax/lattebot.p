@@ -29,10 +29,6 @@ class HTTPClient(_HTTPClient):
         super().__init__(loop, region=Region.AsiaPacific)  # default is AsiaPacific
         self.riot_auth: RiotAuth = RiotAuth()  # set riot auth to default
 
-    async def re_build_headers(self) -> None:
-        self._puuid = self.riot_auth.puuid
-        await self.__build_headers()
-
     def get_account(self, game_name: str, tag_line: str) -> Response[account_henrikdev.Response]:
         r = Route.from_url(
             'GET',

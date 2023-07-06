@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union, overload
 
 import valorantx
 from async_lru import alru_cache
-from valorantx.client import _authorize_required, _loop
+from valorantx.client import _loop
 from valorantx.enums import Locale, QueueType
 from valorantx.models.contracts import Contracts
 from valorantx.models.favorites import Favorites
@@ -17,7 +17,6 @@ from valorantx.models.store import AgentStore as _AgentStore, StoreFront, Wallet
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
-from .auth import RiotAuth
 from .http import HTTPClient
 from .models import PartialUser, PatchNoteScraper
 from .models.custom.match import MatchDetails
@@ -32,6 +31,8 @@ if TYPE_CHECKING:
     from valorantx.models.version import Version
 
     from core.bot import LatteMaid
+
+    from .auth import RiotAuth
 
 
 # fmt: off
@@ -62,8 +63,6 @@ class Client(valorantx.Client):
         self.me: ClientUser = MISSING
         self._tasks: Dict[str, asyncio.Task[None]] = {}
         self.lock: asyncio.Lock = asyncio.Lock()
-
-    # auth related
 
     @property
     def version(self) -> Version:
@@ -153,15 +152,13 @@ class Client(valorantx.Client):
             You are being rate limited.
         """
         data = await self.http.get_account(name, tagline)
-        return PartialUser(state=self.valorant_api.cache, data=data['data'])
+        return PartialUser(self.valorant_api.cache, data['data'])
 
     # store
 
     @alru_cache(maxsize=1, ttl=60 * 60 * 12)  # ttl 12 hours
-    # @_authorize_required
     async def fetch_featured_bundle(self) -> List[FeaturedBundle]:
-        # cache re-use
-        # TODO: sort expire time
+        # TODO: sort remaining time
         for cache in self.fetch_storefront._LRUCacheWrapper__cache.values():  # type: ignore
             if not cache.fut.done():
                 continue
@@ -187,7 +184,6 @@ class Client(valorantx.Client):
     async def fetch_agent_store(self) -> _AgentStore:
         ...
 
-    @_authorize_required
     async def fetch_agent_store(self, riot_auth: Optional[RiotAuth] = None) -> Union[AgentStore, _AgentStore]:
         data = await self.http.get_store_storefronts_agent(riot_auth=riot_auth)
         return AgentStore(self, data['AgentStore'])
@@ -195,21 +191,21 @@ class Client(valorantx.Client):
     @alru_cache(maxsize=512, ttl=30)  # ttl 30 seconds
     async def fetch_wallet(self, riot_auth: Optional[RiotAuth] = None) -> Wallet:
         data = await self.http.get_store_wallet(riot_auth=riot_auth)
-        return Wallet(state=self.valorant_api.cache, data=data)
+        return Wallet(self.valorant_api.cache, data)
 
     # contracts
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     async def fetch_contracts(self, riot_auth: Optional[RiotAuth] = None) -> Contracts:
         data = await self.http.get_contracts(riot_auth=riot_auth)
-        return Contracts(client=self, data=data)
+        return Contracts(self, data)
 
     # favorites
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     async def fetch_favorites(self, riot_auth: Optional[RiotAuth] = None) -> Favorites:
         data = await self.http.get_favorites(riot_auth=riot_auth)
-        return Favorites(state=self.valorant_api.cache, data=data)
+        return Favorites(self.valorant_api.cache, data)
 
     # match
 
@@ -217,7 +213,7 @@ class Client(valorantx.Client):
     async def fetch_match_details(self, match_id: str) -> MatchDetails:
         # TODO: save data to file or cache?
         data = await self.http.get_match_details(match_id)
-        return MatchDetails(client=self, data=data)
+        return MatchDetails(self, data)
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
     async def fetch_match_history(
@@ -234,19 +230,17 @@ class Client(valorantx.Client):
     # mmr
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
     async def fetch_mmr(
         self,
         puuid: Optional[str] = None,
         riot_auth: Optional[RiotAuth] = None,
     ) -> MatchmakingRating:
         data = await self.http.get_mmr_player(puuid, riot_auth=riot_auth)
-        return MatchmakingRating(self, data=data)
+        return MatchmakingRating(self, data)
 
     # loudout
 
     @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
-    @_authorize_required
     async def fetch_loudout(self, riot_auth: Optional[RiotAuth] = None) -> Loadout:
         favorites = await self.fetch_favorites(riot_auth)
         data = await self.http.get_personal_player_loadout(riot_auth=riot_auth)
@@ -260,7 +254,7 @@ class Client(valorantx.Client):
 
     async def fetch_party(self, party_id: str, *, riot_auth: Optional[RiotAuth] = None) -> Party:
         data = await self.http.get_party(party_id=party_id, riot_auth=riot_auth)
-        return Party(client=self, data=data)
+        return Party(self, data)
 
     async def party_invite_by_riot_id(
         self,
@@ -276,7 +270,7 @@ class Client(valorantx.Client):
             tag_line,
             riot_auth=riot_auth,
         )
-        return Party(client=self, data=data)
+        return Party(self, data)
 
     # cache
 
@@ -285,7 +279,7 @@ class Client(valorantx.Client):
             if method_name.startswith('_'):
                 continue
             method = getattr(self, method_name)
-            if hasattr(method, 'cache_clear') and callable(method.cache_clear):
+            if hasattr(method, 'cache_clear'):
                 method.cache_clear()
 
         _log.info('cache cleared')
