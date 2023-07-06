@@ -2,8 +2,9 @@
 python-dotenv==1.0.*
 
 # database
-asyncpg==0.27.0
-sqlalchemy>=2.0.17
+sqlalchemy>=2.0.18
+asyncpg==0.27.* # production
+aiosqlite==0.19.* # development only (faster)
 
 # encryption
 cryptography>=41.0.*
@@ -13,13 +14,12 @@ discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
 jishaku @ git+https://github.com/Gorialis/jishaku.git
 
 # valorantx
-valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.0
+valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.0 # may be public soon?
 
 # caching
 async_lru==2.0.*
 
 # utils
-pillow==9.5.*
 psutil==5.9.*
 pygit2==1.12.*
 
@@ -29,10 +29,6 @@ uvloop; sys_platform != 'win32'
 # web scraping
 beautifulsoup4==4.12.*
 lxml==4.9.*
-
-# other
-cchardet==2.1.7; python_version < '3.10'
-chardet; python_version >= '3.10'
 
 # http
 requests==2.31.*
