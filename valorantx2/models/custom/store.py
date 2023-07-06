@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from valorantx.models.contracts import RecruitmentProgressUpdate
 from valorantx.models.store import AgentStore as _AgentStore
@@ -15,8 +15,8 @@ class AgentStore(_AgentStore):
         _client: Client
 
     async def fetch_featured_agent_recruitment_progress(
-        self, riot_auth: Optional[RiotAuth]
-    ) -> Optional[RecruitmentProgressUpdate]:
+        self, riot_auth: RiotAuth | None
+    ) -> RecruitmentProgressUpdate | None:
         contracts = await self._client.fetch_contracts(riot_auth=riot_auth)
         for processed_match in sorted(
             contracts.processed_matches,

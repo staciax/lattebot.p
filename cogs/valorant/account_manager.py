@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from core.database.models import User
 from core.i18n import I18n
@@ -21,8 +21,8 @@ class AccountManager:
     def __init__(self, user: User, bot: LatteMaid = MISSING) -> None:
         self.user: User = user
         self.bot: LatteMaid = bot
-        self.main_account: Optional[RiotAuth] = None
-        self._riot_accounts: Dict[str, RiotAuth] = {}
+        self.main_account: RiotAuth | None = None
+        self._riot_accounts: dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False
         self._ready: asyncio.Event = asyncio.Event()
         self.bot.loop.create_task(self.init())
@@ -67,7 +67,7 @@ class AccountManager:
     async def wait_until_ready(self) -> None:
         await self._ready.wait()
 
-    def get_riot_account(self, puuid: str, /) -> Optional[RiotAuth]:
+    def get_riot_account(self, puuid: str, /) -> RiotAuth | None:
         return self._riot_accounts.get(puuid)
 
     @property
@@ -75,7 +75,7 @@ class AccountManager:
         return self._hide_display_name
 
     @property
-    def riot_accounts(self) -> List[RiotAuth]:
+    def riot_accounts(self) -> list[RiotAuth]:
         return list(self._riot_accounts.values())
 
     def is_ready(self) -> bool:

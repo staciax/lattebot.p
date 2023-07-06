@@ -4,7 +4,7 @@ import contextlib
 import io
 import logging
 import traceback
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands, ui
@@ -33,7 +33,7 @@ _ = I18n('errors', __file__)
 
 async def application_error_handler(
     interaction: discord.Interaction[LatteMaid],
-    error: Union[Exception, app_commands.AppCommandError],
+    error: Exception | app_commands.AppCommandError,
 ) -> None:
     locale = interaction.locale
     title, message = get_error_handle_message(error, locale)  # interaction.extras.get('embed')
@@ -66,7 +66,7 @@ def guild_support_view(locale: discord.Locale) -> ui.View:
     return view
 
 
-def get_error_handle_message(error: Exception, locale: discord.Locale) -> Tuple[str, str]:
+def get_error_handle_message(error: Exception, locale: discord.Locale) -> tuple[str, str]:
     # item = interaction.extras.get('item')
     # modal = interaction.extras.get('modal')
 
@@ -140,7 +140,7 @@ def get_error_handle_message(error: Exception, locale: discord.Locale) -> Tuple[
 
 
 def get_error_handle_embed(
-    user: Optional[Union[discord.User, discord.Member]],
+    user: discord.User | discord.Member | None,
     title: str,
     message: str,
 ) -> MiadEmbed:
@@ -192,7 +192,7 @@ class Errors(Cog, name='errors'):
 
     @Cog.listener('on_app_command_error')
     async def on_app_command_error(
-        self, interaction: discord.Interaction[LatteMaid], error: Union[Exception, app_commands.errors.AppCommandError]
+        self, interaction: discord.Interaction[LatteMaid], error: Exception | app_commands.errors.AppCommandError
     ) -> None:
         await application_error_handler(interaction, error)
         _log_error(interaction, error)

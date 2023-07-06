@@ -60,7 +60,7 @@ class Event(commands.Cog, name='events'):
     async def on_latte_join(self, guild: discord.Guild) -> None:
         """Called when LatteMaid joins a guild"""
 
-        if guild.id in self.bot.db._blacklist:  # TODO: fix this
+        if self.bot.is_blocked(guild):
             _log.info(f'left guild {guild.id} because it is blacklisted')
             return await guild.leave()
 

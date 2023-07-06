@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from valorantx.valorant_api import Asset
 
@@ -18,20 +18,20 @@ __all__ = (
 
 
 class PatchNoteScraper:
-    def __init__(self, client: Client, title: Optional[str], banner_url: Optional[str]) -> None:
+    def __init__(self, client: Client, title: str | None, banner_url: str | None) -> None:
         self._client: Client = client
-        self._title: Optional[str] = title
-        self._banner_url: Optional[str] = banner_url
+        self._title: str | None = title
+        self._banner_url: str | None = banner_url
 
     def __repr__(self) -> str:
         return f'<PatchNote title={self.title!r}> banner={self.banner!r}>'
 
     @property
-    def title(self) -> Optional[str]:
+    def title(self) -> str | None:
         return self._title
 
     @property
-    def banner(self) -> Optional[Asset]:
+    def banner(self) -> Asset | None:
         if self._banner_url is None:
             return None
         return Asset._from_url(self._client.valorant_api.cache, self._banner_url)
@@ -48,14 +48,14 @@ class PatchNoteScraper:
         return soup
 
     @staticmethod
-    def __get_title(soup: BeautifulSoup) -> Optional[str]:
+    def __get_title(soup: BeautifulSoup) -> str | None:
         soup_title = soup.find('title')
         if soup_title is not None:
             return soup_title.text
         return None
 
     @staticmethod
-    def __get_banner_url(soup: BeautifulSoup) -> Optional[str]:
+    def __get_banner_url(soup: BeautifulSoup) -> str | None:
         banners = soup.find_all('img')
         for banner in banners:
             if 'src' in banner.attrs:

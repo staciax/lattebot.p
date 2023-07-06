@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from aiohttp import ClientResponse
 from valorantx.errors import (
@@ -47,6 +47,6 @@ class RiotAuthRateLimitedError(ValorantXError):
 class RiotAuthMultiFactorInvalidCode(RiotAuthError):
     """Raised when a user has reached the max limit of Riot accounts."""
 
-    def __init__(self, response: ClientResponse, message: Optional[Union[str, Dict[str, Any]]], mfa_code: str) -> None:
+    def __init__(self, response: ClientResponse, message: str | dict[str, Any] | None, mfa_code: str) -> None:
         self.mfa_code: str = mfa_code
         super().__init__(response, message)

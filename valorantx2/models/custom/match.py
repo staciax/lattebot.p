@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from valorantx.client import Client
 from valorantx.models.match import MatchDetails as ValorantXMatchDetails, RoundResult as ValorantXRoundResult
@@ -20,4 +20,4 @@ class RoundResult(ValorantXRoundResult):
 class MatchDetails(ValorantXMatchDetails):
     def __init__(self, client: Client, data: MatchDetailsPayload) -> None:
         super().__init__(client, data)
-        self.round_results: List[RoundResult] = [RoundResult(self, round_result) for round_result in data['roundResults']]
+        self.round_results: list[RoundResult] = [RoundResult(self, round_result) for round_result in data['roundResults']]

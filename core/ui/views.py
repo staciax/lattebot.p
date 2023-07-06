@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import Interaction, ui
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 _log = logging.getLogger(__name__)
 
 
-def key(interaction: discord.Interaction) -> Union[discord.User, discord.Member]:
+def key(interaction: discord.Interaction) -> discord.User | discord.Member:
     return interaction.user
 
 
@@ -36,7 +36,7 @@ class Button(ui.Button):
 class BaseView(ui.View):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._message: Optional[Union[Message, InteractionMessage]] = None
+        self._message: Message | InteractionMessage | None = None
 
     def reset_timeout(self) -> None:
         self.timeout = self.timeout
@@ -94,7 +94,7 @@ class BaseView(ui.View):
         """
         pass
 
-    def disable_all_items(self, *, exclusions: List[Union[ui.Button, ui.Select]] = []) -> Self:
+    def disable_all_items(self, *, exclusions: list[ui.Button | ui.Select] = []) -> Self:
         """
         Disables all items in the view.
 
@@ -108,7 +108,7 @@ class BaseView(ui.View):
                 child.disabled = True
         return self
 
-    def enable_all_items(self, *, exclusions: List[Union[ui.Button, ui.Select]] = []) -> Self:
+    def enable_all_items(self, *, exclusions: list[ui.Button | ui.Select] = []) -> Self:
         """
         Enables all items in the view.
 
@@ -122,7 +122,7 @@ class BaseView(ui.View):
                 child.disabled = False
         return self
 
-    def url_button(self, label: str, url: str, *, emoji: Optional[str] = None, disabled: bool = False) -> Self:
+    def url_button(self, label: str, url: str, *, emoji: str | None = None, disabled: bool = False) -> Self:
         """
         Adds a url button to the view.
 
@@ -171,11 +171,11 @@ class BaseView(ui.View):
         return self
 
     @property
-    def message(self) -> Optional[Union[Message, InteractionMessage]]:
+    def message(self) -> Message | InteractionMessage | None:
         return self._message
 
     @message.setter
-    def message(self, value: Optional[Union[Message, InteractionMessage]]) -> None:
+    def message(self, value: Message | InteractionMessage | None) -> None:
         self._message = value
 
 
@@ -186,7 +186,7 @@ class ViewAuthor(BaseView):
         self.interaction: Interaction[LatteMaid] = interaction
         self.locale: discord.Locale = interaction.locale
         self.bot: LatteMaid = interaction.client
-        self._author: Union[discord.Member, discord.User] = interaction.user
+        self._author: discord.Member | discord.User = interaction.user
         # self.is_command = interaction.command is not None
         self.cooldown = commands.CooldownMapping.from_cooldown(3.0, 10.0, key)
         self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
@@ -222,9 +222,9 @@ class ViewAuthor(BaseView):
         raise CheckFailure(app_command, self.author)
 
     @property
-    def author(self) -> Union[discord.Member, discord.User]:
+    def author(self) -> discord.Member | discord.User:
         return self._author
 
     @author.setter
-    def author(self, value: Union[discord.Member, discord.User]) -> None:
+    def author(self, value: discord.Member | discord.User) -> None:
         self._author = value

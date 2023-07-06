@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import discord
 from discord.app_commands import Command, ContextMenu
@@ -25,7 +25,7 @@ class Stats(commands.Cog, name='stats'):
     async def on_latte_app_command(
         self,
         interaction: discord.Interaction[LatteMaid],
-        app_command: Union[Command, ContextMenu],
+        app_command: Command | ContextMenu,
     ) -> None:
         if self.bot.is_debug_mode():
             return

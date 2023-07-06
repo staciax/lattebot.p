@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands, ui
@@ -24,11 +24,7 @@ _ = I18n('help', __file__)
 
 
 class HelpPageSource(ListPageSource):
-    def __init__(
-        self,
-        cog: commands.Cog,
-        source: List[Union[AppCommand, AppCommandGroup]],
-    ) -> None:
+    def __init__(self, cog: commands.Cog, source: list[AppCommand | AppCommandGroup]) -> None:
         self.cog = cog
         super().__init__(
             sorted(source, key=lambda c: c.qualified_name if isinstance(c, AppCommandGroup) else c.name),
@@ -52,7 +48,7 @@ class HelpPageSource(ListPageSource):
     def format_page(
         self,
         menu: HelpCommand,
-        entries: List[Union[AppCommand, AppCommandGroup]],
+        entries: list[AppCommand | AppCommandGroup],
     ) -> Embed:
         embed = self.default(self.cog, menu.locale)
         for command in entries:
@@ -72,10 +68,7 @@ class CogButton(ui.Button['HelpCommand']):
         if self.emoji is None:
             self.label = cog.qualified_name
 
-    def get_cog_app_commands(
-        self,
-        cog_app_commands: List[Union[Command, Group]],
-    ) -> List[Union[AppCommand, AppCommandGroup]]:
+    def get_cog_app_commands(self, cog_app_commands: list[Command | Group]) -> list[AppCommand | AppCommandGroup]:
         assert self.view is not None
         app_command_list = []
         for cog_app in cog_app_commands:
@@ -112,12 +105,12 @@ class CogButton(ui.Button['HelpCommand']):
         await self.view.show_page(interaction, 0)
 
 
-def key(interaction: discord.Interaction) -> Union[discord.User, discord.Member]:
+def key(interaction: discord.Interaction) -> discord.User | discord.Member:
     return interaction.user
 
 
 class HelpCommand(ViewAuthor, LattePages):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: List[str]) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: list[str]) -> None:
         super().__init__(interaction, timeout=600.0)
         self.cogs = cogs
         self.embed: Embed = self.front_help_command_embed()

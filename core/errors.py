@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 import discord
 from discord.app_commands.commands import Command, ContextMenu
@@ -103,9 +103,9 @@ class CheckFailure(LatteMaidError):
 
     def __init__(
         self,
-        command: Optional[Union[Command[Any, ..., Any], ContextMenu, AppCommand, AppCommandGroup]],
-        author: Optional[Union[discord.User, discord.Member]],
+        command: Command[Any, ..., Any] | ContextMenu | AppCommand | AppCommandGroup | None,
+        author: discord.User | discord.Member | None,
     ) -> None:
-        self.command: Optional[Union[Command[Any, ..., Any], ContextMenu, AppCommand, AppCommandGroup]] = command
-        self.author: Optional[Union[discord.User, discord.Member]] = author
+        self.command: Command[Any, ..., Any] | ContextMenu | AppCommand | AppCommandGroup | None = command
+        self.author: discord.User | discord.Member | None = author
         super().__init__('You are not allowed to use this.')

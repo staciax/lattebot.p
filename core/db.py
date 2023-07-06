@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator
 
 from core.database.connection import DatabaseConnection as _DatabaseConnection
 from core.database.models.blacklist import BlackList
@@ -21,8 +21,8 @@ class DatabaseConnection(_DatabaseConnection):
     def __init__(self, uri: str, echo: bool = False) -> None:
         super().__init__(uri, echo=echo)
         self._log = logging.getLogger(__name__)
-        self._users: Dict[int, User] = {}  # TODO: key to string
-        self._blacklist: Dict[int, BlackList] = {}
+        self._users: dict[int, User] = {}  # TODO: key to string
+        self._blacklist: dict[int, BlackList] = {}
         self.lock = asyncio.Lock()
         self.loop = asyncio.get_running_loop()
         self.loop.create_task(self.initialize())
@@ -49,11 +49,11 @@ class DatabaseConnection(_DatabaseConnection):
         self._log.info('reloaded cache')
 
     @property
-    def users(self) -> List[User]:
+    def users(self) -> list[User]:
         return list(self._users.values())
 
     @property
-    def blacklist(self) -> List[BlackList]:
+    def blacklist(self) -> list[BlackList]:
         return list(self._blacklist.values())
 
     # user
@@ -78,7 +78,7 @@ class DatabaseConnection(_DatabaseConnection):
             self._store_user(user)
         return user
 
-    async def get_user(self, id: int, /) -> Optional[User]:
+    async def get_user(self, id: int, /) -> User | None:
         if id in self._users:
             return self._users[id]
         user = await super().get_user(id)
@@ -103,8 +103,8 @@ class DatabaseConnection(_DatabaseConnection):
         id: int,
         /,
         *,
-        locale: Optional[str] = None,
-        main_account_id: Optional[int] = None,
+        locale: str | None = None,
+        main_account_id: int | None = None,
     ) -> None:
         await super().update_user(id, locale=locale, main_account_id=main_account_id)
         # refresh user cache
@@ -133,7 +133,7 @@ class DatabaseConnection(_DatabaseConnection):
             self._store_blacklist(blacklist)
         return blacklist
 
-    async def get_blacklist(self, id: int, /) -> Optional[BlackList]:
+    async def get_blacklist(self, id: int, /) -> BlackList | None:
         if id in self._blacklist:
             return self._blacklist[id]
         blacklist = await super().get_blacklist(id)
@@ -163,8 +163,8 @@ class DatabaseConnection(_DatabaseConnection):
         owner_id: int,
         *,
         puuid: str,
-        game_name: Optional[str],
-        tag_line: Optional[str],
+        game_name: str | None,
+        tag_line: str | None,
         region: str,
         scope: str,
         token_type: str,
@@ -198,7 +198,7 @@ class DatabaseConnection(_DatabaseConnection):
 
         return riot_account
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> RiotAccount | None:
         delete = await super().delete_riot_account(puuid, owner_id)
 
         # refresh user cache
@@ -217,18 +217,18 @@ class DatabaseConnection(_DatabaseConnection):
         puuid: str,
         owner_id: int,
         *,
-        game_name: Optional[str] = None,
-        tag_line: Optional[str] = None,
-        region: Optional[str] = None,
-        scope: Optional[str] = None,
-        token_type: Optional[str] = None,
-        expires_at: Optional[int] = None,
-        id_token: Optional[str] = None,
-        access_token: Optional[str] = None,
-        entitlements_token: Optional[str] = None,
-        ssid: Optional[str] = None,
-        incognito: Optional[bool] = None,
-        notify: Optional[bool] = None,
+        game_name: str | None = None,
+        tag_line: str | None = None,
+        region: str | None = None,
+        scope: str | None = None,
+        token_type: str | None = None,
+        expires_at: int | None = None,
+        id_token: str | None = None,
+        access_token: str | None = None,
+        entitlements_token: str | None = None,
+        ssid: str | None = None,
+        incognito: bool | None = None,
+        notify: bool | None = None,
     ) -> bool:
         update = await super().update_riot_account(
             puuid,
@@ -278,10 +278,10 @@ class DatabaseConnection(_DatabaseConnection):
         self,
         owner_id: int,
         *,
-        channel_id: Optional[int] = None,
-        mode: Optional[int] = None,
-        enabled: Optional[bool] = None,
-    ) -> Optional[NotificationSettings]:
+        channel_id: int | None = None,
+        mode: int | None = None,
+        enabled: bool | None = None,
+    ) -> NotificationSettings | None:
         notification_settings = await super().update_notification_settings(
             owner_id,
             channel_id=channel_id,

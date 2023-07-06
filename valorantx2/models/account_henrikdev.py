@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from valorantx import ClientUser
 
@@ -20,7 +20,7 @@ __all__ = (
 
 class PartialUser(ClientUser):
     account_level: int
-    player_card: Optional[PlayerCard]
+    player_card: PlayerCard | None
     _last_update: str
     _last_update_raw: int
 
@@ -36,17 +36,17 @@ class PartialUser(ClientUser):
         self._tagline = data['tag']
         self._region = data.get('region')
         self.account_level: int = data.get('account_level', 0)
-        self.player_card: Optional[PlayerCard] = state.get_player_card(data.get('card', {}).get('id'))
+        self.player_card: PlayerCard | None = state.get_player_card(data.get('card', {}).get('id'))
         self._last_update: str = data.get('last_update')
         self._last_update_raw: int = data.get('last_update_raw')
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """:class:`str`: The account's name."""
         return self._username
 
     @property
-    def tag(self) -> Optional[str]:
+    def tag(self) -> str | None:
         """:class:`str`: The account's tag."""
         return self._tagline
 

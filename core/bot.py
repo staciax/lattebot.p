@@ -6,7 +6,7 @@ import logging
 import os
 import random
 import traceback
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import discord
@@ -92,7 +92,7 @@ class LatteMaid(commands.AutoShardedBot):
         self._version: str = '1.0.0a'
 
         # assets
-        self.emoji: Type[Emoji] = Emoji
+        self.emoji: type[Emoji] = Emoji
 
         # support guild
         self.support_guild_id: int = 1097859504906965042
@@ -101,7 +101,7 @@ class LatteMaid(commands.AutoShardedBot):
         # maintenance
         self._is_maintenance: bool = False
         self.maintenance_message: str = 'Bot is in maintenance mode.'
-        self.maintenance_time: Optional[datetime.datetime] = None
+        self.maintenance_time: datetime.datetime | None = None
 
         # i18n
         self.translator: Translator = MISSING
@@ -110,10 +110,10 @@ class LatteMaid(commands.AutoShardedBot):
         self.session: aiohttp.ClientSession = MISSING
 
         # app commands
-        self._app_commands: Dict[str, Union[app_commands.AppCommand, app_commands.AppCommandGroup]] = {}
+        self._app_commands: dict[str, app_commands.AppCommand | app_commands.AppCommandGroup] = {}
 
         # colour
-        self.colors: Dict[str, List[discord.Colour]] = {}
+        self.colors: dict[str, list[discord.Colour]] = {}
 
         # encryption
         # self.encryption: Encryption = Encryption(config.cryptography)
@@ -130,13 +130,13 @@ class LatteMaid(commands.AutoShardedBot):
         return self.bot_app_info.owner
 
     @property
-    def support_guild(self) -> Optional[discord.Guild]:
+    def support_guild(self) -> discord.Guild | None:
         if self.support_guild_id is None:
             raise ValueError('Support guild ID is not set.')
         return self.get_guild(self.support_guild_id)
 
     @discord.utils.cached_property
-    def traceback_log(self) -> Optional[discord.TextChannel]:
+    def traceback_log(self) -> discord.TextChannel | None:
         return self.get_channel(1102897424235761724)  # type: ignore
 
     def is_maintenance(self) -> bool:
@@ -160,8 +160,9 @@ class LatteMaid(commands.AutoShardedBot):
     #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
     #     return hook
 
-    def is_blocked(self, user: Union[discord.abc.User, discord.Guild], /) -> bool:
-        return user.id in self.db._blacklist
+    def is_blocked(self, obj: discord.abc.User | discord.Guild | int, /) -> bool:
+        obj_id = obj if isinstance(obj, int) else obj.id
+        return obj_id in self.db._blacklist
 
     # bot extension setup
 
@@ -247,20 +248,20 @@ class LatteMaid(commands.AutoShardedBot):
     # cogs property
 
     @property
-    def about(self) -> Optional[AboutCog]:
+    def about(self) -> AboutCog | None:
         return self.get_cog('about')  # type: ignore
 
     @property
-    def jsk(self) -> Optional[JishakuCog]:
+    def jsk(self) -> JishakuCog | None:
         return self.get_cog('jishaku')  # type: ignore
 
     @property
-    def developer(self) -> Optional[DeveloperCog]:
+    def developer(self) -> DeveloperCog | None:
         return self.get_cog('developer')  # type: ignore
 
     @property
-    def valorant(self) -> Optional[ValorantCog]:
-        return self.get_cog('valorant')  # type: ignore
+    def valorant(self) -> ValorantCog | None:
+        return self.get_cog('valorant')
 
     # bot event
 
@@ -295,7 +296,7 @@ class LatteMaid(commands.AutoShardedBot):
 
     # app commands
 
-    async def fetch_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
+    async def fetch_app_commands(self) -> list[app_commands.AppCommand | app_commands.AppCommandGroup]:
         """Fetch all application commands."""
 
         app_cmds = await self.tree.fetch_commands()
@@ -314,28 +315,28 @@ class LatteMaid(commands.AutoShardedBot):
         self._app_commands = payload
         return list(self._app_commands.values())
 
-    def get_app_command(self, name: str) -> Optional[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
+    def get_app_command(self, name: str) -> app_commands.AppCommand | app_commands.AppCommandGroup | None:
         return self._app_commands.get(name)
 
-    def get_app_commands(self) -> List[Union[app_commands.AppCommand, app_commands.AppCommandGroup]]:
+    def get_app_commands(self) -> list[app_commands.AppCommand | app_commands.AppCommandGroup]:
         return sorted(list(self._app_commands.values()), key=lambda c: c.name)
 
     # colors # TODO: overload
 
-    def get_colors(self, id: str, /) -> Optional[List[discord.Colour]]:
+    def get_colors(self, id: str, /) -> list[discord.Colour] | None:
         """Returns the colors of the image."""
         if id in self.colors:
             return self.colors[id]
         return None
 
-    def get_color(self, id: str, /) -> Optional[discord.Colour]:
+    def get_color(self, id: str, /) -> discord.Colour | None:
         """Returns the color of the image."""
         colors = self.get_colors(id)
         if colors is not None:
             return random.choice(colors)
         return None
 
-    def store_colors(self, id: str, color: List[discord.Colour]) -> List[discord.Colour]:
+    def store_colors(self, id: str, color: list[discord.Colour]) -> list[discord.Colour]:
         """Sets the colors of the image."""
         self.colors[id] = color
         return color
@@ -343,9 +344,9 @@ class LatteMaid(commands.AutoShardedBot):
     async def get_or_fetch_colors(
         self,
         id: str,
-        image: Union[discord.Asset, str],
+        image: discord.Asset | str,
         palette: int = 0,
-    ) -> List[discord.Colour]:
+    ) -> list[discord.Colour]:
         """Returns the colors of the image."""
         colors = self.get_colors(id)
         if colors is not None:
@@ -364,7 +365,7 @@ class LatteMaid(commands.AutoShardedBot):
     async def get_or_fetch_color(
         self,
         id: str,
-        image: Union[discord.Asset, str],
+        image: discord.Asset | str,
         palette: int = 0,
     ) -> discord.Colour:
         """Returns a random color of the image."""
@@ -373,7 +374,7 @@ class LatteMaid(commands.AutoShardedBot):
 
     # bot methods
 
-    async def load_extension(self, name: str, *, package: Optional[str] = None) -> None:
+    async def load_extension(self, name: str, *, package: str | None = None) -> None:
         try:
             await super().load_extension(name, package=package)
         except Exception as e:
@@ -382,7 +383,7 @@ class LatteMaid(commands.AutoShardedBot):
         else:
             _log.info('loaded extension %s', name)
 
-    async def unload_extension(self, name: str, *, package: Optional[str] = None) -> None:
+    async def unload_extension(self, name: str, *, package: str | None = None) -> None:
         try:
             await super().unload_extension(name, package=package)
         except Exception as e:
@@ -391,7 +392,7 @@ class LatteMaid(commands.AutoShardedBot):
         else:
             _log.info('unloaded extension %s', name)
 
-    async def reload_extension(self, name: str, *, package: Optional[str] = None) -> None:
+    async def reload_extension(self, name: str, *, package: str | None = None) -> None:
         try:
             await super().reload_extension(name, package=package)
         except Exception as e:

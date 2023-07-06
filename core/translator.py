@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from discord import Locale
 from discord.app_commands.commands import Command, ContextMenu, Group, Parameter
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from .bot import LatteMaid
 
-    Localizable = Union[Command, Group, ContextMenu, Parameter, Choice]
+    Localizable = Command | Group | ContextMenu | Parameter | Choice
 
 T = TypeVar('T')
 CogT = TypeVar('CogT', bound=commands.Cog)
@@ -32,7 +32,7 @@ _log = logging.getLogger(__name__)
 class OptionLocalization(TypedDict, total=False):
     display_name: str
     description: str
-    choices: Dict[Union[str, int, float], str]
+    choices: dict[str | int | float, str]
 
 
 class ContextMenuLocalization(TypedDict):
@@ -41,7 +41,7 @@ class ContextMenuLocalization(TypedDict):
 
 class AppCommandLocalization(ContextMenuLocalization, total=False):
     description: str
-    options: Dict[str, OptionLocalization]
+    options: dict[str, OptionLocalization]
 
 
 def get_path(
@@ -54,7 +54,7 @@ def get_path(
 
 def get_parameter_payload(
     parameter: Parameter,
-    data: Optional[OptionLocalization] = None,
+    data: OptionLocalization | None = None,
     *,
     merge: bool = True,
 ) -> OptionLocalization:
@@ -85,8 +85,8 @@ def get_parameter_payload(
 
 
 def get_app_command_payload(
-    command: Union[Command, Group],
-    data: Optional[AppCommandLocalization] = None,
+    command: Command | Group,
+    data: AppCommandLocalization | None = None,
     *,
     merge: bool = True,
 ) -> AppCommandLocalization:
@@ -120,17 +120,17 @@ class Translator(_Translator):
     def __init__(
         self,
         bot: LatteMaid,
-        supported_locales: List[Locale] = [
+        supported_locales: list[Locale] = [
             Locale.american_english,  # default
             Locale.thai,
         ],
     ) -> None:
         super().__init__()
         self.bot: LatteMaid = bot
-        self.supported_locales: List[Locale] = supported_locales
-        self._app_command_localizations: Dict[str, Dict[str, AppCommandLocalization]] = {}
-        self._context_menu_localizations: Dict[str, Dict[str, ContextMenuLocalization]] = {}
-        self._other_localizations: Dict[str, Dict[str, Any]] = {}
+        self.supported_locales: list[Locale] = supported_locales
+        self._app_command_localizations: dict[str, dict[str, AppCommandLocalization]] = {}
+        self._context_menu_localizations: dict[str, dict[str, ContextMenuLocalization]] = {}
+        self._other_localizations: dict[str, dict[str, Any]] = {}
         self.lock: asyncio.Lock = asyncio.Lock()
 
     async def load(self) -> None:
@@ -139,7 +139,7 @@ class Translator(_Translator):
     async def unload(self) -> None:
         _log.info('unloaded')
 
-    async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> Optional[str]:
+    async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> str | None:
         localizable: Localizable = context.data
         tcl: TCL = context.location
 
@@ -161,7 +161,7 @@ class Translator(_Translator):
 
         keys = self._build_localize_keys(tcl, localizable)
 
-        def find_value_by_keys(data: Any, keys: List[str]) -> Optional[str]:
+        def find_value_by_keys(data: Any, keys: list[str]) -> str | None:
             _string = data.copy()
             for k in keys:
                 try:
@@ -189,7 +189,7 @@ class Translator(_Translator):
         self,
         tcl: TCL,
         localizable: Localizable,
-    ) -> List[str]:
+    ) -> list[str]:
         keys = []
 
         if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
@@ -222,7 +222,7 @@ class Translator(_Translator):
 
     # app commands
 
-    async def load_from_files(self, cog_name: str, cog_folder: Union[str, Path, os.PathLike]) -> None:
+    async def load_from_files(self, cog_name: str, cog_folder: str | Path | os.PathLike) -> None:
         for locale in self.supported_locales:
             locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
 
@@ -240,9 +240,9 @@ class Translator(_Translator):
 
     async def save_to_files(
         self,
-        app_commands: List[str],
+        app_commands: list[str],
         cog_name: str,
-        cog_folder: Union[str, Path, os.PathLike],
+        cog_folder: str | Path | os.PathLike,
     ) -> None:
         # for locale, localization in self._app_command_localizations.items():
 
@@ -264,15 +264,15 @@ class Translator(_Translator):
     def get_app_command_localization(
         self,
         locale: str,
-        command: Union[Command, Group],
-    ) -> Optional[AppCommandLocalization]:
+        command: Command | Group,
+    ) -> AppCommandLocalization | None:
         if locale not in self._app_command_localizations:
             return None
         if command.name not in self._app_command_localizations[locale]:
             return None
         return self._app_command_localizations[locale][command.qualified_name]
 
-    def add_app_command_localization(self, command: Union[Command, Group]) -> None:
+    def add_app_command_localization(self, command: Command | Group) -> None:
         for locale in self.supported_locales:
             if locale.value not in self._app_command_localizations:
                 self._app_command_localizations[locale.value] = {}
@@ -283,7 +283,7 @@ class Translator(_Translator):
                 merge=True,
             )
 
-    def remove_app_command_localization(self, command: Union[Command, Group]) -> None:
+    def remove_app_command_localization(self, command: Command | Group) -> None:
         for locale in self.supported_locales:
             self._app_command_localizations.setdefault(locale.value, {}).pop(command.qualified_name, None)
 

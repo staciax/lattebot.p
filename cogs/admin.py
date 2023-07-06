@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 import discord
 from discord import Interaction, app_commands
@@ -36,10 +36,10 @@ EXTENSIONS = Literal[
 
 
 class BlackListPageSource(ListPageSource):
-    def __init__(self, entries: List[BlackList], per_page: int = 12):
+    def __init__(self, entries: list[BlackList], per_page: int = 12):
         super().__init__(entries, per_page)
 
-    async def format_page(self, menu: BlackListPages, entries: List[BlackList]) -> MiadEmbed:
+    async def format_page(self, menu: BlackListPages, entries: list[BlackList]) -> MiadEmbed:
         pages = []
         for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
             pages.append(f'{index + 1}. {entry.id}')
@@ -137,7 +137,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.default_permissions(administrator=True)
     @app_commands.guild_only()
     @owner_only()
-    async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: Optional[str] = None) -> None:
+    async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
         if guild_id is not None and guild_id.isdigit():
@@ -183,12 +183,14 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def blacklist_add(self, interaction: Interaction[LatteMaid], object_id: str) -> None:
+        # NOTE: int maximum length is 18 but currently discord object id more than 18
+
         if not object_id.isdigit():
             raise AppCommandError(f'`{object_id}` is not a valid ID')
 
         await interaction.response.defer(ephemeral=True)
 
-        if object_id in self.bot.db._blacklist:  # TODO: fix this
+        if self.bot.is_blocked(int(object_id)):
             raise AppCommandError(f'`{object_id}` is already in blacklist')
 
         await self.bot.db.create_blacklist(int(object_id))

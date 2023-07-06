@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from valorantx.valorant_api.models import CompetitiveTier as ValorantAPICompetitiveTier, Tier as ValorantAPITier
 
@@ -29,4 +29,4 @@ class Tier(ValorantAPITier):
 class CompetitiveTier(ValorantAPICompetitiveTier):
     def __init__(self, state: Cache, data: CompetitiveTierPayload) -> None:
         super().__init__(state, data)
-        self._tiers: Dict[int, Tier] = {tier['tier']: Tier(state=self._state, data=tier) for tier in data['tiers']}
+        self._tiers: dict[int, Tier] = {tier['tier']: Tier(state=self._state, data=tier) for tier in data['tiers']}

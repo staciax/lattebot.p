@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterable
 
 from discord import Colour as DiscordColour, Embed as DiscordEmbed
 from discord.types.embed import EmbedType
@@ -22,23 +22,23 @@ class MiadEmbed(DiscordEmbed):
     def __init__(
         self,
         *,
-        colour: Optional[Union[int, DiscordColour]] = 0xFFFFFF,
-        color: Optional[Union[int, DiscordColour]] = 0xFFFFFF,
-        title: Optional[Any] = None,
+        colour: int | DiscordColour | None = 0xFFFFFF,
+        color: int | DiscordColour | None = 0xFFFFFF,
+        title: Any | None = None,
         type: EmbedType = 'rich',
-        url: Optional[Any] = None,
-        description: Optional[Any] = None,
-        timestamp: Optional[datetime.datetime] = None,
-        fields: Iterable[Tuple[str, str]] = (),
+        url: Any | None = None,
+        description: Any | None = None,
+        timestamp: datetime.datetime | None = None,
+        fields: Iterable[tuple[str, str]] = (),
         field_inline: bool = False,
-        custom_id: Optional[str] = None,
+        custom_id: str | None = None,
         **kwargs,
     ):
         super().__init__(
             color=color, colour=colour, title=title, type=type, description=description, url=url, timestamp=timestamp
         )
-        self.custom_id: Optional[str] = custom_id
-        self.extra: Dict[str, Any] = kwargs
+        self.custom_id: str | None = custom_id
+        self.extra: dict[str, Any] = kwargs
         for n, v in fields:
             self.add_field(name=n, value=v, inline=field_inline)
 

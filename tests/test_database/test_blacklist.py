@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from core.utils.database.errors import BlacklistAlreadyExists, BlacklistDoesNotExist
+from core.database.errors import BlacklistAlreadyExists, BlacklistDoesNotExist
 
 from .conftest import DatabaseSetup
 from .mock_data import BLACKLIST_DATA
 
 if TYPE_CHECKING:
-    from core.utils.database import DatabaseConnection
+    from core.database import DatabaseConnection
 
 
 class TestBlackList(DatabaseSetup):
@@ -27,12 +27,12 @@ class TestBlackList(DatabaseSetup):
 
     @pytest.mark.asyncio
     async def test_get_blacklist(self, db: DatabaseConnection) -> None:
-        blacklist = await db.get_blacklist(id=1)
+        blacklist = await db.get_blacklist(1)
         assert blacklist is not None
         assert blacklist.id == 1
         assert blacklist.reason == 'test'
 
-        blacklist = await db.get_blacklist(id=2)
+        blacklist = await db.get_blacklist(2)
         assert blacklist is not None
         assert blacklist.id == 2
         assert blacklist.reason == 'test'
@@ -45,21 +45,21 @@ class TestBlackList(DatabaseSetup):
 
     @pytest.mark.asyncio
     async def test_delete_blacklist(self, db: DatabaseConnection) -> None:
-        await db.delete_blacklist(id=1)
-        blacklist = await db.get_blacklist(id=1)
+        await db.delete_blacklist(1)
+        blacklist = await db.get_blacklist(1)
         assert blacklist is None
 
-        await db.delete_blacklist(id=2)
-        blacklist = await db.get_blacklist(id=2)
+        await db.delete_blacklist(2)
+        blacklist = await db.get_blacklist(2)
         assert blacklist is None
 
         try:
-            await db.delete_blacklist(id=0)
+            await db.delete_blacklist(0)
         except Exception as e:
             assert isinstance(e, BlacklistDoesNotExist)
 
     @pytest.mark.asyncio
     async def test_blacklist_is_deleted(self, db: DatabaseConnection) -> None:
-        assert await db.get_blacklist(id=1) is None
-        assert await db.get_blacklist(id=2) is None
-        assert await db.get_blacklist(id=3) is not None
+        assert await db.get_blacklist(1) is None
+        assert await db.get_blacklist(2) is None
+        assert await db.get_blacklist(3) is not None

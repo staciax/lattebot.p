@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -65,9 +65,7 @@ class RiotAuthUnknownError(ValorantError):
 
 class ErrorHandler(MixinMeta):
     async def cog_app_command_error(
-        self,
-        interaction: discord.Interaction[LatteMaid],
-        error: Union[app_commands.AppCommandError, Exception],
+        self, interaction: discord.Interaction[LatteMaid], error: app_commands.AppCommandError | Exception
     ) -> None:
         if isinstance(error, app_commands.errors.CommandInvokeError):
             error = error.original

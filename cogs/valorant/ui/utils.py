@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 from core.i18n import I18n
 from valorantx2.enums import GameModeURL
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 _ = I18n('valorant.ui.utils', Path(__file__).resolve().parent, read_only=True)
 
 
-def find_match_score_by_player(match: MatchDetails, player: MatchPlayer) -> Tuple[int, int]:
+def find_match_score_by_player(match: MatchDetails, player: MatchPlayer) -> tuple[int, int]:
     left_team_score = 0
     right_team_score = 0
 

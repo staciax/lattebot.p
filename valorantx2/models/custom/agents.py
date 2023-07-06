@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from valorantx.valorant_api.models import Ability as ValorantAPIAbility, Agent as ValorantAPIAgent
 
@@ -34,7 +34,9 @@ class Ability(ValorantAPIAbility):
 class Agent(ValorantAPIAgent):
     def __init__(self, *, state: Cache, data: AgentPayload) -> None:
         super().__init__(state=state, data=data)
-        self._abilities: List[Ability] = [Ability(state=state, data=ability, agent=self) for ability in data['abilities']]
+        self._abilities: dict[str, Ability] = {
+            ability['slot'].lower(): Ability(state=self._state, data=ability, agent=self) for ability in data['abilities']
+        }
 
     @property
     def emoji(self) -> str:

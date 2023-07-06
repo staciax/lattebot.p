@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from valorantx.enums import Region
 from valorantx.http import EndpointType, HTTPClient as _HTTPClient, Route
@@ -40,21 +40,21 @@ class HTTPClient(_HTTPClient):
 
     # store
 
-    def post_store_storefront(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[store.StoreFront]:
+    def post_store_storefront(self, *, riot_auth: RiotAuth | None = None) -> Response[store.StoreFront]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('POST', '/store/v3/storefront/{puuid}', region, puuid=riot_auth.puuid)
         return self.request(r, headers=headers, json={})
 
-    def get_store_storefronts_agent(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[store.AgentStoreFront]:
+    def get_store_storefronts_agent(self, *, riot_auth: RiotAuth | None = None) -> Response[store.AgentStoreFront]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('GET', '/store/v1/storefronts/agent', region, EndpointType.pd)
         return self.request(r, headers=headers)
 
-    def get_store_wallet(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[store.Wallet]:
+    def get_store_wallet(self, *, riot_auth: RiotAuth | None = None) -> Response[store.Wallet]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
@@ -63,7 +63,7 @@ class HTTPClient(_HTTPClient):
 
     # contracts
 
-    def get_contracts(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[contracts.Contracts]:
+    def get_contracts(self, *, riot_auth: RiotAuth | None = None) -> Response[contracts.Contracts]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
@@ -74,9 +74,9 @@ class HTTPClient(_HTTPClient):
 
     def get_mmr_player(
         self,
-        puuid: Optional[str] = None,
+        puuid: str | None = None,
         *,
-        riot_auth: Optional[RiotAuth] = None,
+        riot_auth: RiotAuth | None = None,
     ) -> Response[mmr.MatchmakingRating]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
@@ -86,7 +86,7 @@ class HTTPClient(_HTTPClient):
 
     # loadout
 
-    def get_personal_player_loadout(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[loadout.Loadout]:
+    def get_personal_player_loadout(self, *, riot_auth: RiotAuth | None = None) -> Response[loadout.Loadout]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
@@ -95,7 +95,7 @@ class HTTPClient(_HTTPClient):
 
     # favorites
 
-    def get_favorites(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[favorites.Favorites]:
+    def get_favorites(self, *, riot_auth: RiotAuth | None = None) -> Response[favorites.Favorites]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
@@ -104,14 +104,14 @@ class HTTPClient(_HTTPClient):
 
     # party
 
-    def get_party_player(self, *, riot_auth: Optional[RiotAuth] = None) -> Response[party.Player]:
+    def get_party_player(self, *, riot_auth: RiotAuth | None = None) -> Response[party.Player]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
         r = Route('GET', '/parties/v1/players/{puuid}', region, EndpointType.glz, puuid=riot_auth.puuid)
         return self.request(r, headers=headers)
 
-    def get_party(self, party_id: str, *, riot_auth: Optional[RiotAuth] = None) -> Response[party.Party]:
+    def get_party(self, party_id: str, *, riot_auth: RiotAuth | None = None) -> Response[party.Party]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
         region = self.get_region(riot_auth)
@@ -119,7 +119,7 @@ class HTTPClient(_HTTPClient):
         return self.request(r, headers=headers)
 
     def post_party_invite_by_riot_id(
-        self, party_id: str, name: str, tag: str, *, riot_auth: Optional[RiotAuth] = None
+        self, party_id: str, name: str, tag: str, *, riot_auth: RiotAuth | None = None
     ) -> Response[party.Party]:
         riot_auth = riot_auth or self.riot_auth
         headers = self.get_headers(riot_auth)
@@ -137,7 +137,7 @@ class HTTPClient(_HTTPClient):
 
     # utils
 
-    def get_headers(self, riot_auth: RiotAuth, /) -> Dict[str, str]:
+    def get_headers(self, riot_auth: RiotAuth, /) -> dict[str, str]:
         headers = {
             'Authorization': 'Bearer %s' % riot_auth.access_token,
             'X-Riot-Entitlements-JWT': riot_auth.entitlements_token,

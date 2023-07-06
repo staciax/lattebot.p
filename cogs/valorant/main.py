@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import logging
 from abc import ABC
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import aiohttp
 import discord
@@ -281,7 +281,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     @logout.autocomplete('puuid')
     async def logout_autocomplete(
         self, interaction: discord.Interaction[LatteMaid], current: str
-    ) -> List[app_commands.Choice[str]]:
+    ) -> list[app_commands.Choice[str]]:
         user = await self.bot.db.get_user(interaction.user.id)
         if user is None:
             return []

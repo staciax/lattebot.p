@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import yarl
 from valorantx.errors import RiotAuthenticationError
@@ -33,7 +33,7 @@ class RiotAuth(RiotAuth_):
 
     def __init__(self) -> None:
         super().__init__()
-        self.owner_id: Optional[int] = None
+        self.owner_id: int | None = None
         self.notify: bool = False
         self.bot: LatteMaid = MISSING
         self._is_available: bool = True

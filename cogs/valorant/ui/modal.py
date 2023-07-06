@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import discord
 from discord import ui
@@ -23,9 +23,9 @@ class RiotMultiFactorModal(Modal, title=_('Two-factor authentication')):
     def __init__(self, try_auth: RiotAuth, interaction: discord.Interaction[LatteMaid]) -> None:
         super().__init__(interaction=interaction, timeout=180.0, custom_id=f'wait_for_modal_{try_auth.puuid}')
         self.try_auth: RiotAuth = try_auth
-        self.code: Optional[str] = None
+        self.code: str | None = None
         self.original_interaction: discord.Interaction[LatteMaid] = interaction
-        self.interaction: Optional[discord.Interaction[LatteMaid]] = None
+        self.interaction: discord.Interaction[LatteMaid] | None = None
         self.two2fa = ui.TextInput(
             label=_('Input 2FA Code'),
             max_length=6,

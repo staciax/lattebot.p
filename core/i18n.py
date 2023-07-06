@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from discord import Locale
 
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from discord.ext import commands
 
     CogT = TypeVar('CogT', bound=commands.Cog)
+
+T = TypeVar('T')
 
 _log = logging.getLogger(__name__)
 
@@ -30,8 +32,8 @@ class I18n:
     def __init__(
         self,
         name: str,
-        file_location: Union[str, Path, os.PathLike],
-        supported_locales: List[Locale] = [
+        file_location: str | Path | os.PathLike,
+        supported_locales: list[Locale] = [
             Locale.american_english,
             Locale.thai,
         ],
@@ -41,11 +43,11 @@ class I18n:
     ) -> None:
         self.cog_folder: Path = Path(file_location).resolve().parent
         self.cog_name: str = name
-        self.supported_locales: List[Locale] = supported_locales
+        self.supported_locales: list[Locale] = supported_locales
         self.read_only: bool = read_only
         self.loop = asyncio.get_event_loop()
         self.lock = asyncio.Lock()
-        self._data: Dict[str, Dict[str, Dict[str, str]]] = {}
+        self._data: dict[str, dict[str, dict[str, str]]] = {}
         if load_later:
             self.loop.create_task(self.load())
         else:
@@ -93,7 +95,7 @@ class I18n:
             json.dump(data.copy(), file, indent=4, ensure_ascii=False)
             _log.debug(f'saved i18n for {self.cog_name} in {locale}')
 
-    def get_locale(self, locale: str, default: Any = None) -> Optional[Union[Dict[str, str], Any]]:
+    def get_locale(self, locale: str, default: Any = None) -> dict[str, str] | Any | None:
         """Retrieves a locale entry."""
         return self._data.get(locale, default)
 
@@ -109,7 +111,15 @@ class I18n:
         self._data[locale] = {}
         await self.save()
 
-    def get_text(self, key: str, locale: Union[Locale, str], default: Any = None) -> Union[str, Any]:
+    @overload
+    def get_text(self, key: str, locale: Locale | str) -> str | None:
+        ...
+
+    @overload
+    def get_text(self, key: str, locale: Locale | str, default: T) -> str | T | None:
+        ...
+
+    def get_text(self, key: str, locale: Locale | str, default: T | None = None) -> str | T | None:
         if isinstance(locale, Locale):
             locale = locale.value
 
@@ -119,7 +129,7 @@ class I18n:
 
         return locale_data.get(key, default)
 
-    def __call__(self, key: str, locale: Optional[Union[Locale, str]] = None) -> str:
+    def __call__(self, key: str, locale: Locale | str | None = None) -> str:
         if locale is None:
             locale = Locale.american_english
 
@@ -138,7 +148,7 @@ class I18n:
         _log.debug(f'returning {text!r} for {key!r} in {locale}')
         return text
 
-    def __contains__(self, locale: Union[Locale, str]) -> bool:
+    def __contains__(self, locale: Locale | str) -> bool:
         if isinstance(locale, Locale):
             locale = locale.value
         return locale in self._data

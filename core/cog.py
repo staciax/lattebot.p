@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Dict, Iterable, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Iterable, TypeVar, Union
 
 import discord
 from discord import Interaction, app_commands
@@ -31,11 +31,11 @@ ContextMenuCallback = Union[
 # https://github.com/InterStella0/stella_bot/blob/bf5f5632bcd88670df90be67b888c282c6e83d99/utils/cog.py#L28
 def context_menu(
     *,
-    name: Union[str, locale_str] = MISSING,
+    name: str | locale_str = MISSING,
     nsfw: bool = False,
-    guilds: List[discord.abc.Snowflake] = MISSING,
+    guilds: list[discord.abc.Snowflake] = MISSING,
     auto_locale_strings: bool = True,
-    extras: Dict[Any, Any] = MISSING,
+    extras: dict[Any, Any] = MISSING,
 ) -> Callable[[ContextMenuCallback], ContextMenu]:
     def inner(func: Any) -> Any:
         nonlocal name
@@ -54,14 +54,14 @@ def context_menu(
 
 
 class Cog(commands.Cog):
-    __cog_context_menus__: List[app_commands.ContextMenu]
+    __cog_context_menus__: list[app_commands.ContextMenu]
 
-    def _get_file_path(self) -> Optional[str]:
+    def _get_file_path(self) -> str | None:
         module = sys.modules[self.__module__]
         file_path = module.__file__
         return file_path
 
-    def get_context_menus(self) -> List[app_commands.ContextMenu]:
+    def get_context_menus(self) -> list[app_commands.ContextMenu]:
         return [menu for menu in self.__cog_context_menus__ if isinstance(menu, app_commands.ContextMenu)]
 
     async def cog_app_command_error(
@@ -75,8 +75,8 @@ class Cog(commands.Cog):
         self,
         bot: LatteMaid,
         override: bool,
-        guild: Optional[discord.abc.Snowflake],
-        guilds: List[discord.abc.Snowflake],
+        guild: discord.abc.Snowflake | None,
+        guilds: list[discord.abc.Snowflake],
     ) -> Self:
         await super()._inject(bot, override, guild, guilds)
 
@@ -113,7 +113,7 @@ class Cog(commands.Cog):
 
         return self
 
-    async def _eject(self, bot: LatteMaid, guild_ids: Optional[Iterable[int]]) -> None:
+    async def _eject(self, bot: LatteMaid, guild_ids: Iterable[int] | None) -> None:
         await super()._eject(bot, guild_ids)
 
         # context menus in cog

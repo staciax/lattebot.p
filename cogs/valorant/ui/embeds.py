@@ -4,7 +4,7 @@ import datetime
 import logging
 import random
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 from discord import Locale as DiscordLocale
 from discord.utils import format_dt
@@ -66,11 +66,11 @@ __all__ = (
     'wallet_e',
 )
 
-BundleItem = Union[Skin, Buddy, Spray, PlayerCard, PlayerTitle]
-FeaturedBundleItem = Union[SkinLevelBundle, BuddyLevelBundle, SprayBundle, PlayerCardBundle, PlayerTitleBundle]
-SkinItem = Union[Skin, SkinLevel, SkinChroma]
-SprayItem = Union[Spray, SprayLevel]
-BuddyItem = Union[Buddy, BuddyLevel]
+BundleItem = Skin | Buddy | Spray | PlayerCard | PlayerTitle
+FeaturedBundleItem = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
+SkinItem = Skin | SkinLevel | SkinChroma
+SprayItem = Spray | SprayLevel
+BuddyItem = Buddy | BuddyLevel
 
 _ = I18n('valorant.ui.embeds', Path(__file__).resolve().parent, read_only=True)
 _log = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ RECRUITMENT_MILESTONE_THRESHOLD = 200_000
 
 
 def skin_e(
-    skin: Union[Skin, SkinLevel, SkinChroma, SkinLevelOffer, SkinLevelBonus],
+    skin: Skin | SkinLevel | SkinChroma | SkinLevelOffer | SkinLevelBonus,
     *,
     locale: DiscordLocale,
 ) -> Embed:
@@ -110,7 +110,7 @@ def skin_e(
 
 def store_featured_e(
     panel: SkinsPanelLayout, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
-) -> List[Embed]:
+) -> list[Embed]:
     embeds = [
         Embed(
             description='Daily store // {user}\n'.format(user=chat.bold(riot_id))
@@ -159,7 +159,7 @@ def accessory_e(store_offer: AccessoryStoreOffer, *, locale: DiscordLocale = Dis
 
 def store_accessories_e(
     store: AccessoryStore, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
-) -> List[Embed]:
+) -> list[Embed]:
     embeds = [
         Embed(
             description='Weekly Accessories // {user}\n'.format(user=chat.bold(riot_id))
@@ -174,7 +174,7 @@ def store_accessories_e(
 
 def store_agents_recruitment_e(
     agent: Agent,
-    recruitment_progress: Optional[RecruitmentProgressUpdate],
+    recruitment_progress: RecruitmentProgressUpdate | None,
     riot_id: str,
     *,
     locale: DiscordLocale = DiscordLocale.american_english,
@@ -266,7 +266,7 @@ def select_featured_bundle_e(bundle: valorantx.FeaturedBundle, *, locale: Discor
     return embed
 
 
-def select_featured_bundles_e(bundles: List[valorantx.FeaturedBundle], *, locale: DiscordLocale) -> List[Embed]:
+def select_featured_bundles_e(bundles: list[valorantx.FeaturedBundle], *, locale: DiscordLocale) -> list[Embed]:
     embeds = []
     for bundle in bundles:
         if bundle is None:
@@ -276,7 +276,7 @@ def select_featured_bundles_e(bundles: List[valorantx.FeaturedBundle], *, locale
 
 
 def bundle_item_e(
-    item: Union[BundleItem, FeaturedBundleItem],
+    item: BundleItem | FeaturedBundleItem,
     is_featured: bool = False,
     *,
     locale: DiscordLocale = DiscordLocale.american_english,
@@ -443,7 +443,7 @@ def agent_e(agent: Agent, *, locale: valorantx.Locale = valorantx.Locale.america
     return embed
 
 
-def buddy_e(buddy: Union[Buddy, BuddyLevel], *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+def buddy_e(buddy: Buddy | BuddyLevel, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
     embed = Embed().purple()
     if isinstance(buddy, valorantx.Buddy):
         embed.set_author(
@@ -464,7 +464,7 @@ def buddy_e(buddy: Union[Buddy, BuddyLevel], *, locale: valorantx.Locale = valor
     return embed
 
 
-def spray_e(spray: Union[Spray, SprayLevel], *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
+def spray_e(spray: Spray | SprayLevel, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
     embed = Embed().purple()
 
     if isinstance(spray, valorantx.Spray):
@@ -584,7 +584,7 @@ def spray_loadout_e(
 # patch note embed
 
 
-def patch_note_e(pn: valorantx.PatchNote, banner_url: Optional[str] = None) -> Embed:
+def patch_note_e(pn: valorantx.PatchNote, banner_url: str | None = None) -> Embed:
     embed = Embed(
         title=pn.title,
         timestamp=pn.timestamp.replace(tzinfo=datetime.timezone.utc),
@@ -601,11 +601,11 @@ def patch_note_e(pn: valorantx.PatchNote, banner_url: Optional[str] = None) -> E
 class BundleEmbed:
     def __init__(
         self,
-        bundle: Union[Bundle, FeaturedBundle],
+        bundle: Bundle | FeaturedBundle,
         *,
         locale: DiscordLocale = DiscordLocale.american_english,
     ) -> None:
-        self.bundle: Union[Bundle, FeaturedBundle] = bundle
+        self.bundle: Bundle | FeaturedBundle = bundle
         self.locale: DiscordLocale = locale
         # self.banner_embed: Embed = self.build_banner_embed()
         # self.item_embeds: List[Embed] = self._build_items_embeds()
@@ -645,10 +645,10 @@ class BundleEmbed:
 
         return embed
 
-    def build_items_embeds(self) -> List[Embed]:
+    def build_items_embeds(self) -> list[Embed]:
         embeds = []
 
-        def item_priorities(i: Union[BundleItem, FeaturedBundleItem]) -> int:
+        def item_priorities(i: BundleItem | FeaturedBundleItem) -> int:
             is_melee = i.is_melee() if hasattr(i, 'is_melee') and isinstance(i, SkinLevel) else False
             if is_melee:
                 return 0
@@ -689,7 +689,7 @@ class GamePassEmbed:
             self.title = 'Eventpass'
 
     # @cache ?
-    def build_page_embed(self, page: int, reward: RewardValorantAPI, locale: Optional[DiscordLocale] = None) -> Embed:
+    def build_page_embed(self, page: int, reward: RewardValorantAPI, locale: DiscordLocale | None = None) -> Embed:
         locale = locale or self.locale
 
         valorant_locale = locale_converter.to_valorant(locale)
@@ -1178,7 +1178,7 @@ class MatchDetailsEmbed:
         puuid: str,
         *,
         locale: valorantx.Locale = valorantx.Locale.american_english,
-    ) -> Tuple[List[Embed], List[Embed]]:
+    ) -> tuple[list[Embed], list[Embed]]:
         player = self.match.get_player(puuid)
         if player is None:
             raise ValueError(f'player {puuid} was not in this match')

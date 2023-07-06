@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import itertools
 import platform
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 # import pkg_resources
 import discord
@@ -61,7 +61,7 @@ class About(Cog, name='about'):
         self.process = psutil.Process()
 
     @property
-    def display_emoji(self) -> Optional[discord.Emoji]:
+    def display_emoji(self) -> discord.Emoji | None:
         return self.bot.get_emoji(998453861511610398)
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))

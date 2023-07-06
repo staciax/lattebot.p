@@ -4,7 +4,7 @@ import inspect
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 import discord
 from discord import app_commands
@@ -165,8 +165,8 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
     async def jishaku_app(
         self,
         interaction: discord.Interaction[LatteMaid],
-        sub: Optional[app_commands.Range[str, 1, 20]] = None,
-        args: Optional[str] = None,
+        sub: app_commands.Range[str, 1, 20] | None = None,
+        args: str | None = None,
     ) -> None:
         """Jishaku
 
@@ -194,7 +194,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         self,
         interaction: discord.Interaction,
         current: str,
-    ) -> List[app_commands.Choice[str]]:
+    ) -> list[app_commands.Choice[str]]:
         subs = []
 
         for command in self.walk_commands():

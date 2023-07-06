@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING
 
 import discord
 
@@ -28,7 +28,7 @@ _ = I18n('valorant.context_menu', __file__, read_only=True)
 SUPPORT_GUILD_ID = 1097859504906965042
 
 
-def validate_riot_id(riot_id: str) -> Tuple[str, str]:
+def validate_riot_id(riot_id: str) -> tuple[str, str]:
     if '#' not in riot_id:
         raise BadArgument('Invalid Riot ID.')
 
@@ -85,7 +85,7 @@ class ContextMenu(MixinMeta):
     @context_menu(name=_T('party request'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
     @dynamic_cooldown(cooldown_medium)
     async def user_request_to_party(
-        self, interaction: discord.Interaction[LatteMaid], user: Union[discord.User, discord.Member]
+        self, interaction: discord.Interaction[LatteMaid], user: discord.User | discord.Member
     ) -> None:
         # author
         author = await self.get_user(interaction.user.id)  # type: ignore

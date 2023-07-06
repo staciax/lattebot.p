@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 import discord
 from discord import Interaction, app_commands
@@ -18,7 +18,7 @@ from discord.app_commands.checks import (
 if TYPE_CHECKING:
     from .bot import LatteMaid
 
-__all__: Tuple[str, ...] = (
+__all__ = (
     'owner_only',
     'Cooldown',
     'bot_has_permissions',
@@ -42,25 +42,25 @@ def owner_only() -> Callable[[T], T]:
     return app_commands.check(actual_check)
 
 
-def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
+def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 5)
 
 
-def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
+def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 10)
 
 
-def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Optional[Cooldown]:
+def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 20)
 
 
-def custom_cooldown(interaction: discord.Interaction[LatteMaid], rate: float, per: float) -> Optional[Cooldown]:
+def custom_cooldown(interaction: discord.Interaction[LatteMaid], rate: float, per: float) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(rate, per)

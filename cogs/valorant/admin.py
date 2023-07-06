@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -43,8 +43,8 @@ class Admin(MixinMeta):
     async def valorant_run(
         self,
         interaction: discord.Interaction[LatteMaid],
-        username: Optional[str],
-        password: Optional[str],
+        username: str | None,
+        password: str | None,
     ) -> None:
         await interaction.response.defer(ephemeral=True)
 

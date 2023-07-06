@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands, ui
@@ -16,7 +16,7 @@ class Modal(ui.Modal):
         interaction: discord.Interaction[LatteMaid],
         *,
         title: str = MISSING,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         custom_id: str = MISSING,
     ) -> None:
         super().__init__(title=title, timeout=timeout, custom_id=custom_id)

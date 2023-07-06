@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
@@ -85,7 +85,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
 
         return True
 
-    async def sync(self, *, guild: Optional[discord.abc.Snowflake] = None) -> List[app_commands.AppCommand]:
+    async def sync(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
         synced = await super().sync(guild=guild)
         if synced:
             _log.info('synced %s application commands %s' % (len(synced), f'for guild {guild.id}' if guild else ''))
@@ -99,7 +99,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     ) -> None:
         await super().on_error(interaction, error)
 
-    async def fake_translator(self, *, guild: Optional[discord.abc.Snowflake] = None) -> None:
+    async def fake_translator(self, *, guild: discord.abc.Snowflake | None = None) -> None:
         if self.translator is None:
             return
         commands = self._get_all_commands(guild=guild)
@@ -109,7 +109,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     # wait for discord adding this feature
     # fetch_commands with localizations
 
-    async def fetch_commands(self, *, guild: Optional[discord.abc.Snowflake] = None) -> List[app_commands.AppCommand]:
+    async def fetch_commands(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
         if self.client.application_id is None:
             raise app_commands.errors.MissingApplicationID
 

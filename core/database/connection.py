@@ -34,6 +34,8 @@ __all__ = (
 )
 # fmt: on
 
+# TODO: improvement python typing to 3.9+
+
 
 class DatabaseConnection:
     _async_session: async_sessionmaker[AsyncSession]
@@ -104,6 +106,7 @@ class DatabaseConnection:
     async def update_user(
         self,
         id: int,
+        /,
         *,
         locale: Optional[str] = None,
         main_account_id: Optional[int] = None,
