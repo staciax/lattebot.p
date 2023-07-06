@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
-import time
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
 import discord
 from async_lru import alru_cache
@@ -28,7 +26,7 @@ from valorantx2.utils import MISSING, locale_converter
 from ..account_manager import AccountManager
 
 # from ..account_manager import AccountManager
-from . import embeds as e, utils
+from . import embeds as e
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

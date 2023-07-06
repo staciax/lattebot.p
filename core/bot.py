@@ -182,7 +182,7 @@ class LatteMaid(commands.AutoShardedBot):
             try:
                 await self.tree.sync(guild=discord.Object(id=guild_id))
             except Exception as e:
-                _log.exception(f'Failed to sync guild {guild_id}.')
+                _log.error(f'Failed to sync guild {guild_id}.', exc_info=e)
 
     async def cogs_load(self) -> None:
         """Load cogs."""
@@ -212,7 +212,7 @@ class LatteMaid(commands.AutoShardedBot):
             _log.error('valorant client failed to initialize within 120 seconds.')
         except valorantx.RiotAuthenticationError as e:
             await self.valorant_client._init()  # bypass the auth check
-            _log.warning(f'valorant client failed to authorized', exc_info=e)
+            _log.warning('valorant client failed to authorized', exc_info=e)
         else:
             _log.info('valorant client is initialized.')
 

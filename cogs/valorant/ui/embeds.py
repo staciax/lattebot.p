@@ -393,7 +393,7 @@ def mission_e(
 
     if len(daily) > 0:
         embed.add_field(
-            name=f"**Daily**",
+            name="**Daily**",
             value='\n'.join(daily),
             inline=False,
         )
@@ -420,7 +420,7 @@ def mission_e(
 
     if len(npe) > 0:
         embed.add_field(
-            name=f"**NPE**",
+            name="**NPE**",
             value='\n'.join(npe),
             inline=False,
         )

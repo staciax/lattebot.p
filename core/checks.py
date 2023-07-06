@@ -6,7 +6,6 @@ import discord
 from discord import Interaction, app_commands
 from discord.app_commands.checks import (
     Cooldown as Cooldown,
-    _create_cooldown_decorator as _create_cooldown_decorator,
     bot_has_permissions as bot_has_permissions,
     cooldown as cooldown,
     dynamic_cooldown as dynamic_cooldown,

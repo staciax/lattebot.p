@@ -247,7 +247,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         if user is None:
             raise RiotAuthNotLinked('You do not have any accounts linked.')
 
-        e = Embed(description=f'Successfully logged out all accounts')
+        e = Embed(description='Successfully logged out all accounts')
         view = discord.utils.MISSING
 
         if puuid is None:

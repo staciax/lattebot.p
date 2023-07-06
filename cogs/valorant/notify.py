@@ -44,7 +44,7 @@ class Notify(MixinMeta):
             for riot_auth in account_manager.riot_accounts:
                 try:
                     sf = self.valorant_client.fetch_storefront(riot_auth)
-                except BadRequest as e:
+                except BadRequest:
                     # token expired
                     continue
                 except RateLimited:

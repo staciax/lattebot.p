@@ -120,6 +120,6 @@ class Events(MixinMeta):
     async def after_valorant_cache_control(self) -> None:
         if self.valorant_cache_control.is_being_cancelled():
             self.do_cache_control()
-            _log.info(f'valorant cache control loop has been cancelled')
+            _log.info('valorant cache control loop has been cancelled')
         else:
-            _log.info(f'valorant cache control loop has been stopped')
+            _log.info('valorant cache control loop has been stopped')

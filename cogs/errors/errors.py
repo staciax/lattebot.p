@@ -112,7 +112,7 @@ def get_error_handle_message(error: Exception, locale: discord.Locale) -> tuple[
         #     message = _('You do not have the required role(s).', locale)
         elif isinstance(error, app_commands.errors.CommandNotFound):
             title = _('Command Not Found', locale)
-            message = _(f'CommandNotFound', locale)
+            message = _('CommandNotFound', locale)
         elif isinstance(error, app_commands.errors.NoPrivateMessage):
             title = _('No Private Message', locale)
             message = _('UserAlreadyExists', locale)

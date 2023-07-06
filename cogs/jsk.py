@@ -227,7 +227,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
 
         content = message.content.removeprefix('_').strip()
 
-        jsk = self.bot.get_command(f'jishaku py')
+        jsk = self.bot.get_command('jishaku py')
         ctx = await self.bot.get_context(interaction)
         codeblock = codeblock_converter(content)
 
