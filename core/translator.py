@@ -207,11 +207,7 @@ class Translator(_Translator):
             keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'description'])
 
         elif tcl == TCL.choice_name:
-            if (
-                self.__latest_command is not None
-                and self.__latest_parameter is not None
-                and isinstance(localizable, Choice)
-            ):
+            if self.__latest_command is not None and self.__latest_parameter is not None and isinstance(localizable, Choice):
                 keys.extend(
                     [
                         self.__latest_command.qualified_name,
@@ -258,9 +254,7 @@ class Translator(_Translator):
                 _log.debug(f'created {locale_path.parent}')
 
             localizations = self._app_command_localizations.get(locale.value, {})
-            entries = {
-                command: localization for command, localization in localizations.items() if command in app_commands
-            }
+            entries = {command: localization for command, localization in localizations.items() if command in app_commands}
             entries = dict(sorted(entries.items()))
 
             with locale_path.open('w', encoding='utf-8') as file:

@@ -121,6 +121,4 @@ class ProfileCardImage:
         self._draw.text((92, 141), tier.name.default.upper(), font=FONT_BENIBOLD_36, fill=f"#{tier.color}")
 
     def _level_text(self, value: int) -> None:
-        self._draw.text(
-            (264, 82), str(value), font=FONT_DINNEXTWIG_13, fill=TextColor.level, align='center', anchor='ms'
-        )
+        self._draw.text((264, 82), str(value), font=FONT_DINNEXTWIG_13, fill=TextColor.level, align='center', anchor='ms')
