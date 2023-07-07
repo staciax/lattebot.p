@@ -75,8 +75,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         self.bot: LatteMaid = bot
 
     @property
-    def display_emoji(self) -> discord.Emoji | None:
-        return self.bot.get_emoji(998169266044022875)
+    def display_emoji(self) -> discord.PartialEmoji:
+        return discord.PartialEmoji(name='VALORANT', id=998169266044022875)
 
     @property
     def valorant_client(self) -> ValorantClient:

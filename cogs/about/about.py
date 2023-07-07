@@ -61,8 +61,8 @@ class About(Cog, name='about'):
         self.process = psutil.Process()
 
     @property
-    def display_emoji(self) -> discord.Emoji | None:
-        return self.bot.get_emoji(998453861511610398)
+    def display_emoji(self) -> discord.PartialEmoji:
+        return discord.PartialEmoji(name='latte', id=998453861511610398)
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
