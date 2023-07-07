@@ -69,6 +69,7 @@ class LatteMaid(commands.AutoShardedBot):
         # intents
         intents = discord.Intents.none()  # set all intents to False
         intents.guilds = True
+        intents.emojis_and_stickers = True
         # intents.dm_messages = True # wait for implementation modmail?
 
         # allowed_mentions
