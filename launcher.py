@@ -5,8 +5,9 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
+import aiohttp
 from discord import utils
-from discord.webhook import SyncWebhook
+from discord.webhook import Webhook
 
 from core.bot import LatteMaid
 
@@ -92,33 +93,39 @@ def setup_logging():
             log.removeHandler(handler)
 
 
-@contextlib.contextmanager
-def setup_webhook():
+@contextlib.asynccontextmanager
+async def setup_webhook():
     # inspired by ayane-bot - Buco7854(github)
     if args.prod:
         yield
-    url = os.getenv('WEBHOOK_STATUS_URI')
-    # token = os.getenv('DISCORD_TOKEN')
-    assert url is not None, 'Webhook URI is not set'
+
+    wh_id = os.getenv('WEBHOOK_STATUS_ID')
+    assert wh_id is not None, 'Webhook ID is not set.'
+
+    wh_token = os.getenv('WEBHOOK_STATUS_TOKEN')
+    assert wh_token is not None, 'Webhook token is not set.'
+
+    session = aiohttp.ClientSession()
     try:
-        webhook = SyncWebhook.from_url(url)
-        webhook.send('☕ LatteMaid is drinking coffee!')
+        webhook = Webhook.partial(int(wh_id), wh_token, session=session)
+        await webhook.send('☕ LatteMaid is drinking coffee!')
         yield
     finally:
-        webhook.send('💤 LatteMaid is going to sleep!')
-
-
-def main():
-    with setup_logging(), setup_webhook():
-        asyncio.run(run_bot())
+        await webhook.send('💤 LatteMaid is going to sleep!')
+        await session.close()
 
 
 async def run_bot():
     async with LatteMaid(
         debug_mode=not args.prod,
         tree_sync_at_startup=args.sync,
-    ) as bot:
+    ) as bot, setup_webhook():
         await bot.start()
+
+
+def main():
+    with setup_logging():
+        asyncio.run(run_bot())
 
 
 if __name__ == '__main__':

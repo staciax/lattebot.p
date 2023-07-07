@@ -25,8 +25,11 @@ class Event(commands.Cog, name='events'):
     @discord.utils.cached_property
     def webhook(self) -> discord.Webhook:
         load_dotenv()
-        wh_url = os.getenv('WEBHOOK_GUILD_URI')
-        hook = discord.Webhook.from_url(url=wh_url, session=self.bot.session)  # type: ignore
+        wh_id = os.getenv('WEBHOOK_GUILD_ID')
+        assert wh_id is not None, 'WEBHOOK_GUILD_ID is not set'
+        wh_token = os.getenv('WEBHOOK_GUILD_TOKEN')
+        assert wh_token is not None, 'WEBHOOK_GUILD_TOKEN is not set'
+        hook = discord.Webhook.partial(int(wh_id), wh_token, session=self.bot.session)
         return hook
 
     # @commands.Cog.isltener('on_message_edit')
