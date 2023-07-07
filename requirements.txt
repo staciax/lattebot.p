@@ -8,7 +8,6 @@ asyncpg==0.27.* # production
 aiosqlite==0.19.* # development only (faster)
 cryptography>=41.0.* # encryption
 
-
 # caching
 async_lru==2.0.*
 
