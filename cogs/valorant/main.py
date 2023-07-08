@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import logging
 from abc import ABC
@@ -73,6 +74,7 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
+        self._lock: asyncio.Lock = asyncio.Lock()
 
     @property
     def display_emoji(self) -> discord.PartialEmoji:
