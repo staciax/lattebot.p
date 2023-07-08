@@ -99,6 +99,15 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     ) -> None:
         await super().on_error(interaction, error)
 
+    async def insert_model_to_commands(self) -> None:
+        server_app_commands = await self.fetch_commands()
+        for server in server_app_commands:
+            command = self.get_command(server.name, type=server.type)
+            if command is None:
+                _log.warning('command not found', server.name, server.type)
+                continue
+            command.extras['model'] = server
+
     async def fake_translator(self, *, guild: discord.abc.Snowflake | None = None) -> None:
         if self.translator is None:
             return

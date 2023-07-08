@@ -236,7 +236,7 @@ class LatteMaid(commands.AutoShardedBot):
         if self._tree_sync_at_startup:
             await self.tree_sync()
 
-        await self.fetch_app_commands()
+        await self.tree.insert_model_to_commands()
 
         # valorant client
         # await self.run_valorant_client()
@@ -292,17 +292,6 @@ class LatteMaid(commands.AutoShardedBot):
     #     return self.get_channel(config.traceback_channel_id)
 
     # app commands
-
-    async def fetch_app_commands(self) -> None:
-        """Fetch all application commands."""
-
-        server_app_commands = await self.tree.fetch_commands()
-        for server in server_app_commands:
-            command = self.tree.get_command(server.name, type=server.type)
-            if command is None:
-                _log.warning('command not found', server.name, server.type)
-                continue
-            command.extras['model'] = server
 
     # colors # TODO: overload
 
