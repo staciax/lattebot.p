@@ -12,7 +12,7 @@ from core.bot import LatteMaid
 from core.checks import bot_has_permissions, owner_only
 from core.database.models.blacklist import BlackList
 from core.errors import AppCommandError
-from core.ui.embed import MiadEmbed
+from core.ui.embed import MiadEmbed as Embed
 from core.utils.chat_formatting import inline
 from core.utils.pages import LattePages, ListPageSource
 
@@ -39,7 +39,7 @@ class BlackListPageSource(ListPageSource):
     def __init__(self, entries: list[BlackList], per_page: int = 12):
         super().__init__(entries, per_page)
 
-    async def format_page(self, menu: BlackListPages, entries: list[BlackList]) -> MiadEmbed:
+    async def format_page(self, menu: BlackListPages, entries: list[BlackList]) -> Embed:
         pages = []
         for index, entry in enumerate(entries, start=menu.current_page * self.per_page):
             pages.append(f'{index + 1}. {entry.id}')
@@ -56,7 +56,7 @@ class BlackListPageSource(ListPageSource):
 class BlackListPages(LattePages):
     def __init__(self, source: BlackListPageSource, *, interaction: Interaction[LatteMaid]):
         super().__init__(source, interaction=interaction)
-        self.embed: MiadEmbed = MiadEmbed(title='Blacklist').dark()
+        self.embed: Embed = Embed(title='Blacklist').dark()
 
 
 class Developer(commands.Cog, name='developer'):
@@ -89,7 +89,7 @@ class Developer(commands.Cog, name='developer'):
         except Exception as e:
             raise AppCommandError('The extension load failed') from e
 
-        embed = MiadEmbed(description=f"**Loaded**: `{extension}`").success()
+        embed = Embed(description=f"**Loaded**: `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('unload'), description=_T('Unload an extension'))
@@ -107,7 +107,7 @@ class Developer(commands.Cog, name='developer'):
         except Exception as e:
             raise AppCommandError('The extension unload failed') from e
 
-        embed = MiadEmbed(description=f"**Unloaded**: `{extension}`").success()
+        embed = Embed(description=f"**Unloaded**: `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('reload'))
@@ -127,7 +127,7 @@ class Developer(commands.Cog, name='developer'):
         except Exception as e:
             raise AppCommandError('The extension reload failed') from e
 
-        embed = MiadEmbed(description=f"**Reloaded**: `{extension}`").success()
+        embed = Embed(description=f"**Reloaded**: `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @app_commands.command(name='sync', description='Syncs the application commands to Discord.')
@@ -146,13 +146,13 @@ class Developer(commands.Cog, name='developer'):
             return
         synced = await self.bot.tree.sync()
 
-        embed = MiadEmbed(description=f"sync tree: {len(synced)}").success()
+        embed = Embed(description=f"sync tree: {len(synced)}").success()
         if guild_id is not None:
             assert embed.description is not None
             embed.description += f" : `{guild_id}`"
 
-        # refresh application commands
-        await self.bot.fetch_app_commands()
+        # refresh application commands model
+        await self.bot.tree.insert_model_to_commands()
 
         await interaction.followup.send(embed=embed, ephemeral=True, silent=True)
 
@@ -205,7 +205,7 @@ class Developer(commands.Cog, name='developer'):
         if isinstance(blacklist, (discord.User, discord.Guild)):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
-        embed = MiadEmbed(
+        embed = Embed(
             description=f"{blacklist} are now blacklisted.",
         ).success()
 
@@ -237,7 +237,7 @@ class Developer(commands.Cog, name='developer'):
         if isinstance(blacklist, (discord.User, discord.Guild)):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
-        embed = MiadEmbed(description=f"{blacklist} are now unblacklisted.").success()
+        embed = Embed(description=f"{blacklist} are now unblacklisted.").success()
 
         await interaction.followup.send(embed=embed, silent=True)
 
@@ -251,7 +251,7 @@ class Developer(commands.Cog, name='developer'):
 
     #     await interaction.response.defer(ephemeral=True)
 
-    #     embed = MiadEmbed(description=f'{bold(object_id)} is blacklisted.').error()
+    #     embed = Embed(description=f'{bold(object_id)} is blacklisted.').error()
 
     #     if int(object_id) not in self.bot.db._blacklist:
     #         embed.description = f'{bold(object_id)} is not blacklisted.'
