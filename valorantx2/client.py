@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Callable, overload
+from typing import TYPE_CHECKING, Iterator, overload
 
 import valorantx
-from async_lru import alru_cache
+from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
 from valorantx.client import _loop
 from valorantx.enums import Locale, QueueType
 from valorantx.models.contracts import Contracts
@@ -284,24 +284,22 @@ class Client(valorantx.Client):
 
     # cache
 
-    def get_cache_methods(self) -> list[tuple[str, Callable[..., Any]]]:
-        methods = []
+    def _get_cache_methods(self) -> Iterator[_LRUCacheWrapperInstanceMethod]:
         for method_name in dir(self):
             if method_name.startswith('_'):
                 continue
             method = getattr(self, method_name)
-            if hasattr(method, 'cache_info'):
-                methods.append((method_name, method))
-        return methods
+            if isinstance(method, _LRUCacheWrapperInstanceMethod):
+                yield method
 
     async def cache_clear(self) -> None:
-        methods = self.get_cache_methods()
-        for method_name, method in methods:
+        for method in self._get_cache_methods():
+            _log.debug('clearing cache for %s', method.__name__)
             method.cache_clear()
         _log.info('cache cleared')
 
     async def cache_close(self) -> None:
-        methods = self.get_cache_methods()
-        for method_name, method in methods:
-            method.cache_close()
+        for method in self._get_cache_methods():
+            _log.debug('closing cache for %s', method.__name__)
+            await method.cache_close()
         _log.info('cache closed')
