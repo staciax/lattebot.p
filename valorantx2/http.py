@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 from valorantx.enums import Region, try_enum
 from valorantx.http import EndpointType, HTTPClient as _HTTPClient, Route
 
-from .auth import RiotAuth
 from .errors import BadRequest
 
 if TYPE_CHECKING:
@@ -29,27 +28,30 @@ _log = logging.getLogger(__name__)
 
 
 class HTTPClient(_HTTPClient):
+    riot_auth: RiotAuth
+
     def __init__(self, loop: AbstractEventLoop) -> None:
         super().__init__(loop, re_authorize=False, region=Region.AsiaPacific)  # default is AsiaPacific
-        self.riot_auth: RiotAuth = RiotAuth()  # set riot auth to defaul
 
     async def request(self, route: Route, **kwargs: Any) -> Any:
         riot_auth: RiotAuth | None = kwargs.pop('riot_auth', None)
         data: dict[str, Any] | str | None = None
-        for _ in range(3):
+
+        for tries in range(3):
             try:
                 data = await super().request(route, **kwargs)
             except BadRequest as e:
-                if e.code == 'BAD_CLAIMS':
+                if tries < 2:
                     if riot_auth is None:
-                        await self.riot_auth.reauthorize()
-                    else:
-                        await riot_auth.reauthorize()
+                        raise e
+                    if e.code != 'BAD_CLAIMS':
+                        raise e
+                    await riot_auth.reauthorize()
                     continue
+                raise e
             else:
-                return data
+                break
 
-        _log.error('Failed to request %s %s', route.method, route.url)
         return data
 
     # account
