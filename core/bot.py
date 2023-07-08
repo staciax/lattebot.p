@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import discord
-from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
 from dotenv import load_dotenv
@@ -109,9 +108,6 @@ class LatteMaid(commands.AutoShardedBot):
 
         # http session
         self.session: aiohttp.ClientSession = MISSING
-
-        # app commands
-        self._app_commands: dict[str, app_commands.AppCommand | app_commands.AppCommandGroup] = {}
 
         # colour
         self.colors: dict[str, list[discord.Colour]] = {}
@@ -297,30 +293,16 @@ class LatteMaid(commands.AutoShardedBot):
 
     # app commands
 
-    async def fetch_app_commands(self) -> list[app_commands.AppCommand | app_commands.AppCommandGroup]:
+    async def fetch_app_commands(self) -> None:
         """Fetch all application commands."""
 
-        app_cmds = await self.tree.fetch_commands()
-
-        payload = {}
-        for app_cmd in app_cmds:
-            if app_cmd.type == discord.AppCommandType.chat_input:
-                if len(app_cmd.options) > 0:
-                    payload[app_cmd.name] = app_cmd
-                    for option in app_cmd.options:
-                        if isinstance(option, app_commands.AppCommandGroup):
-                            payload[option.qualified_name] = option
-                else:
-                    payload[app_cmd.name] = app_cmd
-
-        self._app_commands = payload
-        return list(self._app_commands.values())
-
-    def get_app_command(self, name: str) -> app_commands.AppCommand | app_commands.AppCommandGroup | None:
-        return self._app_commands.get(name)
-
-    def get_app_commands(self) -> list[app_commands.AppCommand | app_commands.AppCommandGroup]:
-        return sorted(list(self._app_commands.values()), key=lambda c: c.name)
+        server_app_commands = await self.tree.fetch_commands()
+        for server in server_app_commands:
+            command = self.tree.get_command(server.name, type=server.type)
+            if command is None:
+                _log.warning('command not found', server.name, server.type)
+                continue
+            command.extras['model'] = server
 
     # colors # TODO: overload
 
