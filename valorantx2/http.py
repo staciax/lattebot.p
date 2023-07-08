@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from valorantx.enums import Region, try_enum
@@ -24,6 +25,8 @@ __all__ = (
 )
 # fmt: on
 
+_log = logging.getLogger(__name__)
+
 
 class HTTPClient(_HTTPClient):
     def __init__(self, loop: AbstractEventLoop) -> None:
@@ -46,6 +49,7 @@ class HTTPClient(_HTTPClient):
             else:
                 return data
 
+        _log.error('Failed to request %s %s', route.method, route.url)
         return data
 
     # account
