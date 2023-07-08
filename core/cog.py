@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Coroutine, Iterable, TypeVar, Union
 
@@ -26,6 +27,8 @@ ContextMenuCallback = Union[
     Callable[[GroupT, 'Interaction[Any]', discord.Message], Coro[Any]],
     Callable[[GroupT, 'Interaction[Any]', Union[discord.Member, discord.User]], Coro[Any]],
 ]
+
+_log = logging.getLogger(__name__)
 
 
 # https://github.com/InterStella0/stella_bot/blob/bf5f5632bcd88670df90be67b888c282c6e83d99/utils/cog.py#L28
@@ -69,6 +72,12 @@ class Cog(commands.Cog):
         interaction: discord.Interaction[LatteMaid],
         error: app_commands.AppCommandError,
     ) -> None:
+        if interaction.client.is_debug_mode():
+            command = interaction.command
+            if command is not None:
+                _log.error('exception in %s command on %s', command.name, self.qualified_name, exc_info=error)
+            else:
+                _log.error('exception on %s', self.qualified_name, exc_info=error)
         interaction.client.dispatch('app_command_error', interaction, error)
 
     async def _inject(

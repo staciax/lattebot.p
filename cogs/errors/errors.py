@@ -151,11 +151,10 @@ def get_error_handle_embed(
 
 
 def _log_error(interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
-    command = interaction.command  # or interaction.extras.get('command')
+    command = interaction.command
     if command is not None:
         if command._has_any_error_handlers():
             return
-
         _log.error('exception in command %r', command.name, exc_info=error)
     else:
         _log.error('exception ', exc_info=error)
@@ -194,18 +193,18 @@ class Errors(Cog, name='errors'):
     async def on_app_command_error(
         self, interaction: discord.Interaction[LatteMaid], error: Exception | app_commands.errors.AppCommandError
     ) -> None:
-        await application_error_handler(interaction, error)
         _log_error(interaction, error)
+        await application_error_handler(interaction, error)
         # self.bot.loop.create_task(self.send_traceback(interaction))
 
     @Cog.listener('on_view_error')
     async def on_view_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, item: Item) -> None:
+        _log_error(interaction, error)
         interaction.extras['item'] = item
         await application_error_handler(interaction, error)
-        _log_error(interaction, error)
 
     @Cog.listener('on_modal_error')
     async def on_modal_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, modal: Modal) -> None:
+        _log_error(interaction, error)
         interaction.extras['modal'] = modal
         await application_error_handler(interaction, error)
-        _log_error(interaction, error)
