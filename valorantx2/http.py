@@ -41,11 +41,11 @@ class HTTPClient(_HTTPClient):
             try:
                 data = await super().request(route, **kwargs)
             except BadRequest as e:
+                if riot_auth is None:
+                    raise e
+                if e.code != 'BAD_CLAIMS':
+                    raise e
                 if tries < 2:
-                    if riot_auth is None:
-                        raise e
-                    if e.code != 'BAD_CLAIMS':
-                        raise e
                     await riot_auth.reauthorize()
                     continue
                 raise e
