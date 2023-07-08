@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from dotenv import load_dotenv
 from sqlalchemy import ForeignKey, String, delete, select
@@ -37,8 +37,8 @@ class RiotAccount(Base):
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=True)
     puuid: Mapped[str] = mapped_column('puuid', String(length=36), nullable=False)
-    game_name: Mapped[Optional[str]] = mapped_column('name', String(length=16))
-    tag_line: Mapped[Optional[str]] = mapped_column('tag', String(length=5))
+    game_name: Mapped[str | None] = mapped_column('name', String(length=16))
+    tag_line: Mapped[str | None] = mapped_column('tag', String(length=5))
     region: Mapped[str] = mapped_column('region', String(length=16), nullable=False)
     scope: Mapped[str] = mapped_column('scope', String(length=64), nullable=False)
     token_type: Mapped[str] = mapped_column('token_type', String(length=64), nullable=False)
@@ -50,7 +50,7 @@ class RiotAccount(Base):
     notify: Mapped[bool] = mapped_column('notify', nullable=False, default=False)
     incognito: Mapped[bool] = mapped_column('incognito', nullable=False, default=False)
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
-    owner: Mapped[Optional[User]] = relationship('User', back_populates='riot_accounts', lazy='joined')
+    owner: Mapped[User | None] = relationship('User', back_populates='riot_accounts', lazy='joined')
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
 
     @hybrid_property
@@ -113,12 +113,12 @@ class RiotAccount(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Optional[Self]:
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def read_by_puuid_and_owner_id(cls, session: AsyncSession, puuid: str, owner_id: int) -> Optional[Self]:
+    async def read_by_puuid_and_owner_id(cls, session: AsyncSession, puuid: str, owner_id: int) -> Self | None:
         stmt = select(cls).where(cls.puuid == puuid).where(cls.owner_id == owner_id)
         return await session.scalar(stmt.order_by(cls.id))
 
@@ -128,8 +128,8 @@ class RiotAccount(Base):
         session: AsyncSession,
         owner_id: int,
         puuid: str,
-        game_name: Optional[str],
-        tag_line: Optional[str],
+        game_name: str | None,
+        tag_line: str | None,
         region: str,
         scope: str,
         token_type: str,
@@ -168,18 +168,18 @@ class RiotAccount(Base):
     async def update(
         self,
         session: AsyncSession,
-        game_name: Optional[str] = None,
-        tag_line: Optional[str] = None,
-        region: Optional[str] = None,
-        scope: Optional[str] = None,
-        token_type: Optional[str] = None,
-        expires_at: Optional[int] = None,
-        id_token: Optional[str] = None,
-        access_token: Optional[str] = None,
-        entitlements_token: Optional[str] = None,
-        ssid: Optional[str] = None,
-        incognito: Optional[bool] = None,
-        notify: Optional[bool] = None,
+        game_name: str | None = None,
+        tag_line: str | None = None,
+        region: str | None = None,
+        scope: str | None = None,
+        token_type: str | None = None,
+        expires_at: int | None = None,
+        id_token: str | None = None,
+        access_token: str | None = None,
+        entitlements_token: str | None = None,
+        ssid: str | None = None,
+        incognito: bool | None = None,
+        notify: bool | None = None,
     ) -> Self:
         if game_name is not None:
             self.game_name = game_name

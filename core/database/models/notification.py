@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,7 +39,7 @@ class Notification(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Optional[Self]:
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
@@ -51,7 +51,7 @@ class Notification(Base):
             yield row
 
     @classmethod
-    async def read_by_owner_id_and_item_id(cls, session: AsyncSession, owner_id: int, item_id: str) -> Optional[Self]:
+    async def read_by_owner_id_and_item_id(cls, session: AsyncSession, owner_id: int, item_id: str) -> Self | None:
         stmt = select(cls).where(cls.owner_id == owner_id).where(cls.item_id == item_id)
         return await session.scalar(stmt.order_by(cls.id))
 

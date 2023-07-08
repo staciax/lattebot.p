@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator, List, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,26 +31,26 @@ class User(Base):
     id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True, unique=True)
     locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
-    blacklist: Mapped[Optional[BlackList]] = relationship(
+    blacklist: Mapped[BlackList | None] = relationship(
         'BlackList',
         lazy='joined',
         viewonly=True,
     )
-    app_command_uses: Mapped[List[AppCommand]] = relationship(
+    app_command_uses: Mapped[list[AppCommand]] = relationship(
         'AppCommand',
         back_populates='author',
         order_by='AppCommand.used',
         lazy='selectin',
         viewonly=True,
     )
-    riot_accounts: Mapped[List[RiotAccount]] = relationship(
+    riot_accounts: Mapped[list[RiotAccount]] = relationship(
         'RiotAccount',
         back_populates='owner',
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='selectin',
     )
-    main_riot_account_id: Mapped[Optional[int]] = mapped_column('main_riot_account_id')
-    notification_settings: Mapped[Optional[NotificationSettings]] = relationship(
+    main_riot_account_id: Mapped[int | None] = mapped_column('main_riot_account_id')
+    notification_settings: Mapped[NotificationSettings | None] = relationship(
         'NotificationSettings',
         back_populates='owner',
         lazy='joined',
@@ -62,7 +62,7 @@ class User(Base):
         return self.blacklist is not None
 
     @hybrid_method
-    def get_riot_account(self, puuid: str, /) -> Optional[RiotAccount]:
+    def get_riot_account(self, puuid: str, /) -> RiotAccount | None:
         for account in self.riot_accounts:
             if account.puuid == puuid:
                 return account
@@ -71,8 +71,8 @@ class User(Base):
     async def update(
         self,
         session: AsyncSession,
-        locale: Optional[str] = None,
-        main_riot_account_id: Optional[int] = None,
+        locale: str | None = None,
+        main_riot_account_id: int | None = None,
     ) -> Self:
         if locale is not None:
             self.locale = locale
@@ -93,7 +93,7 @@ class User(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Optional[Self]:
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 

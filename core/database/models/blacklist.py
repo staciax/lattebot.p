@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,9 +25,9 @@ class BlackList(Base):
     __tablename__ = 'blacklist'
 
     id: Mapped[int] = mapped_column('id', ForeignKey('users.id'), nullable=False, unique=True, primary_key=True)
-    reason: Mapped[Optional[str]] = mapped_column('reason', String(length=2000), nullable=True, default=None)
+    reason: Mapped[str | None] = mapped_column('reason', String(length=2000), nullable=True, default=None)
     banned_at: Mapped[datetime.datetime] = mapped_column('banned_at', nullable=False, default=datetime.datetime.utcnow)
-    maybe_user: Mapped[Optional[User]] = relationship(
+    maybe_user: Mapped[User | None] = relationship(
         'User',
         # back_populates='blacklist',
         lazy='joined',
@@ -48,12 +48,12 @@ class BlackList(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Optional[Self]:
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def create(cls, session: AsyncSession, id: int, reason: Optional[str] = None) -> Self:
+    async def create(cls, session: AsyncSession, id: int, reason: str | None = None) -> Self:
         blacklist = BlackList(
             id=id,
             reason=reason,

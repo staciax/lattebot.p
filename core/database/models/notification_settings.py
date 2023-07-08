@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncIterator, List, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +30,7 @@ class NotificationSettings(Base):
     channel_id: Mapped[int] = mapped_column('channel_id', nullable=False, default=0)
     mode: Mapped[int] = mapped_column('mode', nullable=False, default=0)
     enabled: Mapped[bool] = mapped_column('enabled', nullable=False, default=False)
-    notifications: Mapped[List[Notification]] = relationship(
+    notifications: Mapped[list[Notification]] = relationship(
         'Notification',
         lazy='joined',
         foreign_keys='Notification.owner_id',
@@ -62,7 +62,7 @@ class NotificationSettings(Base):
             yield row
 
     @classmethod
-    async def read_by_owner_id(cls, session: AsyncSession, owner_id: int) -> Optional[Self]:
+    async def read_by_owner_id(cls, session: AsyncSession, owner_id: int) -> Self | None:
         stmt = select(cls).where(cls.owner_id == owner_id)
         return await session.scalar(stmt)
 
@@ -85,9 +85,9 @@ class NotificationSettings(Base):
         self,
         session: AsyncSession,
         *,
-        channel_id: Optional[int] = None,
-        mode: Optional[int] = None,
-        enabled: Optional[bool] = None,
+        channel_id: int | None = None,
+        mode: int | None = None,
+        enabled: bool | None = None,
     ) -> Self:
         if channel_id is not None:
             self.channel_id = channel_id

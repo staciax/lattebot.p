@@ -2,7 +2,7 @@
 import asyncio
 import datetime
 import logging
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -93,7 +93,7 @@ class DatabaseConnection:
             self._log.info(f'created user with id {id!r}')
             return user
 
-    async def get_user(self, id: int, /) -> Optional[User]:
+    async def get_user(self, id: int, /) -> User | None:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             return user
@@ -108,9 +108,9 @@ class DatabaseConnection:
         id: int,
         /,
         *,
-        locale: Optional[str] = None,
-        main_account_id: Optional[int] = None,
-    ) -> Optional[User]:
+        locale: str | None = None,
+        main_account_id: int | None = None,
+    ) -> User | None:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
@@ -149,7 +149,7 @@ class DatabaseConnection:
 
     # blacklist
 
-    async def create_blacklist(self, id: int, *, reason: Optional[str] = None) -> BlackList:
+    async def create_blacklist(self, id: int, *, reason: str | None = None) -> BlackList:
         async with self._async_session() as session:
             exist_blacklist = await BlackList.read_by_id(session, id)
             if exist_blacklist:
@@ -159,7 +159,7 @@ class DatabaseConnection:
             self._log.info(f'created blacklist with id {id!r}')
             return blacklist
 
-    async def get_blacklist(self, id: int, /) -> Optional[BlackList]:
+    async def get_blacklist(self, id: int, /) -> BlackList | None:
         async with self._async_session() as session:
             stmt = select(BlackList).where(BlackList.id == id)
             result = await session.execute(stmt)
@@ -184,8 +184,8 @@ class DatabaseConnection:
     async def create_app_command(
         self,
         type: int,
-        guild: Optional[int],
-        channel: Optional[int],
+        guild: int | None,
+        channel: int | None,
         author: int,
         used: datetime.datetime,
         command: str,
@@ -223,8 +223,8 @@ class DatabaseConnection:
         owner_id: int,
         *,
         puuid: str,
-        game_name: Optional[str],
-        tag_line: Optional[str],
+        game_name: str | None,
+        tag_line: str | None,
         region: str,
         scope: str,
         token_type: str,
@@ -262,7 +262,7 @@ class DatabaseConnection:
             self._log.info(f'created riot account {game_name}#{tag_line}({puuid}) for user with id {owner_id}')
             return riot_account
 
-    async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
+    async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             return riot_account
@@ -282,18 +282,18 @@ class DatabaseConnection:
         puuid: str,
         owner_id: int,
         *,
-        game_name: Optional[str] = None,
-        tag_line: Optional[str] = None,
-        region: Optional[str] = None,
-        scope: Optional[str] = None,
-        token_type: Optional[str] = None,
-        expires_at: Optional[int] = None,
-        id_token: Optional[str] = None,
-        access_token: Optional[str] = None,
-        entitlements_token: Optional[str] = None,
-        ssid: Optional[str] = None,
-        incognito: Optional[bool] = None,
-        notify: Optional[bool] = None,
+        game_name: str | None = None,
+        tag_line: str | None = None,
+        region: str | None = None,
+        scope: str | None = None,
+        token_type: str | None = None,
+        expires_at: int | None = None,
+        id_token: str | None = None,
+        access_token: str | None = None,
+        entitlements_token: str | None = None,
+        ssid: str | None = None,
+        incognito: bool | None = None,
+        notify: bool | None = None,
     ) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
@@ -324,7 +324,7 @@ class DatabaseConnection:
                 self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
                 return True
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> Optional[RiotAccount]:
+    async def delete_riot_account(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
@@ -382,7 +382,7 @@ class DatabaseConnection:
             async for notification in Notification.read_all_by_owner_id(session, owner_id):
                 yield notification
 
-    async def get_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Optional[Notification]:
+    async def get_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Notification | None:
         async with self._async_session() as session:
             notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
             return notification
@@ -464,7 +464,7 @@ class DatabaseConnection:
             self._log.info(f'created notification settings for user with id {owner_id}')
             return settings
 
-    async def get_notification_settings_by_owner_id(self, owner_id: int, /) -> Optional[NotificationSettings]:
+    async def get_notification_settings_by_owner_id(self, owner_id: int, /) -> NotificationSettings | None:
         async with self._async_session() as session:
             settings = await NotificationSettings.read_by_owner_id(session, owner_id)
             return settings
@@ -473,10 +473,10 @@ class DatabaseConnection:
         self,
         owner_id: int,
         *,
-        channel_id: Optional[int] = None,
-        mode: Optional[int] = None,
-        enabled: Optional[bool] = None,
-    ) -> Optional[NotificationSettings]:
+        channel_id: int | None = None,
+        mode: int | None = None,
+        enabled: bool | None = None,
+    ) -> NotificationSettings | None:
         async with self._async_session() as session:
             settings = await NotificationSettings.read_by_owner_id(session, owner_id)
             if not settings:

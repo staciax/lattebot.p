@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator, Optional
+from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,8 +26,8 @@ class AppCommand(Base):
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=True)
     type: Mapped[int] = mapped_column('type', default=1)
-    guild: Mapped[Optional[int]] = mapped_column('guild_id')
-    channel: Mapped[Optional[int]] = mapped_column('channel')
+    guild: Mapped[int | None] = mapped_column('guild_id')
+    channel: Mapped[int | None] = mapped_column('channel')
     author_id: Mapped[int] = mapped_column('author_id', ForeignKey('users.id'), nullable=False)
     used: Mapped[datetime.datetime] = mapped_column('used', default=datetime.datetime.utcnow)
     command: Mapped[str] = mapped_column('command', String(length=256))
@@ -42,17 +42,17 @@ class AppCommand(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Optional[Self]:
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.used))
 
     @classmethod
-    async def read_by_guild_id(cls, session: AsyncSession, guild_id: int) -> Optional[Self]:
+    async def read_by_guild_id(cls, session: AsyncSession, guild_id: int) -> Self | None:
         stmt = select(cls).where(cls.guild == guild_id)
         return await session.scalar(stmt.order_by(cls.used))
 
     @classmethod
-    async def read_by_name(cls, session: AsyncSession, name: str) -> Optional[Self]:
+    async def read_by_name(cls, session: AsyncSession, name: str) -> Self | None:
         stmt = select(cls).where(cls.command == name)
         return await session.scalar(stmt.order_by(cls.used))
 
@@ -68,8 +68,8 @@ class AppCommand(Base):
         cls,
         session: AsyncSession,
         type: int,
-        guild: Optional[int],
-        channel: Optional[int],
+        guild: int | None,
+        channel: int | None,
         author: int,
         used: datetime.datetime,
         command: str,
