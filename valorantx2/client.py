@@ -219,13 +219,13 @@ class Client(valorantx.Client):
 
     # match
 
-    @alru_cache(maxsize=512, ttl=60 * 60 * 12)  # ttl 12 hours
+    @alru_cache(maxsize=1024, ttl=60 * 24 * 7)  # ttl 7 days
     async def fetch_match_details(self, match_id: str) -> MatchDetails:
         # TODO: save data to file or cache?
         data = await self.http.get_match_details(match_id)
         return MatchDetails(self, data)
 
-    @alru_cache(maxsize=512, ttl=60 * 15)  # ttl 15 minutes
+    @alru_cache(maxsize=512, ttl=60 * 10)  # ttl 10 minutes
     async def fetch_match_history(
         self,
         puuid: str,  # required puuid
