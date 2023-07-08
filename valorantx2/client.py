@@ -4,9 +4,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Iterator, overload
 
-import valorantx
 from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
-from valorantx.client import _loop
+from valorantx.client import Client as _Client, _loop
 from valorantx.enums import Locale, QueueType
 from valorantx.models.contracts import Contracts
 from valorantx.models.favorites import Favorites
@@ -47,10 +46,10 @@ _log = logging.getLogger(__name__)
 
 
 # valorantx Client customized for lattemaid
-class Client(valorantx.Client):
+class Client(_Client):
     def __init__(self, bot: LatteMaid = MISSING) -> None:
         self.bot: LatteMaid = bot
-        self.locale: Locale = valorantx.Locale.english
+        self.locale: Locale = Locale.english
         self.loop: asyncio.AbstractEventLoop = _loop
         self.http: HTTPClient = HTTPClient(self.loop)
         self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
