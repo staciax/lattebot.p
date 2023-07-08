@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, Callable, overload
 
 import valorantx
 from async_lru import alru_cache
@@ -87,6 +87,16 @@ class Client(valorantx.Client):
     @act.setter
     def act(self, value: Season) -> None:
         self._act = value
+
+    async def clear(self) -> None:
+        super().clear()
+        await self.cache_clear()
+
+    async def close(self) -> None:
+        if self._closed:
+            return
+        await self.cache_close()
+        await super().close()
 
     # patch note
 
@@ -274,12 +284,24 @@ class Client(valorantx.Client):
 
     # cache
 
-    async def cache_clear(self) -> None:
+    def get_cache_methods(self) -> list[tuple[str, Callable[..., Any]]]:
+        methods = []
         for method_name in dir(self):
             if method_name.startswith('_'):
                 continue
             method = getattr(self, method_name)
-            if hasattr(method, 'cache_clear'):
-                method.cache_clear()
+            if hasattr(method, 'cache_info'):
+                methods.append((method_name, method))
+        return methods
 
+    async def cache_clear(self) -> None:
+        methods = self.get_cache_methods()
+        for method_name, method in methods:
+            method.cache_clear()
         _log.info('cache cleared')
+
+    async def cache_close(self) -> None:
+        methods = self.get_cache_methods()
+        for method_name, method in methods:
+            method.cache_close()
+        _log.info('cache closed')
