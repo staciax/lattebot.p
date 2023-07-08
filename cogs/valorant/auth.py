@@ -48,7 +48,9 @@ class RiotAuth(RiotAuth_):
         _log.info(f're authorizing {self.game_name}#{self.tag_line}({self.puuid})')
 
         if not self.is_available():
-            raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')
+            _log.debug(f'{self.game_name}#{self.tag_line}({self.puuid}) is not available')
+            # TODO: something here
+            return
 
         for tries in range(4):
             try:
