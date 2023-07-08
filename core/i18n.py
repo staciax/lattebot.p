@@ -62,7 +62,7 @@ class I18n:
             self.load_from_file(locale.value)
         if not self.read_only:
             self.loop.create_task(self.save())
-        _log.info(f'loaded i18n for cogs.{self.cog_name} ')
+        _log.info(f'loaded cogs.{self.cog_name}')
 
     def load_from_file(self, locale: str) -> None:
         locale_path = get_path(self.cog_folder, locale)
