@@ -75,9 +75,9 @@ class Cog(commands.Cog):
         if interaction.client.is_debug_mode():
             command = interaction.command
             if command is not None:
-                _log.error('exception in %s command on %s', command.name, self.qualified_name, exc_info=error)
+                _log.error('exception in %s command on %s cog', command.name, self.qualified_name, exc_info=error)
             else:
-                _log.error('exception on %s', self.qualified_name, exc_info=error)
+                _log.error('exception on %s cog', self.qualified_name, exc_info=error)
         interaction.client.dispatch('app_command_error', interaction, error)
 
     async def _inject(
