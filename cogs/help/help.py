@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord import app_commands, ui
 from discord.app_commands import locale_str as _T
-from discord.app_commands.checks import bot_has_permissions, dynamic_cooldown
 from discord.app_commands.commands import Command, Group
 from discord.app_commands.models import AppCommand
 from discord.ext import commands
 
-from core.checks import cooldown_short
+from core.checks import bot_has_permissions, cooldown_short, dynamic_cooldown, user as user_check
 from core.cog import Cog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
@@ -99,10 +98,6 @@ class CogButton(ui.Button['HelpCommand']):
         await self.view.show_page(interaction, 0)
 
 
-def key(interaction: discord.Interaction) -> discord.User | discord.Member:
-    return interaction.user
-
-
 class HelpCommand(ViewAuthor, LattePages):
     def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: list[str]) -> None:
         super().__init__(interaction, timeout=600.0)
@@ -113,7 +108,7 @@ class HelpCommand(ViewAuthor, LattePages):
         self.go_to_first_page.row = 1
         self.go_to_previous_page.row = 1
         self.go_to_next_page.row = 1
-        self.cooldown = commands.CooldownMapping.from_cooldown(5.0, 15.0, key)
+        self.cooldown = commands.CooldownMapping.from_cooldown(5.0, 15.0, user_check)
         self.clear_items()
 
     def _update_labels(self, page_number: int) -> None:

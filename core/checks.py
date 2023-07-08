@@ -34,6 +34,10 @@ __all__ = (
 T = TypeVar('T')
 
 
+def user(interaction: discord.Interaction) -> discord.User | discord.Member:
+    return interaction.user
+
+
 def owner_only() -> Callable[[T], T]:
     async def actual_check(interaction: Interaction[LatteMaid]):
         return await interaction.client.is_owner(interaction.user)
