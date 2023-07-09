@@ -31,6 +31,7 @@ __all__ = (
     'cooldown_long',
     'custom_cooldown',
 )
+
 T = TypeVar('T')
 
 

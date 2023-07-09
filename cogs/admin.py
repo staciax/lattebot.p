@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
-# fmt: off
 EXTENSIONS = Literal[
     'cogs.about',
     'cogs.errors',
@@ -30,9 +29,8 @@ EXTENSIONS = Literal[
     'cogs.jsk',
     'cogs.stats',
     'cogs.valorant',
-    'cogs.test'
+    'cogs.test',
 ]
-# fmt: on
 
 
 class BlackListPageSource(ListPageSource):
