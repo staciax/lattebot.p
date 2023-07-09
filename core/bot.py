@@ -132,6 +132,10 @@ class LatteMaid(commands.AutoShardedBot):
             raise ValueError('Support guild ID is not set.')
         return self.get_guild(self.support_guild_id)
 
+    @property
+    def version(self) -> str:
+        return self._version
+
     @discord.utils.cached_property
     def traceback_log(self) -> discord.TextChannel | None:
         return self.get_channel(1102897424235761724)  # type: ignore
