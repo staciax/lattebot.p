@@ -102,7 +102,7 @@ class HelpCommand(ViewAuthor, LattePages):
     def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: list[str]) -> None:
         super().__init__(interaction, timeout=600.0)
         self.cogs = cogs
-        self.embed: Embed = self.front_help_command_embed()
+        self.embed: Embed = self.front_help_command_embed(interaction)
         self.home_button.emoji = self.bot.emoji.latte_icon
         self.go_to_last_page.row = 1
         self.go_to_first_page.row = 1
@@ -114,13 +114,13 @@ class HelpCommand(ViewAuthor, LattePages):
     def _update_labels(self, page_number: int) -> None:
         super()._update_labels(page_number)
         self.go_to_next_page.label = 'next'
-        self.go_to_previous_page.label = 'previous'
+        self.go_to_previous_page.label = 'prev'
 
-    def front_help_command_embed(self) -> Embed:
+    def front_help_command_embed(self, interaction: discord.Interaction[LatteMaid]) -> Embed:
         assert self.bot.user is not None
-        embed = Embed().secondary()
+        embed = Embed(timestamp=interaction.created_at).white()
         embed.set_author(
-            name=f'{self.bot.user.display_name} - Help',
+            name=f'{self.bot.user.display_name} - ' + _('help.command', interaction.locale),
             icon_url=self.bot.user.display_avatar,
         )
         embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
