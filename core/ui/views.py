@@ -192,7 +192,8 @@ class ViewAuthor(BaseView):
         self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
 
     async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
-        self.locale = interaction.locale
+        if self.locale != interaction.locale:
+            self.locale = interaction.locale
 
     async def interaction_check(self, interaction: Interaction[LatteMaid]) -> bool:
         """Only allowing the context author to interact with the view"""
@@ -216,10 +217,8 @@ class ViewAuthor(BaseView):
 
     async def on_check_failure(self, interaction: Interaction[LatteMaid]) -> None:
         """Handles the error when the check fails"""
-        app_command = interaction.command or self.interaction.command
-        if app_command is not None:
-            app_command = self.bot.get_app_command(app_command.qualified_name) or app_command
-        raise CheckFailure(app_command, self.author)
+        command = interaction.command or self.interaction.command
+        raise CheckFailure(command, self.author)
 
     @property
     def author(self) -> discord.Member | discord.User:
