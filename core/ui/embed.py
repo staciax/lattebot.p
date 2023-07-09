@@ -105,3 +105,11 @@ class MiadEmbed(DiscordEmbed):
     def light(self) -> Self:
         self.colour = 0xCBCCD6
         return self
+
+    def white(self) -> Self:
+        self.colour = DiscordColour.light_embed()
+        return self
+
+    def dark_theme(self) -> Self:
+        self.colour = DiscordColour.dark_theme()
+        return self
