@@ -2,7 +2,6 @@ from typing import Any
 
 import discord
 from discord.app_commands.commands import Command, ContextMenu
-from discord.app_commands.models import AppCommand, AppCommandGroup
 
 # TODO: improve this
 
@@ -103,9 +102,9 @@ class CheckFailure(LatteMaidError):
 
     def __init__(
         self,
-        command: Command[Any, ..., Any] | ContextMenu | AppCommand | AppCommandGroup | None,
+        command: Command[Any, ..., Any] | ContextMenu | None,
         author: discord.User | discord.Member | None,
     ) -> None:
-        self.command: Command[Any, ..., Any] | ContextMenu | AppCommand | AppCommandGroup | None = command
+        self.command: Command[Any, ..., Any] | ContextMenu | None = command
         self.author: discord.User | discord.Member | None = author
         super().__init__('You are not allowed to use this.')
