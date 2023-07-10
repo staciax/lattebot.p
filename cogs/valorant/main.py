@@ -16,12 +16,12 @@ import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import Cog
 from core.database.models import User
-from core.errors import UserInputError
+from core.errors import BadArgument, UserInputError
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from valorantx2.client import Client as ValorantClient
 from valorantx2.errors import RiotMultifactorError
-from valorantx2.utils import locale_converter
+from valorantx2.utils import locale_converter, validate_riot_id
 
 from .account_manager import AccountManager
 from .admin import Admin
@@ -468,9 +468,27 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_medium)
-    async def match(self, interaction: discord.Interaction, mode: Choice[str] | None = None) -> None:
+    async def match(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        mode: Choice[str] | None = None,
+        riot_id: str | None = None,
+    ) -> None:
         user = await self.get_or_create_user(interaction.user.id, interaction.locale)
         await interaction.response.defer()
+
+        queue_id = mode.value if mode is not None else None
+
+        if riot_id is not None:
+            try:
+                game_name, tag_line = validate_riot_id(riot_id)
+            except ValueError:
+                raise BadArgument(_('invalid.riot_id', interaction.locale))
+
+            puuid = (await self.valorant_client.fetch_partial_user(game_name, tag_line)).puuid
+
+            match_history = await self.valorant_client.fetch_match_history(puuid, queue_id)
+            return
 
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     @app_commands.guild_only()
