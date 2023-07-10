@@ -38,15 +38,7 @@ from .events import Events
 from .notify import Notify
 from .ui import embeds as e
 from .ui.modal import RiotMultiFactorModal
-from .ui.views import (
-    CarrierView,
-    CollectionView,
-    FeaturedBundleView,
-    GamePassView,
-    MissionView,
-    NightMarketView,
-    WalletView,
-)
+from .ui.views import CarrierView, CollectionView, FeaturedBundleView, GamePassView, MissionView, NightMarketView, WalletView
 
 #     StoreFrontView,
 from .ui.views_7 import NewStoreFrontView
