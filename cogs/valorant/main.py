@@ -437,7 +437,12 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_long)
-    async def carrier(self, interaction: discord.Interaction[LatteMaid], mode: Choice[str] | None = None) -> None:
+    async def carrier(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        mode: Choice[str] | None = None,
+        riot_id: str | None = None,
+    ) -> None:
         user = await self.get_or_create_user(interaction.user.id, interaction.locale)
 
         await interaction.response.defer()
@@ -487,7 +492,13 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
             puuid = (await self.valorant_client.fetch_partial_user(game_name, tag_line)).puuid
 
-            match_history = await self.valorant_client.fetch_match_history(puuid, queue_id)
+            match_history = await self.valorant_client.fetch_match_history(puuid, queue_id, end=1)
+
+            if not len(match_history.match_details):
+                raise BadArgument(_('match.no_match', interaction.locale))
+
+            match_details = match_history.match_details[0]
+
             return
 
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
