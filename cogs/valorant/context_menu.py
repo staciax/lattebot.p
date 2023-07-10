@@ -13,6 +13,7 @@ from core.checks import cooldown_medium, dynamic_cooldown
 from core.cog import context_menu
 from core.errors import BadArgument
 from core.i18n import I18n
+from valorantx2.utils import validate_riot_id
 
 from .abc import MixinMeta
 from .account_manager import AccountManager
@@ -20,30 +21,11 @@ from .account_manager import AccountManager
 if TYPE_CHECKING:
     from core.bot import LatteMaid
 
-_log = logging.getLogger(__name__)
-
-
-_ = I18n('valorant.context_menu', __file__, read_only=True)
-
 SUPPORT_GUILD_ID = 1097859504906965042
 
+_log = logging.getLogger(__name__)
 
-def validate_riot_id(riot_id: str) -> tuple[str, str]:
-    if '#' not in riot_id:
-        raise BadArgument('Invalid Riot ID.')
-
-    game_name, _, tag_line = riot_id.partition('#')
-
-    if not game_name or not tag_line:
-        raise BadArgument('Invalid Riot ID.')
-
-    if len(game_name) > 16:
-        raise BadArgument('Invalid Riot ID.')
-
-    if len(tag_line) > 5:
-        raise BadArgument('Invalid Riot ID.')
-
-    return game_name, tag_line
+_ = I18n('valorant.context_menu', __file__, read_only=True)
 
 
 class ContextMenu(MixinMeta):
@@ -56,7 +38,10 @@ class ContextMenu(MixinMeta):
     ) -> None:
         """Invite the author of the message to the party."""
 
-        game_name, tag_line = validate_riot_id(message.content)
+        try:
+            game_name, tag_line = validate_riot_id(message.content)
+        except ValueError:
+            raise BadArgument(_('invalid.riot_id', interaction.locale))
 
         await interaction.response.defer(ephemeral=True)
 
@@ -67,11 +52,10 @@ class ContextMenu(MixinMeta):
         try:
             party_player = await self.valorant_client.fetch_party_player(riot_auth=account_manager.main_account)
         except valorantx.errors.NotFound:
-            await interaction.followup.send('You are not in a party.', ephemeral=True, silent=True)
-            return
+            raise BadArgument(_('not_in_party', interaction.locale))
         else:
             if account_manager.main_account is None:
-                raise RuntimeError('main_account is None')
+                raise BadArgument(_('not_logged_in', interaction.locale))
             party = await self.valorant_client.party_invite_by_riot_id(
                 party_player.current_party_id,
                 game_name,
@@ -79,7 +63,7 @@ class ContextMenu(MixinMeta):
                 riot_auth=account_manager.main_account,
             )
             if party.version == 0:
-                raise BadArgument(f'Not found: {game_name}#{tag_line}')
+                raise BadArgument(_('not_in_party', interaction.locale))
             await interaction.followup.send('Invited.', ephemeral=True, silent=True)
 
     @context_menu(name=_T('party request'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
@@ -118,7 +102,10 @@ class ContextMenu(MixinMeta):
     @context_menu(name=_T('match history'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
     @dynamic_cooldown(cooldown_medium)
     async def message_match_history(self, interaction: discord.Interaction[LatteMaid], message: discord.Message) -> None:
-        game_name, tag_line = validate_riot_id(message.content)
+        try:
+            game_name, tag_line = validate_riot_id(message.content)
+        except ValueError:
+            raise BadArgument(_('invalid.riot_id', interaction.locale))
 
         await interaction.response.defer(ephemeral=True)
 
