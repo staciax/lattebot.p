@@ -99,7 +99,9 @@ class ContextMenu(MixinMeta):
 
         await interaction.response.send_message('Not implemented.', ephemeral=True, silent=True)
 
-    @context_menu(name=_T('match history'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
+    # avaliable in 1.0.0a
+
+    @context_menu(name=_T('match history'))
     @dynamic_cooldown(cooldown_medium)
     async def message_match_history(self, interaction: discord.Interaction[LatteMaid], message: discord.Message) -> None:
         try:
