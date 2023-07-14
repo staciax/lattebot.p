@@ -26,4 +26,4 @@ pygit2
 uvloop; sys_platform != 'win32'
 
 # valorantx
-valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.0 # may be public soon?
+valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x # may be public soon?
