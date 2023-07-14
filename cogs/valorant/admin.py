@@ -85,7 +85,7 @@ class Admin(MixinMeta):
         await interaction.response.defer(ephemeral=True)
 
         try:
-            self.valorant_client.clear()
+            await self.valorant_client.clear()
         finally:
             _log.info('valorant client is cleared.')
 
