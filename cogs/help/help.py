@@ -88,7 +88,7 @@ class CogButton(ui.Button['HelpCommandView']):
         self.view.source = HelpPageSource(self.cog, self.entries)
 
         max_pages = self.view.source.get_max_pages()
-        if max_pages is not None and max_pages > 1:
+        if max_pages > 1:
             self.view._add_nav_buttons()
         else:
             self.view._remove_nav_buttons()
@@ -97,28 +97,18 @@ class CogButton(ui.Button['HelpCommandView']):
         for child in self.view.children:
             if isinstance(child, CogButton) and child != self:
                 child.disabled = False
+
         self.view.home_button.disabled = False
         await self.view.show_page(interaction, 0)
 
 
 class HelpCommandView(ViewAuthor, LattePages):
-    def __init__(
-        self,
-        interaction: discord.Interaction[LatteMaid],
-        allowed_cogs: tuple[str, ...],
-        *,
-        check_embeds: bool = True,
-        compact: bool = False,
-        **kwargs,
-    ):
-        super().__init__(interaction=interaction, check_embeds=check_embeds, compact=compact, **kwargs)
+    def __init__(self, interaction: discord.Interaction[LatteMaid], allowed_cogs: tuple[str, ...]):
+        super().__init__(interaction=interaction, timeout=60.0 * 30)  # 30 minutes
         self.allowed_cogs = allowed_cogs
         self.embed: Embed = get_front_help_command_embed(interaction)
-        self.go_to_last_page.row = 1
-        self.go_to_first_page.row = 1
-        self.go_to_previous_page.row = 1
-        self.go_to_next_page.row = 1
-        self.cooldown = commands.CooldownMapping.from_cooldown(8.0, 15.0, user_check)
+        self.cooldown = commands.CooldownMapping.from_cooldown(8.0, 15.0, user_check)  # overide default cooldown
+        self.go_to_last_page.row = self.go_to_first_page.row = self.go_to_previous_page.row = self.go_to_next_page.row = 1
         self.clear_items()
         self.add_item(self.home_button)
 
