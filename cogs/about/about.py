@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import discord
 import psutil
 import pygit2
-from discord import Interaction, app_commands
+from discord import app_commands
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import bot_has_permissions
 from discord.utils import format_dt
@@ -66,7 +66,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def invite(self, interaction: Interaction[LatteMaid]) -> None:
+    async def invite(self, interaction: discord.Interaction[LatteMaid]) -> None:
         locale = interaction.locale
         embed = MiadEmbed().secondary()
         embed.set_author(
@@ -85,7 +85,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('about'), description=_T('Shows bot information'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def about(self, interaction: Interaction[LatteMaid]) -> None:
+    async def about(self, interaction: discord.Interaction[LatteMaid]) -> None:
         # await interaction.response.defer()
 
         locale = interaction.locale
@@ -153,7 +153,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('support'), description=_T('Sends the support server of the bot.'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def support(self, interaction: Interaction[LatteMaid]) -> None:
+    async def support(self, interaction: discord.Interaction[LatteMaid]) -> None:
         locale = interaction.locale
         embed = MiadEmbed()
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
