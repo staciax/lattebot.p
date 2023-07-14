@@ -433,7 +433,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             Choice(name=_T('Custom'), value='custom'),
         ]
     )
-    @app_commands.describe(mode=_T('The queue to show your carrier for'))
+    @app_commands.describe(mode=_T('The queue to show your carrier for'), riot_id=_T('Riot ID'))
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_long)
@@ -469,7 +469,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
             Choice(name=_T('Custom'), value='custom'),
         ]
     )
-    @app_commands.describe(mode=_T('The queue to show your latest match for'))
+    @app_commands.describe(mode=_T('The queue to show your latest match for'), riot_id=_T('Riot ID'))
     @app_commands.rename(mode=_T('mode'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_medium)

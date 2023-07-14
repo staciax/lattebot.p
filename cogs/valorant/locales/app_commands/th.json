@@ -36,6 +36,10 @@
                     "snowball": "Snowball Fight",
                     "custom": "Custom"
                 }
+            },
+            "riot_id": {
+                "display_name": "riot_id",
+                "description": "Riot ID"
             }
         }
     },
@@ -106,6 +110,10 @@
                     "snowball": "Snowball Fight",
                     "custom": "Custom"
                 }
+            },
+            "riot_id": {
+                "display_name": "riot_id",
+                "description": "Riot ID"
             }
         }
     },
