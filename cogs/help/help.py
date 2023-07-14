@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 import discord
 from discord import app_commands, ui
 from discord.app_commands import locale_str as _T
-from discord.app_commands.commands import Command, Group
+from discord.app_commands.commands import Command, ContextMenu, Group
 from discord.app_commands.models import AppCommand
 from discord.ext import commands
 
@@ -22,41 +22,44 @@ if TYPE_CHECKING:
 _ = I18n('help', __file__)
 
 
+def get_front_help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
+    bot = interaction.client
+    embed = Embed(timestamp=interaction.created_at).white()
+    embed.set_author(
+        name=f'{bot.user.display_name} - ' + _('help.command', interaction.locale),  # type: ignore
+        icon_url=bot.user.display_avatar,  # type: ignore
+    )
+    embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
+    return embed
+
+
+def cog_embed(cog: commands.Cog | Cog, locale: discord.Locale) -> Embed:
+    emoji = getattr(cog, 'display_emoji', '')
+
+    description = cog.description
+    if i18n := getattr(cog, '__i18n__', None):
+        description = i18n.get_text('cog.description', locale, description)
+
+    embed = Embed(
+        title=f'{emoji} {cog.qualified_name}',
+        description=description + '\n',
+    )
+    return embed
+
+
 class HelpPageSource(ListPageSource):
-    def __init__(self, cog: commands.Cog, source: list[Command[Any, ..., Any] | Group]) -> None:
+    def __init__(self, cog: commands.Cog | Cog, source: list[Command[Any, ..., Any] | Group]) -> None:
         self.cog = cog
-        entries = []
-        for app in sorted(source, key=lambda c: c.qualified_name):
-            if app.parent and app.parent._guild_ids:
-                continue
-            if app._guild_ids:
-                continue
-            entries.append(app)
-
-        super().__init__(entries, per_page=6)
-
-    @staticmethod
-    def default(cog: commands.Cog, locale: discord.Locale) -> Embed:
-        emoji = getattr(cog, 'display_emoji', '')
-
-        description = cog.description
-        if i18n := getattr(cog, '__i18n__', None):
-            description = i18n.get_text('cog.description', locale, description)
-
-        embed = Embed(
-            title=f'{emoji} {cog.qualified_name}',
-            description=description + '\n',
-        )
-        return embed
+        super().__init__(sorted(source, key=lambda c: c.qualified_name), per_page=6)
 
     def format_page(
         self,
-        menu: HelpCommand,
+        menu: HelpCommandView,
         entries: list[Command[Any, ..., Any] | Group],
     ) -> Embed:
-        embed = self.default(self.cog, menu.locale)
+        embed = cog_embed(self.cog, menu.locale)
+        assert embed.description is not None
         for command in entries:
-            assert embed.description is not None
             name = command.qualified_name
             description = command.description
 
@@ -64,16 +67,17 @@ class HelpPageSource(ListPageSource):
             if model is not None:
                 assert isinstance(model, AppCommand)
                 name = model.mention
-                description = model.description_localizations.get(menu.locale, command.description)
+                description = model.description_localizations.get(menu.locale, description)
 
             embed.description += f'\n{name} - {description}'
 
         return embed
 
 
-class CogButton(ui.Button['HelpCommand']):
-    def __init__(self, cog: commands.Cog, *args, **kwargs) -> None:
+class CogButton(ui.Button['HelpCommandView']):
+    def __init__(self, cog: commands.Cog | Cog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs) -> None:
         self.cog = cog
+        self.entries = entries
         emoji = getattr(cog, 'display_emoji')
         super().__init__(emoji=emoji, style=discord.ButtonStyle.primary, *args, **kwargs)
         if self.emoji is None:
@@ -81,8 +85,7 @@ class CogButton(ui.Button['HelpCommand']):
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
-
-        self.view.source = HelpPageSource(self.cog, list(self.cog.walk_app_commands()))
+        self.view.source = HelpPageSource(self.cog, self.entries)
 
         max_pages = self.view.source.get_max_pages()
         if max_pages is not None and max_pages > 1:
@@ -98,28 +101,32 @@ class CogButton(ui.Button['HelpCommand']):
         await self.view.show_page(interaction, 0)
 
 
-class HelpCommand(ViewAuthor, LattePages):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], cogs: tuple[str, ...]) -> None:
-        super().__init__(interaction, timeout=600.0)
-        self.cogs = cogs
-        self.embed: Embed = self._front_help_command_embed(interaction)
-        # self.home_button.emoji = self.bot.emoji.latte_icon
+class HelpCommandView(ViewAuthor, LattePages):
+    def __init__(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        allowed_cogs: tuple[str, ...],
+        *,
+        check_embeds: bool = True,
+        compact: bool = False,
+        **kwargs,
+    ):
+        super().__init__(interaction=interaction, check_embeds=check_embeds, compact=compact, **kwargs)
+        self.allowed_cogs = allowed_cogs
+        self.embed: Embed = get_front_help_command_embed(interaction)
         self.go_to_last_page.row = 1
         self.go_to_first_page.row = 1
         self.go_to_previous_page.row = 1
         self.go_to_next_page.row = 1
-        self.cooldown = commands.CooldownMapping.from_cooldown(5.0, 15.0, user_check)
+        self.cooldown = commands.CooldownMapping.from_cooldown(8.0, 15.0, user_check)
         self.clear_items()
+        self.add_item(self.home_button)
 
-    def _front_help_command_embed(self, interaction: discord.Interaction[LatteMaid]) -> Embed:
-        assert self.bot.user is not None
-        embed = Embed(timestamp=interaction.created_at).white()
-        embed.set_author(
-            name=f'{self.bot.user.display_name} - ' + _('help.command', interaction.locale),
-            icon_url=self.bot.user.display_avatar,
-        )
-        embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
-        return embed
+    def _update_labels(self, page_number: int) -> None:
+        super()._update_labels(page_number)
+        self.go_to_next_page.label = 'next'
+        self.go_to_previous_page.label = 'prev'
+        # TODO: i18n in lattepages class
 
     def _add_nav_buttons(self) -> None:
         self.add_item(self.go_to_first_page)
@@ -133,30 +140,82 @@ class HelpCommand(ViewAuthor, LattePages):
         self.remove_item(self.go_to_next_page)
         self.remove_item(self.go_to_last_page)
 
-    def _add_cog_buttons(self) -> None:
-        for cog in sorted(self.bot.cogs.values(), key=lambda c: c.qualified_name.lower()):
-            if cog.qualified_name.lower() not in self.cogs:
-                continue
-            if not len(list(cog.walk_app_commands())):
-                continue
-            self.add_item(CogButton(cog=cog))
+    async def _build_cog_buttons(self) -> None:
+        user = self.interaction.user
+        channel = self.interaction.channel
 
-    def _update_labels(self, page_number: int) -> None:
-        super()._update_labels(page_number)
-        self.go_to_next_page.label = 'next'
-        self.go_to_previous_page.label = 'prev'
-        # TODO: i18n in lattepages class
+        async def command_available(command: Command[Any, ..., Any] | Group | ContextMenu) -> bool:
+            # it fine my bot is not nsfw
+            # if (
+            #     command.nsfw
+            #     and channel is not None
+            #     and not isinstance(channel, (discord.GroupChannel, discord.DMChannel))
+            #     and not channel.is_nsfw()
+            # ):
+            #     return False
+
+            if isinstance(command, Group):
+                return False
+
+            if await self.bot.is_owner(user):
+                return True
+
+            if command._guild_ids:
+                return False
+
+            # ignore slash commands that are not global
+            if not isinstance(command, ContextMenu) and command.parent and command.parent._guild_ids:
+                return False
+
+            # ignore slash commands you can't run
+            if command.checks and not await discord.utils.async_all(f(self.interaction) for f in command.checks):
+                return False
+
+            # ignore slash commands you not have default permissions
+            if (
+                command.default_permissions
+                and channel is not None
+                and isinstance(user, discord.Member)
+                and not channel.permissions_for(user) >= command.default_permissions
+            ):
+                return False
+
+            return True
+
+        for cog in sorted(self.bot.cogs.values(), key=lambda c: c.qualified_name.lower()):
+            if cog.qualified_name.lower() not in self.allowed_cogs:
+                continue
+
+            if not list(cog.walk_app_commands()):
+                continue
+
+            entries = []
+            for command in cog.walk_app_commands():
+                if not await command_available(command):
+                    continue
+                entries.append(command)
+
+            # TODO: implement context menu
+            # if isinstance(cog, Cog):
+            #     context_menus = cog.get_context_menus()
+            #     for menu in context_menus:
+            #         if not await command_available(menu):
+            #             continue
+            #         entries.append(menu)
+
+            if not entries:
+                continue
+
+            self.add_item(CogButton(cog, entries))
 
     async def before_callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         if self.locale == interaction.locale:
             return
-
         self.locale = interaction.locale
-        self.embed = self._front_help_command_embed(interaction)
+        self.embed = get_front_help_command_embed(interaction)
 
-    async def callback(self) -> None:
-        self.add_item(self.home_button)
-        self._add_cog_buttons()
+    async def start(self) -> None:
+        await self._build_cog_buttons()
         await self.interaction.response.send_message(embed=self.embed, view=self)
         self.message = await self.interaction.original_response()
 
@@ -188,8 +247,8 @@ class Help(Cog, name='help'):
     @dynamic_cooldown(cooldown_short)
     async def help_command(self, interaction: discord.Interaction[LatteMaid]):
         cogs = ('about', 'valorant')
-        help_command = HelpCommand(interaction, cogs)
-        await help_command.callback()
+        help_command = HelpCommandView(interaction, cogs)
+        await help_command.start()
 
 
 async def setup(bot: LatteMaid) -> None:
