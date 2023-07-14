@@ -192,8 +192,9 @@ class ViewAuthor(BaseView):
         self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
 
     async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
-        if self.locale != interaction.locale:
-            self.locale = interaction.locale
+        if self.locale == interaction.locale:
+            return
+        self.locale = interaction.locale
 
     async def interaction_check(self, interaction: Interaction[LatteMaid]) -> bool:
         """Only allowing the context author to interact with the view"""
