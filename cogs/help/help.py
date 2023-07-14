@@ -49,8 +49,8 @@ def cog_embed(cog: commands.Cog | Cog, locale: discord.Locale) -> Embed:
 
 class HelpPageSource(ListPageSource):
     def __init__(self, cog: commands.Cog | Cog, source: list[Command[Any, ..., Any] | Group]) -> None:
-        self.cog = cog
         super().__init__(sorted(source, key=lambda c: c.qualified_name), per_page=6)
+        self.cog = cog
 
     def format_page(
         self,
@@ -76,10 +76,9 @@ class HelpPageSource(ListPageSource):
 
 class CogButton(ui.Button['HelpCommandView']):
     def __init__(self, cog: commands.Cog | Cog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs) -> None:
+        super().__init__(emoji=getattr(cog, 'display_emoji'), style=discord.ButtonStyle.primary, *args, **kwargs)
         self.cog = cog
         self.entries = entries
-        emoji = getattr(cog, 'display_emoji')
-        super().__init__(emoji=emoji, style=discord.ButtonStyle.primary, *args, **kwargs)
         if self.emoji is None:
             self.label = cog.qualified_name
 
