@@ -3,7 +3,7 @@ discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
 jishaku @ git+https://github.com/Gorialis/jishaku.git
 
 # database
-sqlalchemy>=2,<3
+SQLAlchemy>=2,<3
 asyncpg>=0.28.0 # production
 aiosqlite>=0.19.0 # development (faster)
 cryptography>=41.0.1 # encryption
@@ -19,11 +19,11 @@ beautifulsoup4
 lxml
 
 # utils
-psutil>=5,<6
+psutil
 pygit2
 
 # speedups
 uvloop; sys_platform != 'win32'
 
 # valorantx
-valorantx @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x # may be public soon?
+valorantx[speed] @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x # may be public soon?
