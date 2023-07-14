@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 _ = I18n('help', __file__)
 
 
-def get_front_help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
+def help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
     bot = interaction.client
     embed = Embed(timestamp=interaction.created_at).white()
     embed.set_author(
@@ -106,7 +106,7 @@ class HelpCommandView(ViewAuthor, LattePages):
     def __init__(self, interaction: discord.Interaction[LatteMaid], allowed_cogs: tuple[str, ...]):
         super().__init__(interaction=interaction, timeout=60.0 * 30)  # 30 minutes
         self.allowed_cogs = allowed_cogs
-        self.embed: Embed = get_front_help_command_embed(interaction)
+        self.embed: Embed = help_command_embed(interaction)
         self.cooldown = commands.CooldownMapping.from_cooldown(8.0, 15.0, user_check)  # overide default cooldown
         self.go_to_last_page.row = self.go_to_first_page.row = self.go_to_previous_page.row = self.go_to_next_page.row = 1
         self.clear_items()
@@ -202,7 +202,7 @@ class HelpCommandView(ViewAuthor, LattePages):
         if self.locale == interaction.locale:
             return
         self.locale = interaction.locale
-        self.embed = get_front_help_command_embed(interaction)
+        self.embed = help_command_embed(interaction)
 
     async def start(self) -> None:
         await self._build_cog_buttons()
