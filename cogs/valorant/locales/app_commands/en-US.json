@@ -131,6 +131,10 @@
             }
         }
     },
+    "notify": {
+        "name": "notify",
+        "description": "Setting notification"
+    },
     "patchnote": {
         "name": "patchnote",
         "description": "Patch notes"
@@ -144,6 +148,10 @@
                 "description": "Show the message only to you"
             }
         }
+    },
+    "settings": {
+        "name": "settings",
+        "description": "Change your settings"
     },
     "store": {
         "name": "store",

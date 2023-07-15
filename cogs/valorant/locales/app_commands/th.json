@@ -131,6 +131,10 @@
             }
         }
     },
+    "notify": {
+        "name": "notify",
+        "description": "Setting notification"
+    },
     "patchnote": {
         "name": "patchnote",
         "description": "แสดงแพทช์โน้ตล่าสุด"
@@ -144,6 +148,10 @@
                 "description": "แสดงข้อความเฉพาะคุณเท่านั้น"
             }
         }
+    },
+    "settings": {
+        "name": "settings",
+        "description": "Change your settings"
     },
     "store": {
         "name": "store",
