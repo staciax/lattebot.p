@@ -36,6 +36,7 @@ from .error import (
 )
 from .events import Events
 from .notify import Notify
+from .schedule import Schedule
 from .ui import embeds as e
 from .ui.modal import RiotMultiFactorModal
 from .ui.views import CarrierView, CollectionView, FeaturedBundleView, GamePassView, MissionView, NightMarketView, WalletView
@@ -63,7 +64,7 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 
 @cog_i18n(_)
-class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=CompositeMetaClass):
+class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
         self._lock: asyncio.Lock = asyncio.Lock()
@@ -78,13 +79,13 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
     async def cog_load(self) -> None:
         # self.notify_alert.start()
-        self.valorant_version_checker.start()
-        self.valorant_cache_control.start()
+        self.version_checker.start()
+        self.cache_control.start()
 
     async def cog_unload(self) -> None:
         # self.notify_alert.cancel()
-        self.valorant_version_checker.cancel()
-        self.valorant_cache_control.cancel()
+        self.version_checker.cancel()
+        self.cache_control.cancel()
 
     # check
 
@@ -131,7 +132,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
         ]
     )
     @app_commands.guild_only()
-    @dynamic_cooldown(cooldown_short)
+    @dynamic_cooldown(cooldown_medium)
     async def login(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -201,6 +202,20 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
                 riot_auth.region = 'ap'  # default to ap
                 _log.error('riot auth error fetching region', exc_info=e)
         assert riot_auth.region is not None
+
+        embed = Embed().blurple()
+        embed.add_field(name='PUUID', value=riot_auth.puuid)
+        embed.add_field(name='Riot ID', value=riot_auth.riot_id)
+        embed.add_field(name='Region', value=riot_auth.region)
+
+        view = RiotAuthConfirmView(riot_auth, interaction)
+        message = await interaction.followup.send(
+            embed=embed,
+            ephemeral=True,
+            view=view,
+            wait=True,
+        )
+        await view.wait()
 
         riot_account = await self.bot.db.create_riot_account(
             interaction.user.id,
@@ -530,6 +545,12 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Cog, metaclass=
 
         else:
             raise UserInputError('Patch note not found')
+
+    @app_commands.command(name='settings', description='Change your settings')
+    @app_commands.guild_only()
+    @dynamic_cooldown(cooldown_short)
+    async def settings(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        ...
 
     # infomation commands
 

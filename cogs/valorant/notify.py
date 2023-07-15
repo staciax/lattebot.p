@@ -1,11 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 import asyncio
 import logging
 from datetime import datetime, time, timedelta
 
 import discord
+from discord import ui
 from discord import app_commands
-
-# i18n
 from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import dynamic_cooldown
 from discord.ext import tasks
@@ -13,15 +15,61 @@ from discord.ext import tasks
 from core.checks import cooldown_short
 from core.i18n import I18n
 from valorantx2.errors import BadRequest, RateLimited
+from core.ui.views import ViewAuthor
 
 from .abc import MixinMeta
 from .account_manager import AccountManager
+
+if TYPE_CHECKING:
+    from core.database.models import User
+    from core.bot import LatteMaid
 
 _log = logging.getLogger(__name__)
 
 _ = I18n('valorant.events', __file__, read_only=True)
 
 
+class NotifyView(ViewAuthor):
+    user: User
+    def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        super().__init__(interaction)
+
+    async def _init(self) -> None:
+        user = await self.bot.db.get_user(self.author.id)
+        if user is None:
+            # await self.bot.db.create_user(self.author.id, locale=self.locale)
+            raise RuntimeError('User not found')
+        
+        if not len(user.riot_accounts):
+            raise RuntimeError('User has no riot accounts')
+
+        self.user = user
+
+    async def start(self) -> None:
+        await self._init()
+        self.build_buttons()
+    
+    def add_buttons(self) -> None:
+        self.clear_items()
+        self.add_item(StoreNotify(label='Store'))
+        self.add_item(AccessorieNotify(label='Accessorie'))
+        self.add_item(PatchNoteNotify(label='Patch Note'))
+
+class StoreNotify(ui.Button['NotifyView']):
+    
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        ...
+
+class AccessorieNotify(ui.Button['NotifyView']):
+    
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        ...
+
+class PatchNoteNotify(ui.Button['NotifyView']):
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        ...
+    
 class Notify(MixinMeta):
     async def send_notify(self) -> None:
         ...
@@ -65,6 +113,16 @@ class Notify(MixinMeta):
         if not self.valorant_client.is_ready():
             return
         _log.info('notify alert loop started')
+    
+    @app_commands.command(
+        name=_T('notify'),
+        description=_T('Setting notification'),
+    )  # type: ignore
+    @dynamic_cooldown(cooldown_short)
+    async def notify(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        """Setting notification"""
+        view = NotifyView(interaction)
+        await view.start()
 
     # notify = app_commands.Group(name=_T('notify'), description=_T('Notify commands'), guild_only=True)
 
