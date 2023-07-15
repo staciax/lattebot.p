@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, Any, Iterable
 
-from discord import Colour as DiscordColour, Embed as DiscordEmbed
+from discord import Colour, Embed as DiscordEmbed
 from discord.types.embed import EmbedType
 
 if TYPE_CHECKING:
@@ -22,8 +22,8 @@ class MiadEmbed(DiscordEmbed):
     def __init__(
         self,
         *,
-        colour: int | DiscordColour | None = 0xFFFFFF,
-        color: int | DiscordColour | None = 0xFFFFFF,
+        colour: int | Colour | None = 0xFFFFFF,
+        color: int | Colour | None = 0xFFFFFF,
         title: Any | None = None,
         type: EmbedType = 'rich',
         url: Any | None = None,
@@ -107,9 +107,13 @@ class MiadEmbed(DiscordEmbed):
         return self
 
     def white(self) -> Self:
-        self.colour = DiscordColour.light_embed()
+        self.colour = Colour.light_embed()
         return self
 
     def dark_theme(self) -> Self:
-        self.colour = DiscordColour.dark_theme()
+        self.colour = Colour.dark_theme()
+        return self
+
+    def blurple(self) -> Self:
+        self.colour = Colour.blurple()
         return self
