@@ -294,6 +294,7 @@ class DatabaseConnection:
         ssid: str | None = None,
         incognito: bool | None = None,
         notify: bool | None = None,
+        display_name: str | None = None,
     ) -> bool:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
@@ -314,6 +315,7 @@ class DatabaseConnection:
                     ssid=ssid,
                     incognito=incognito,
                     notify=notify,
+                    display_name=display_name,
                 )
             except SQLAlchemyError as e:
                 self._log.error(f'failed to update riot account with puuid {puuid!r} for user id {owner_id!r}: {e!r}')

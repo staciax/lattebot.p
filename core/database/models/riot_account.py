@@ -52,6 +52,7 @@ class RiotAccount(Base):
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[User | None] = relationship('User', back_populates='riot_accounts', lazy='joined')
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
+    display_name: Mapped[str | None] = mapped_column('display_name', String(length=128))
 
     @hybrid_property
     def riot_id(self) -> str:
@@ -180,6 +181,7 @@ class RiotAccount(Base):
         ssid: str | None = None,
         incognito: bool | None = None,
         notify: bool | None = None,
+        display_name: str | None = None,
     ) -> Self:
         if game_name is not None:
             self.game_name = game_name
@@ -205,6 +207,8 @@ class RiotAccount(Base):
             self.incognito = incognito
         if notify is not None:
             self.notify = notify
+        if display_name is not None:
+            self.display_name = display_name
         await session.flush()
         # To fetch the new object
         new = await self.read_by_id(session, self.id)
