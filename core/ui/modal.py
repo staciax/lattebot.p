@@ -21,6 +21,7 @@ class Modal(ui.Modal):
     ) -> None:
         super().__init__(title=title, timeout=timeout, custom_id=custom_id)
         self.original_interaction: discord.Interaction[LatteMaid] = interaction
+        self.locale: discord.Locale = interaction.locale
 
     async def on_error(self, interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
         command = interaction.command or self.original_interaction.command
