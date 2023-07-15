@@ -1,6 +1,6 @@
 import logging
 
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 from core.i18n import I18n
 

@@ -35,13 +35,21 @@ from .error import (
     RiotAuthNotLinked,
 )
 from .events import Events
-from .notify import Notify
+from .notifications import Notifications
 from .schedule import Schedule
 from .ui import embeds as e
-from .ui.modal import RiotMultiFactorModal
-from .ui.views import CarrierView, CollectionView, FeaturedBundleView, GamePassView, MissionView, NightMarketView, WalletView
-
-#     StoreFrontView,
+from .ui.auth import RiotAuthConfirmView, RiotAuthManageView, RiotMultiFactorModal
+from .ui.settings import SettingsView
+from .ui.views import (
+    CarrierView,
+    CollectionView,
+    FeaturedBundleView,
+    GamePassView,
+    MissionView,
+    NightMarketView,
+    StoreFrontView,
+    WalletView,
+)
 from .ui.views_7 import NewStoreFrontView
 
 if TYPE_CHECKING:
@@ -64,7 +72,7 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 
 @cog_i18n(_)
-class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, metaclass=CompositeMetaClass):
+class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, Cog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid) -> None:
         self.bot: LatteMaid = bot
         self._lock: asyncio.Lock = asyncio.Lock()
@@ -150,6 +158,9 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
         if len(user.riot_accounts) >= 5:
             raise RiotAuthMaxLimitReached('You can only link up to 5 accounts.')
 
+        view = RiotAuthManageView(interaction)
+        await view.start()
+
         riot_auth = RiotAuth()
 
         try:
@@ -204,11 +215,11 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
         assert riot_auth.region is not None
 
         embed = Embed().blurple()
-        embed.add_field(name='PUUID', value=riot_auth.puuid)
-        embed.add_field(name='Riot ID', value=riot_auth.riot_id)
-        embed.add_field(name='Region', value=riot_auth.region)
+        embed.add_field(name='Riot ID', value=riot_auth.riot_id, inline=False)
+        embed.add_field(name='Region', value=riot_auth.region, inline=False)
+        embed.set_footer(text='ID: ' + riot_auth.puuid)
 
-        view = RiotAuthConfirmView(riot_auth, interaction)
+        view = RiotAuthConfirmView(interaction)
         message = await interaction.followup.send(
             embed=embed,
             ephemeral=True,
@@ -216,6 +227,9 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
             wait=True,
         )
         await view.wait()
+
+        if not view.value:
+            raise BadArgument(_('You did not confirm the login.', interaction.locale))
 
         riot_account = await self.bot.db.create_riot_account(
             interaction.user.id,
@@ -236,13 +250,13 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
             await self.bot.db.update_user(user.id, main_account_id=riot_account.id)
 
         _log.info(
-            f'{interaction.user}({interaction.user.id}) linked {riot_auth.display_name}({riot_auth.puuid}) - {riot_auth.region}'
+            f'{interaction.user}({interaction.user.id}) linked {riot_auth.riot_id}({riot_auth.puuid}) - {riot_auth.region}'
         )
         # invalidate cache
         # self.??.invalidate(self, id=interaction.user.id)
 
-        e = Embed(description=f'Successfully logged in {chat.bold(riot_auth.display_name)}')
-        await interaction.followup.send(embed=e, ephemeral=True)
+        e = Embed(description=f'Successfully logged in {chat.bold(riot_auth.riot_id)}')
+        await message.edit(embed=e, view=None)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
     @app_commands.rename(puuid=_T('account'))
@@ -274,7 +288,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
             #         if riot_acc.puuid == puuid:
             #             continue
             #         await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
-            #         e.description += f'\n{chat.bold(riot_acc.riot_id)} is now your main account.'  # type: ignore
+            #         e.description += f'\n{chat.bold(riot_acc.riot_id)} is now your main account.'
             #         _log.info(
             #             f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
             #         )
@@ -550,7 +564,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notify, Schedule, Cog, 
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def settings(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+        view = SettingsView(interaction)
+        await view.start()
 
     # infomation commands
 
