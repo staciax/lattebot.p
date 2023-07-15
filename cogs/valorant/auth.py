@@ -33,6 +33,7 @@ class RiotAuth(RiotAuth_):
 
     def __init__(self) -> None:
         super().__init__()
+        self.id: int | None = None
         self.owner_id: int | None = None
         self.notify: bool = False
         self.bot: LatteMaid = MISSING
@@ -83,6 +84,7 @@ class RiotAuth(RiotAuth_):
     @classmethod
     def from_database(cls, riot_account: RiotAccount, /) -> Self:
         self = cls()
+        self.id = riot_account.id
         self.access_token = riot_account.access_token
         self.id_token = riot_account.id_token
         self.entitlements_token = riot_account.entitlements_token
