@@ -1,7 +1,7 @@
-import datetime
+import datetime as dt
 import logging
 
-from discord.ext import commands, tasks
+from discord.ext import tasks
 
 from core.i18n import I18n
 
@@ -10,13 +10,13 @@ from .auth import RiotAuth
 
 _log = logging.getLogger(__name__)
 
-utc7 = datetime.timezone(datetime.timedelta(hours=7))
-times = [
-    datetime.time(hour=6, minute=30, tzinfo=utc7),  # 6:30 AM UTC+7
-    datetime.time(hour=20, tzinfo=utc7),  # 8:00 PM UTC+7
-]
-
 _ = I18n('valorant.schedule', __file__, read_only=True)
+
+utc7 = dt.timezone(dt.timedelta(hours=7))
+times = [
+    dt.time(hour=6, minute=30, tzinfo=utc7),  # 6:30 AM UTC+7
+    dt.time(hour=20, tzinfo=utc7),  # 8:00 PM UTC+7
+]
 
 
 class Schedule(MixinMeta):
@@ -62,7 +62,7 @@ class Schedule(MixinMeta):
                 method.cache_clear()
         _log.info(f'valorant client cache cleared')
 
-    @tasks.loop(time=datetime.time(hour=6, minute=30, tzinfo=utc7))
+    @tasks.loop(time=dt.time(hour=6, minute=30, tzinfo=utc7))
     async def cache_control(self) -> None:
         self.do_cache_clear()
 
@@ -76,7 +76,7 @@ class Schedule(MixinMeta):
     @cache_control.after_loop
     async def after_cache_control(self) -> None:
         if self.cache_control.is_being_cancelled():
-            self.do_cache_control()
+            self.do_cache_clear()
             _log.info('valorant cache control loop has been cancelled')
         else:
             _log.info('valorant cache control loop has been stopped')
