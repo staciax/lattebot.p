@@ -104,7 +104,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         for server in server_app_commands:
             command = self.get_command(server.name, type=server.type)
             if command is None:
-                _log.warning('command not found', server.name, server.type)
+                _log.warning('not found command %s (type: %s)', server.name, server.type)
                 continue
             command.extras['model'] = server
 
