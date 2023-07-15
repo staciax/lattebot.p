@@ -34,6 +34,7 @@ class RiotAuth(RiotAuth_):
     def __init__(self) -> None:
         super().__init__()
         self.id: int | None = None
+        self.display_name: str | None = None
         self.owner_id: int | None = None
         self.notify: bool = False
         self.bot: LatteMaid = MISSING
@@ -53,38 +54,38 @@ class RiotAuth(RiotAuth_):
             # TODO: something here
             return
 
-        for tries in range(4):
+        for tries in range(3):
             try:
                 await self.authorize('', '')
             except RiotAuthenticationError as e:
                 _log.info(f'failed status code: {e.status} message: {e.text}')
-                if e.status == 403 and tries <= 1:  # 403 Forbidden
-                    if self.bot is not MISSING:
-                        # self.bot.dispatch('re_authorize_forbidden', RiotAuth.RIOT_CLIENT_USER_AGENT)
-                        version = await self.bot.valorant_client.valorant_api.fetch_version()
-                        RiotAuth.RIOT_CLIENT_USER_AGENT = (
-                            f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
-                        )
+                if e.status == 403 and tries <= 1 and self.bot is not MISSING:
+                    version = await self.bot.valorant_client.valorant_api.fetch_version()
+                    RiotAuth.RIOT_CLIENT_USER_AGENT = (
+                        f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
+                    )
+                    # self.bot.dispatch('valorant_version_updated', version)
                     await asyncio.sleep(1)
                     continue
-                elif e.status == 400 and tries <= 2:
-                    continue
-                else:
-                    raise e
+                self._is_available = False
+                raise e
             else:
+                _log.info(f'successfully re authorized {self.game_name}#{self.tag_line}({self.puuid})')
                 if self.bot is not MISSING:
                     self.bot.dispatch('re_authorized_successfully', self)
-                _log.info(f'successfully re authorized {self.game_name}#{self.tag_line}({self.puuid})')
                 break
         else:
             self._is_available = False
             self.bot.dispatch('re_authorize_failed', self)
-            raise RuntimeError(f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid})')
+            raise RuntimeError(
+                f'failed to re authorize {self.game_name}#{self.tag_line}({self.puuid}) for user {self.owner_id}'
+            )
 
     @classmethod
     def from_database(cls, riot_account: RiotAccount, /) -> Self:
         self = cls()
         self.id = riot_account.id
+        self.display_name = riot_account.display_name
         self.access_token = riot_account.access_token
         self.id_token = riot_account.id_token
         self.entitlements_token = riot_account.entitlements_token

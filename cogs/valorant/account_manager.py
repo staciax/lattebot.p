@@ -17,16 +17,24 @@ if TYPE_CHECKING:
 _ = I18n('valorant.account_manager', __file__, read_only=True)
 
 
-class RiotAccountManager:
-    def __init__(self, user: UserDB, bot: LatteMaid = MISSING, init_later: bool = True) -> None:
+class AccountManager:
+    def __init__(
+        self,
+        user: UserDB,
+        bot: LatteMaid = MISSING,
+        *,
+        re_authorize: bool = True,
+        init_later: bool = True,
+    ) -> None:
         self.author: UserDB = user
         self.bot: LatteMaid = bot
+        self.re_authorize: bool = re_authorize
         self.main_account: RiotAuth | None = None
         self._accounts: dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False
         self._ready: asyncio.Event = asyncio.Event()
         if init_later:
-            self.bot.loop.create_task(self.init())
+            self.bot.loop.create_task(self._init())
 
     def __repr__(self) -> str:
         return f'<AccountManager author={self.author!r}>'
@@ -38,12 +46,12 @@ class RiotAccountManager:
         return len(self._accounts)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, RiotAccountManager) and self.author == other.author
+        return isinstance(other, AccountManager) and self.author == other.author
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
-    async def init(self) -> None:
+    async def _init(self) -> None:
         for riot_account in sorted(self.author.riot_accounts, key=lambda x: x.created_at):
             riot_auth = RiotAuth.from_database(riot_account)
 
@@ -51,13 +59,13 @@ class RiotAccountManager:
             if self.bot is not MISSING:
                 riot_auth.bot = self.bot
 
-            if time.time() > riot_auth.expires_at:
+            if self.re_authorize and time.time() > riot_auth.expires_at:
                 with contextlib.suppress(Exception):
                     await riot_auth.reauthorize()
 
-            # if not riot_auth.is_available():
-            #     _log.warning(f'failed to authorize {riot_auth.game_name}#{riot_auth.tag_line}({riot_auth.puuid})')
-            #     continue
+                # if not riot_auth.is_available():
+                #     _log.warning(f'failed to authorize {riot_auth.game_name}#{riot_auth.tag_line}({riot_auth.puuid})')
+                #     continue
 
             self._accounts[riot_auth.puuid] = riot_auth
             if self.author.main_riot_account_id == riot_account.id:

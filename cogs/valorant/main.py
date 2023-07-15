@@ -129,134 +129,14 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     # app commands
 
     @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
-    @app_commands.describe(username=_T('Input username'), password=_T('Input password'), region=_T('Select region'))
-    @app_commands.rename(username=_T('username'), password=_T('password'), region=_T('region'))
-    @app_commands.choices(
-        region=[
-            Choice(name=_T('Asia Pacific'), value='ap'),
-            Choice(name=_T('Europe'), value='eu'),
-            Choice(name=_T('North America / Latin America / Brazil'), value='na'),
-            Choice(name=_T('Korea'), value='kr'),
-        ]
-    )
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_medium)
     async def login(
         self,
         interaction: discord.Interaction[LatteMaid],
-        username: app_commands.Range[str, 1, 24],
-        password: app_commands.Range[str, 1, 128],
-        region: Choice[str] | None = None,
     ) -> None:
-        # TODO: transformers params
-        # TODO: website login ?
-        # TODO: TOS, privacy policy
-        user = await self.get_user(interaction.user.id, check_linked=False)
-        if user is None:
-            user = await self.bot.db.create_user(interaction.user.id, locale=interaction.locale)
-
-        if len(user.riot_accounts) >= 5:
-            raise RiotAuthMaxLimitReached('You can only link up to 5 accounts.')
-
         view = RiotAuthManageView(interaction)
         await view.start()
-
-        riot_auth = RiotAuth()
-
-        try:
-            await riot_auth.authorize(username.strip(), password.strip(), remember=True)
-        except RiotMultifactorError:
-            multi_modal = RiotMultiFactorModal(riot_auth, interaction)
-            await interaction.response.send_modal(multi_modal)
-            await multi_modal.wait()
-
-            if multi_modal.code is None:
-                raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
-
-            interaction = multi_modal.interaction or interaction
-
-            if multi_modal.interaction is not None:
-                await interaction.response.defer(ephemeral=True, thinking=True)
-
-            try:
-                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
-            except Exception as e:
-                await multi_modal.on_error(interaction, e)
-                return
-            finally:
-                multi_modal.stop()
-
-        else:
-            await interaction.response.defer(ephemeral=True)
-
-        # check if already linked
-        riot_account = await self.bot.db.get_riot_account_by_puuid_and_owner_id(
-            puuid=riot_auth.puuid, owner_id=interaction.user.id
-        )
-        if riot_account is not None:
-            raise RiotAuthAlreadyLinked('You already have this account linked.')
-
-        # fetch userinfo and region
-        try:
-            await riot_auth.fetch_userinfo()
-        except aiohttp.ClientResponseError as e:
-            _log.error('riot auth error fetching userinfo', exc_info=e)
-
-        # set region if specified
-        if region is not None:
-            riot_auth.region = region.value
-        else:
-            # fetch region if not specified
-            try:
-                await riot_auth.fetch_region()
-            except aiohttp.ClientResponseError as e:
-                riot_auth.region = 'ap'  # default to ap
-                _log.error('riot auth error fetching region', exc_info=e)
-        assert riot_auth.region is not None
-
-        embed = Embed().blurple()
-        embed.add_field(name='Riot ID', value=riot_auth.riot_id, inline=False)
-        embed.add_field(name='Region', value=riot_auth.region, inline=False)
-        embed.set_footer(text='ID: ' + riot_auth.puuid)
-
-        view = RiotAuthConfirmView(interaction)
-        message = await interaction.followup.send(
-            embed=embed,
-            ephemeral=True,
-            view=view,
-            wait=True,
-        )
-        await view.wait()
-
-        if not view.value:
-            raise BadArgument(_('You did not confirm the login.', interaction.locale))
-
-        riot_account = await self.bot.db.create_riot_account(
-            interaction.user.id,
-            puuid=riot_auth.puuid,
-            game_name=riot_auth.game_name,
-            tag_line=riot_auth.tag_line,
-            region=riot_auth.region,
-            scope=riot_auth.scope,  # type: ignore
-            token_type=riot_auth.token_type,  # type: ignore
-            expires_at=riot_auth.expires_at,
-            id_token=riot_auth.id_token,  # type: ignore
-            access_token=riot_auth.access_token,  # type: ignore
-            entitlements_token=riot_auth.entitlements_token,  # type: ignore
-            ssid=riot_auth.get_ssid(),
-            notify=False,
-        )
-        if not len(user.riot_accounts):
-            await self.bot.db.update_user(user.id, main_account_id=riot_account.id)
-
-        _log.info(
-            f'{interaction.user}({interaction.user.id}) linked {riot_auth.riot_id}({riot_auth.puuid}) - {riot_auth.region}'
-        )
-        # invalidate cache
-        # self.??.invalidate(self, id=interaction.user.id)
-
-        e = Embed(description=f'Successfully logged in {chat.bold(riot_auth.riot_id)}')
-        await message.edit(embed=e, view=None)
 
     @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
     @app_commands.rename(puuid=_T('account'))

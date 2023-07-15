@@ -156,8 +156,8 @@ def get_error_handle_embed(
 def _log_error(interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
     command = interaction.command
     if command is not None:
-        if command._has_any_error_handlers():
-            return
+        # if command._has_any_error_handlers():
+        #     return
         _log.error('exception in command %r', command.name, exc_info=error)
     else:
         _log.error('exception ', exc_info=error)
