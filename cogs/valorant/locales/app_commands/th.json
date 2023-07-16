@@ -59,27 +59,7 @@
     },
     "login": {
         "name": "login",
-        "description": "เข้าสู่ระบบด้วยบัญชี riot games",
-        "options": {
-            "username": {
-                "display_name": "ชื่อผู้ใช้",
-                "description": "ป้อนชื่อผู้ใช้"
-            },
-            "password": {
-                "display_name": "รหัสผ่าน",
-                "description": "ใส่รหัสผ่าน"
-            },
-            "region": {
-                "display_name": "ภูมิภาค",
-                "description": "เลือกภูมิภาค",
-                "choices": {
-                    "ap": "Asia Pacific (เอเชียแปซิฟิก)",
-                    "eu": "Europe (ยุโรป)",
-                    "na": "North America / Latin America / Brazil (อเมริกาเหนือ / ละตินอเมริกา / บราซิล)",
-                    "kr": "Korea (เกาหลี)"
-                }
-            }
-        }
+        "description": "เข้าสู่ระบบด้วยบัญชี riot games"
     },
     "logout": {
         "name": "logout",

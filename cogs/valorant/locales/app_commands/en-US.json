@@ -59,27 +59,7 @@
     },
     "login": {
         "name": "login",
-        "description": "Log in with your Riot accounts",
-        "options": {
-            "username": {
-                "display_name": "username",
-                "description": "Input username"
-            },
-            "password": {
-                "display_name": "password",
-                "description": "Input password"
-            },
-            "region": {
-                "display_name": "region",
-                "description": "Select region",
-                "choices": {
-                    "ap": "Asia Pacific",
-                    "eu": "Europe",
-                    "na": "North America / Latin America / Brazil",
-                    "kr": "Korea"
-                }
-            }
-        }
+        "description": "Log in with your Riot accounts"
     },
     "logout": {
         "name": "logout",
