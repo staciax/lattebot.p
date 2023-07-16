@@ -31,18 +31,25 @@ class LanguageButton(ui.Button['SettingsView']):
     def __init__(self, *, locale: discord.Locale, **kwargs: Any) -> None:
         super().__init__(
             label=_('button.language', locale=locale),
+            emoji='🌐',
             **kwargs
         )
         self.locale = locale
     
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+        assert self.view is not None
+        self.view.clear_items()
+        self.view.add_items(
+            PreviousButton(),
+            LanguageSelect(support_locales=())
+        )
 
 class NotificationButton(ui.Button['SettingsView']):
 
     def __init__(self, *, locale: discord.Locale, **kwargs: Any) -> None:
         super().__init__(
             label=_('button.notification', locale=locale),
+            emoji='🔔',
             **kwargs
         )
         self.locale = locale
@@ -52,11 +59,38 @@ class NotificationButton(ui.Button['SettingsView']):
 
 class PreviousButton(ui.Button['SettingsView']):
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, row: int=0, **kwargs: Any) -> None:
         super().__init__(
             label='<',
+            row=row,
             **kwargs
         )
     
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         ...
+
+class LanguageSelect(ui.Select['SettingsView']):
+
+    def __init__(self, support_locales: tuple[discord.Locale, ...],**kwargs: Any) -> None:
+        super().__init__(
+            placeholder=_('select.language'),
+            options=[discord.SelectOption(label='Automatic', value='auto')],
+            **kwargs
+        )
+        self.build_options()
+    
+    def build_options(self) -> None:
+        for locale in self.support_locales:
+            self.add_option(
+                label=locale.name,
+                value=locale.value
+            )
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        assert self.view is not None
+        value = self.values[0]
+        self.view.locale = discord.Locale(value)
+        user = interaction.user
+        bot = self.view.bot
+        await bot.db.update_user(user.id, locale=value)
+        await interaction.response.edit_message(view=self.view)
