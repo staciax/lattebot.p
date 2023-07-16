@@ -78,7 +78,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         if isinstance(interaction.command, app_commands.Command) and interaction.user:  # TODO: context menu support
             user_db = await self.client.db.get_user(interaction.user.id)
             if user_db is None:
-                await self.client.db.create_user(interaction.user.id, locale=locale.value)
+                await self.client.db.add_user(interaction.user.id, locale=locale.value)
                 # self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
             elif user_db.locale != interaction.locale.value:
                 self.client.loop.create_task(self.client.db.update_user(interaction.user.id, locale=locale.value))

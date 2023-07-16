@@ -49,7 +49,7 @@ class Stats(commands.Cog, name='stats'):
 
         _log.info(f'{interaction.created_at}: {interaction.user} in {destination}: /{app_command.qualified_name}')
 
-        await self.bot.db.create_app_command(
+        await self.bot.db.add_app_command(
             type=app_command_type,
             command=app_command.qualified_name,
             guild=guild_id,

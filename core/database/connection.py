@@ -26,7 +26,9 @@ from .models.blacklist import BlackList
 from .models.notification import Notification
 from .models.notification_settings import NotificationSettings
 from .models.riot_account import RiotAccount
+from .models.riot_account_settings import RiotAccountSettings
 from .models.user import User
+from .models.user_settings import UserSettings
 
 # fmt: off
 __all__ = (
@@ -83,7 +85,7 @@ class DatabaseConnection:
 
     # user
 
-    async def create_user(self, id: int, *, locale: str = 'en-US') -> User:
+    async def add_user(self, id: int, *, locale: str = 'en-US') -> User:
         async with self._async_session() as session:
             exist_user = await User.read_by_id(session, id)
             if exist_user:
@@ -149,7 +151,7 @@ class DatabaseConnection:
 
     # blacklist
 
-    async def create_blacklist(self, id: int, *, reason: str | None = None) -> BlackList:
+    async def add_blacklist(self, id: int, *, reason: str | None = None) -> BlackList:
         async with self._async_session() as session:
             exist_blacklist = await BlackList.read_by_id(session, id)
             if exist_blacklist:
@@ -181,7 +183,7 @@ class DatabaseConnection:
 
     # command
 
-    async def create_app_command(
+    async def add_app_command(
         self,
         type: int,
         guild: int | None,
@@ -218,7 +220,7 @@ class DatabaseConnection:
 
     # riot account
 
-    async def create_riot_account(
+    async def add_riot_account(
         self,
         owner_id: int,
         *,
@@ -358,7 +360,7 @@ class DatabaseConnection:
 
     # notification
 
-    async def create_notification(
+    async def add_notification(
         self,
         owner_id: int,
         *,
@@ -443,7 +445,7 @@ class DatabaseConnection:
 
     # notification settings
 
-    async def create_notification_settings(
+    async def add_notification_settings(
         self,
         owner_id: int,
         *,

@@ -191,7 +191,7 @@ class Developer(commands.Cog, name='developer'):
         if self.bot.is_blocked(int(object_id)):
             raise AppCommandError(f'`{object_id}` is already in blacklist')
 
-        await self.bot.db.create_blacklist(int(object_id))
+        await self.bot.db.add_blacklist(int(object_id))
 
         blacklist = (
             self.bot.get_user(int(object_id))
