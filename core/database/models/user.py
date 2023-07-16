@@ -30,8 +30,8 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True)
-    user_id: Mapped[int] = mapped_column('user_id', primary_key=True)
+    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, autoincrement=True, primary_key=True)
+    user_id: Mapped[int] = mapped_column('user_id', nullable=False, unique=True)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     user_settings: Mapped[UserSettings | None] = relationship(
         'UserSettings',
@@ -47,6 +47,7 @@ class User(Base):
     )
     blacklist: Mapped[BlackList | None] = relationship(
         'BlackList',
+        back_populates='object',
         lazy='joined',
         viewonly=True,
     )
@@ -112,13 +113,13 @@ class User(Base):
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
-        stmt = select(cls).where(cls.id == id)
+    async def read_by_id(cls, session: AsyncSession, user_id: int) -> Self | None:
+        stmt = select(cls).where(cls.user_id == user_id)
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def create(cls, session: AsyncSession, id: int, locale: str) -> Self:
-        user = User(id=id, locale=locale)
+    async def create(cls, session: AsyncSession, user_id: int) -> Self:
+        user = User(user_id=user_id)
         session.add(user)
         await session.flush()
         # To fetch accounts

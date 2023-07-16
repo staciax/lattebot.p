@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -24,50 +25,52 @@ __all__ = (
 class BlackList(Base):
     __tablename__ = 'blacklist'
 
-    id: Mapped[int] = mapped_column('id', ForeignKey('users.id'), nullable=False, unique=True, primary_key=True)
+    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, autoincrement=True, primary_key=True)
+    object_id: Mapped[int] = mapped_column(
+        'object_id',
+        ForeignKey('users.id'),
+        nullable=False,
+        unique=True,
+    )
+    object: Mapped[User | None] = relationship('User', lazy='joined', viewonly=True, back_populates='blacklist')
     reason: Mapped[str | None] = mapped_column('reason', String(length=2000), nullable=True, default=None)
     banned_at: Mapped[datetime.datetime] = mapped_column('banned_at', nullable=False, default=datetime.datetime.utcnow)
-    maybe_user: Mapped[User | None] = relationship(
-        'User',
-        # back_populates='blacklist',
-        lazy='joined',
-    )
 
     def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} id={self.id} reason={self.reason!r}>'
+        return f'<{self.__class__.__name__} object_id={self.object_id} reason={self.reason!r}>'
 
-    @property
-    def object_id(self) -> int:
-        return self.id
+    @hybrid_method
+    def is_user(self) -> bool:
+        return self.object is not None
 
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
-        stream = await session.stream_scalars(stmt.order_by(cls.id))
+        stream = await session.stream_scalars(stmt.order_by(cls.object_id))
         async for row in stream:
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
-        stmt = select(cls).where(cls.id == id)
-        return await session.scalar(stmt.order_by(cls.id))
+    async def read_by_id(cls, session: AsyncSession, object_id: int) -> Self | None:
+        stmt = select(cls).where(cls.object_id == object_id)
+        return await session.scalar(stmt.order_by(cls.object_id))
 
     @classmethod
-    async def create(cls, session: AsyncSession, id: int, reason: str | None = None) -> Self:
+    async def create(cls, session: AsyncSession, object_id: int, reason: str | None = None) -> Self:
         blacklist = BlackList(
-            id=id,
+            object_id=object_id,
             reason=reason,
         )
         session.add(blacklist)
         await session.flush()
-        new = await cls.read_by_id(session, blacklist.id)
+        new = await cls.read_by_id(session, blacklist.object_id)
         if not new:
             raise RuntimeError()
         return new
 
     @classmethod
     async def delete(cls, session: AsyncSession, blacklist: Self) -> None:
-        stmt = delete(cls).where(cls.id == blacklist.id)
+        stmt = delete(cls).where(cls.object_id == blacklist.object_id)
         # await session.delete(blacklist)
         await session.execute(stmt)
         await session.flush()

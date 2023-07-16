@@ -85,12 +85,12 @@ class DatabaseConnection:
 
     # user
 
-    async def add_user(self, id: int, *, locale: str = 'en-US') -> User:
+    async def add_user(self, user_id: int) -> User:
         async with self._async_session() as session:
-            exist_user = await User.read_by_id(session, id)
+            exist_user = await User.read_by_id(session, user_id)
             if exist_user:
-                raise UserAlreadyExists(id)
-            user = await User.create(session=session, id=id, locale=locale)
+                raise UserAlreadyExists(user_id)
+            user = await User.create(session=session, user_id=user_id)
             await session.commit()
             self._log.info(f'created user with id {id!r}')
             return user
@@ -151,12 +151,12 @@ class DatabaseConnection:
 
     # blacklist
 
-    async def add_blacklist(self, id: int, *, reason: str | None = None) -> BlackList:
+    async def add_blacklist(self, object_id: int, *, reason: str | None = None) -> BlackList:
         async with self._async_session() as session:
-            exist_blacklist = await BlackList.read_by_id(session, id)
+            exist_blacklist = await BlackList.read_by_id(session, object_id)
             if exist_blacklist:
-                raise BlacklistAlreadyExists(id)
-            blacklist = await BlackList.create(session=session, id=id, reason=reason)
+                raise BlacklistAlreadyExists(object_id)
+            blacklist = await BlackList.create(session=session, object_id=object_id, reason=reason)
             await session.commit()
             self._log.info(f'created blacklist with id {id!r}')
             return blacklist
