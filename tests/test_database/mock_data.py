@@ -3,36 +3,42 @@ import datetime
 USER_DATA = [
     {
         'id': 1,
-        'locale': 'en_US',
     },
     {
         'id': 2,
-        'locale': 'en_GB',
     },
     {
         'id': 3,
-        'locale': 'th_TH',
     },
 ]
 
 BLACKLIST_DATA = [
     {
-        'id': 1,
+        'object_id': 1,
         'reason': 'test',
     },
     {
-        'id': 2,
+        'object_id': 2,
         'reason': 'test',
     },
     {
-        'id': 3,
+        'object_id': 3,
         'reason': 'test',
     },
 ]
 
 APP_COMMAND_DATA = [
-    {'guild': 1, 'channel': 1, 'author': 1, 'used': datetime.datetime.utcnow(), 'command': 'test 1', 'failed': False},
     {
+        'type': 1,
+        'guild': 1,
+        'channel': 1,
+        'author': 1,
+        'used': datetime.datetime.utcnow(),
+        'command': 'test 1',
+        'failed': False,
+    },
+    {
+        'type': 2,
         'guild': 2,
         'channel': 2,
         'author': 2,
@@ -41,6 +47,7 @@ APP_COMMAND_DATA = [
         'failed': False,
     },
     {
+        'type': 3,
         'guild': 3,
         'channel': 3,
         'author': 3,

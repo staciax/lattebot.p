@@ -15,13 +15,13 @@ if TYPE_CHECKING:
 
 class TestBlackList(DatabaseSetup):
     @pytest.mark.asyncio
-    async def test_create_blacklist(self, db: DatabaseConnection) -> None:
+    async def test_add_blacklist(self, db: DatabaseConnection) -> None:
         for data in BLACKLIST_DATA:
-            blacklist = await db.create_blacklist(**data)
+            blacklist = await db.add_blacklist(**data)
             assert blacklist is not None
 
         try:
-            await db.create_blacklist(id=3)
+            await db.add_blacklist(3)
         except Exception as e:
             assert isinstance(e, BlacklistAlreadyExists)
 
@@ -44,17 +44,17 @@ class TestBlackList(DatabaseSetup):
             assert blacklist.reason == 'test'
 
     @pytest.mark.asyncio
-    async def test_delete_blacklist(self, db: DatabaseConnection) -> None:
-        await db.delete_blacklist(1)
+    async def test_remove_blacklist(self, db: DatabaseConnection) -> None:
+        await db.remove_blacklist(1)
         blacklist = await db.get_blacklist(1)
         assert blacklist is None
 
-        await db.delete_blacklist(2)
+        await db.remove_blacklist(2)
         blacklist = await db.get_blacklist(2)
         assert blacklist is None
 
         try:
-            await db.delete_blacklist(0)
+            await db.remove_blacklist(0)
         except Exception as e:
             assert isinstance(e, BlacklistDoesNotExist)
 

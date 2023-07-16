@@ -15,13 +15,14 @@ if TYPE_CHECKING:
 
 class TestUser(DatabaseSetup):
     @pytest.mark.asyncio
-    async def test_create_user(self, db: DatabaseConnection) -> None:
+    async def test_add_user(self, db: DatabaseConnection) -> None:
         for data in USER_DATA:
-            user = await db.create_user(**data)
+            user_id = data.pop('id')
+            user = await db.add_user(user_id, **data)
             assert user is not None
 
         try:
-            await db.create_user(id=3)
+            await db.add_user(3)
         except Exception as e:
             assert isinstance(e, UserAlreadyExists)
 
@@ -30,55 +31,45 @@ class TestUser(DatabaseSetup):
         user = await db.get_user(1)
         assert user is not None
         assert user.id == 1
-        assert user.locale == 'en_US'
 
         user = await db.get_user(2)
         assert user is not None
         assert user.id == 2
-        assert user.locale == 'en_GB'
 
     @pytest.mark.asyncio
     async def test_get_users(self, db: DatabaseConnection) -> None:
         async for user in db.get_users():
             assert user is not None
-            if user.id == 1:
-                assert user.locale == 'en_US'
-            elif user.id == 2:
-                assert user.locale == 'en_GB'
-            elif user.id == 3:
-                assert user.locale == 'th_TH'
 
     @pytest.mark.asyncio
     async def test_update_user(self, db: DatabaseConnection) -> None:
-        await db.update_user(1, locale='en_GB')
+        await db.update_user(1)
         user = await db.get_user(1)
         assert user is not None
         assert user.id == 1
-        assert user.locale == 'en_GB'
 
-        await db.update_user(2, locale='en_US')
+        await db.update_user(2)
         user = await db.get_user(2)
         assert user is not None
         assert user.id == 2
-        assert user.locale == 'en_US'
 
         try:
-            await db.update_user(0, locale='en_US')
+            await db.update_user(0)
         except Exception as e:
             assert isinstance(e, UserDoesNotExist)
 
     @pytest.mark.asyncio
-    async def test_delete_user(self, db: DatabaseConnection) -> None:
-        await db.delete_user(1)
+    async def test_remove_user(self, db: DatabaseConnection) -> None:
+        await db.remove_user(1)
         user = await db.get_user(1)
         assert user is None
 
-        await db.delete_user(2)
+        await db.remove_user(2)
         user = await db.get_user(2)
         assert user is None
 
         try:
-            await db.delete_user(0)
+            await db.remove_user(0)
         except Exception as e:
             assert isinstance(e, UserDoesNotExist)
 

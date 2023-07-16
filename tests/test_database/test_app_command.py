@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 
 class TestCommand(DatabaseSetup):
     @pytest.mark.asyncio
-    async def test_create_command(self, db: DatabaseConnection) -> None:
+    async def test_add_command(self, db: DatabaseConnection) -> None:
         for data in APP_COMMAND_DATA:
-            command = await db.create_app_command(**data)
+            command = await db.add_app_command(**data)
             assert command is not None
 
     @pytest.mark.asyncio
