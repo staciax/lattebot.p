@@ -3,9 +3,9 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, AsyncIterator
 
-from sqlalchemy import String, delete, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from .blacklist import BlackList
     from .notification_settings import NotificationSettings
     from .riot_account import RiotAccount
+    from .riot_account_settings import RiotAccountSettings
+    from .user_settings import UserSettings
 
 # fmt: off
 __all__ = (
@@ -28,9 +30,21 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, primary_key=True, unique=True)
-    locale: Mapped[str] = mapped_column('locale', String(length=10), nullable=False, default='en_US')
+    id: Mapped[int] = mapped_column('id', nullable=False, unique=True)
+    user_id: Mapped[int] = mapped_column('user_id', primary_key=True)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
+    user_settings: Mapped[UserSettings | None] = relationship(
+        'UserSettings',
+        back_populates='user',
+        lazy='joined',
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
+    )
+    notification_settings: Mapped[NotificationSettings | None] = relationship(
+        'NotificationSettings',
+        back_populates='owner',
+        lazy='joined',
+        viewonly=True,
+    )
     blacklist: Mapped[BlackList | None] = relationship(
         'BlackList',
         lazy='joined',
@@ -49,13 +63,18 @@ class User(Base):
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
         lazy='selectin',
     )
-    main_riot_account_id: Mapped[int | None] = mapped_column('main_riot_account_id')
-    notification_settings: Mapped[NotificationSettings | None] = relationship(
-        'NotificationSettings',
-        back_populates='owner',
+    riot_account_settings: Mapped[RiotAccountSettings | None] = relationship(
+        'RiotAccountSettings',
+        back_populates='user',
         lazy='joined',
-        viewonly=True,
+        cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
     )
+
+    @hybrid_property
+    def locale(self) -> str | None:
+        if self.user_settings is None:
+            return None
+        return self.user_settings.locale
 
     @hybrid_method
     def is_blacklisted(self) -> bool:
