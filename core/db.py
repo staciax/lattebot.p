@@ -44,7 +44,7 @@ class DatabaseConnection(_DatabaseConnection):
 
         return self.blacklists
 
-    async def add_blacklist(self, id: int, /) -> BlackList:
+    async def add_blacklist(self, id: int, /, *, reason: str | None = None) -> BlackList:
         blacklist = await super().add_blacklist(id=id)
         self._blacklist[blacklist.id] = blacklist
         return blacklist
@@ -52,7 +52,7 @@ class DatabaseConnection(_DatabaseConnection):
     def get_blacklist(self, id: int, /) -> BlackList | None:
         return self._blacklist.get(id)
 
-    async def delete_blacklist(self, id: int) -> None:
+    async def remove_blacklist(self, id: int, /) -> None:
         await super().delete_blacklist(id)
         try:
             del self._blacklist[id]

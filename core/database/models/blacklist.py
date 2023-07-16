@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AsyncIterator
 
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -24,13 +24,12 @@ __all__ = (
 
 class BlackList(Base):
     __tablename__ = 'blacklist'
-
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, autoincrement=True, primary_key=True)
     object_id: Mapped[int] = mapped_column(
         'object_id',
         ForeignKey('users.id'),
         nullable=False,
         unique=True,
+        primary_key=True,
     )
     object: Mapped[User | None] = relationship('User', lazy='joined', viewonly=True, back_populates='blacklist')
     reason: Mapped[str | None] = mapped_column('reason', String(length=2000), nullable=True, default=None)
@@ -38,6 +37,10 @@ class BlackList(Base):
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} object_id={self.object_id} reason={self.reason!r}>'
+
+    @hybrid_property
+    def id(self) -> int:
+        return self.object_id
 
     @hybrid_method
     def is_user(self) -> bool:
@@ -47,7 +50,7 @@ class BlackList(Base):
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
         stream = await session.stream_scalars(stmt.order_by(cls.object_id))
-        async for row in stream:
+        async for row in stream.unique():
             yield row
 
     @classmethod
@@ -70,7 +73,5 @@ class BlackList(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, blacklist: Self) -> None:
-        stmt = delete(cls).where(cls.object_id == blacklist.object_id)
-        # await session.delete(blacklist)
-        await session.execute(stmt)
+        await session.delete(blacklist)
         await session.flush()

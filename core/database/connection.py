@@ -85,12 +85,12 @@ class DatabaseConnection:
 
     # user
 
-    async def add_user(self, user_id: int) -> User:
+    async def add_user(self, id: int, /) -> User:
         async with self._async_session() as session:
-            exist_user = await User.read_by_id(session, user_id)
+            exist_user = await User.read_by_id(session, id)
             if exist_user:
-                raise UserAlreadyExists(user_id)
-            user = await User.create(session=session, user_id=user_id)
+                raise UserAlreadyExists(id)
+            user = await User.create(session=session, id=id)
             await session.commit()
             self._log.info(f'created user with id {id!r}')
             return user
@@ -133,7 +133,7 @@ class DatabaseConnection:
                 self._log.info(log_msg)
                 return new
 
-    async def delete_user(self, id: int, /) -> bool:
+    async def remove_user(self, id: int, /) -> bool:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
@@ -172,7 +172,7 @@ class DatabaseConnection:
             async for blacklist in BlackList.read_all(session):
                 yield blacklist
 
-    async def delete_blacklist(self, id: int, /) -> None:
+    async def remove_blacklist(self, id: int, /) -> None:
         async with self._async_session() as session:
             blacklist = await BlackList.read_by_id(session, id)
             if not blacklist:
@@ -194,7 +194,7 @@ class DatabaseConnection:
         failed: bool,
     ) -> AppCommand:
         async with self._async_session() as session:
-            cmd = await AppCommand.create(
+            command = await AppCommand.create(
                 type=type,
                 session=session,
                 guild=guild,
@@ -205,18 +205,18 @@ class DatabaseConnection:
                 failed=failed,
             )
             await session.commit()
-            self._log.info(f'created app command with id {command!r}')
-            return cmd
+            self._log.info(f'created app command {command.command!r}')
+            return command
 
     async def get_app_commands(self) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for cmd in AppCommand.read_all(session):
-                yield cmd
+            async for command in AppCommand.read_all(session):
+                yield command
 
     async def get_app_commands_by_name(self, name: str) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for cmd in AppCommand.read_all_by_name(session, name):
-                yield cmd
+            async for command in AppCommand.read_all_by_name(session, name):
+                yield command
 
     # riot account
 
@@ -328,7 +328,7 @@ class DatabaseConnection:
                 self._log.info(f'updated riot account with puuid {puuid!r} for user with id {owner_id!r}')
                 return True
 
-    async def delete_riot_account(self, puuid: str, owner_id: int) -> RiotAccount | None:
+    async def remove_riot_account(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
@@ -345,7 +345,7 @@ class DatabaseConnection:
                 self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
                 return riot_account
 
-    async def delete_all_riot_accounts(self, owner_id: int) -> bool:
+    async def remove_riot_accounts(self, owner_id: int, /) -> bool:
         async with self._async_session() as session:
             try:
                 await RiotAccount.delete_all_by_owner_id(session, owner_id)
@@ -396,7 +396,7 @@ class DatabaseConnection:
             async for notification in Notification.read_all_by_owner_id_and_type(session, owner_id, type):
                 yield notification
 
-    async def delete_notification(self, owner_id: int, /, *, item_id: str, type: str) -> bool:
+    async def remove_notification(self, owner_id: int, /, *, item_id: str, type: str) -> bool:
         async with self._async_session() as session:
             notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
             if not notification:
@@ -413,7 +413,7 @@ class DatabaseConnection:
                 self._log.info(f'deleted notification for user with id {owner_id!r}')
                 return True
 
-    async def delete_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> bool:
+    async def remove_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> bool:
         async with self._async_session() as session:
             notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
             if not notification:
@@ -430,7 +430,7 @@ class DatabaseConnection:
                 self._log.info(f'deleted notification for user with id {owner_id!r}')
                 return True
 
-    async def delete_all_notifications(self, owner_id: int, /) -> bool:
+    async def remove_notifications(self, owner_id: int, /) -> bool:
         async with self._async_session() as session:
             try:
                 await Notification.delete_all_by_owner_id(session, owner_id)
@@ -497,7 +497,7 @@ class DatabaseConnection:
                 self._log.info(f'updated notification settings for user with id {owner_id!r}')
                 return settings
 
-    async def delete_notification_settings(self, owner_id: int, /) -> bool:
+    async def remove_notification_settings(self, owner_id: int, /) -> bool:
         async with self._async_session() as session:
             settings = await NotificationSettings.read_by_owner_id(session, owner_id)
             if not settings:
