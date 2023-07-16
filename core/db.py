@@ -28,23 +28,29 @@ class DatabaseConnection(_DatabaseConnection):
         self._log.info('initialized database')
 
     async def _cache_blacklist(self) -> None:
-        async for user in super().get_blacklists():
-            self._blacklist[user.id] = user
+        async for blacklist in super().get_blacklists():
+            self._blacklist[blacklist.id] = blacklist
         self._log.debug('cached %d blacklists', len(self._blacklist))
 
+    # blacklists
+
     @property
-    def blacklist(self) -> list[BlackList]:
+    def blacklists(self) -> list[BlackList]:
         return list(self._blacklist.values())
 
-    def _store_blacklist(self, blacklist: BlackList) -> None:
-        self._blacklist[blacklist.id] = blacklist
-        self._log.debug('stored blacklist %d in cache', blacklist.id)
+    async def fetch_blacklists(self) -> list[BlackList]:
+        async for blacklist in super().get_blacklists():
+            self._blacklist[blacklist.id] = blacklist
+
+        return self.blacklists
 
     async def add_blacklist(self, id: int, /) -> BlackList:
         blacklist = await super().add_blacklist(id=id)
-        if blacklist is not None and blacklist.id not in self._blacklist:
-            self._store_blacklist(blacklist)
+        self._blacklist[blacklist.id] = blacklist
         return blacklist
+
+    def get_blacklist(self, id: int, /) -> BlackList | None:
+        return self._blacklist.get(id)
 
     async def delete_blacklist(self, id: int) -> None:
         await super().delete_blacklist(id)
