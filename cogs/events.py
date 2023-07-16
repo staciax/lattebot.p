@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from core.ui.embed import MiadEmbed
+from core.ui.embed import MiadEmbed as Embed
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -31,16 +31,6 @@ class Event(commands.Cog, name='events'):
         assert wh_token is not None, 'WEBHOOK_GUILD_TOKEN is not set'
         hook = discord.Webhook.partial(int(wh_id), wh_token, session=self.bot.session)
         return hook
-
-    # @commands.Cog.isltener('on_message_edit')
-    # async def on_latte_message_edit(self, before: discord.Message, after: discord.Message) -> None:
-    #     if before.author.bot:
-    #         return
-
-    #     if before.content == after.content:
-    #         return
-
-    #     await self.bot.process_commands(after)
 
     async def send_guild_stats(self, embed: discord.Embed, guild: discord.Guild):
         """Send guild stats to webhook"""
@@ -67,13 +57,13 @@ class Event(commands.Cog, name='events'):
             _log.info(f'left guild {guild.id} because it is blacklisted')
             return await guild.leave()
 
-        embed = MiadEmbed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ').success()
+        embed = Embed(title='ᴊᴏɪɴᴇᴅ ꜱᴇʀᴠᴇʀ').success()
         await self.send_guild_stats(embed, guild)
 
     @commands.Cog.listener('on_guild_remove')
     async def on_latte_leave(self, guild: discord.Guild) -> None:
         """Called when LatteMaid leaves a guild"""
-        embed = MiadEmbed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ').error()
+        embed = Embed(title='ʟᴇꜰᴛ ꜱᴇʀᴠᴇʀ').error()
         await self.send_guild_stats(embed, guild)
 
 
