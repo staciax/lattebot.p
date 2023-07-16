@@ -78,14 +78,7 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_load(self, interaction: Interaction[LatteMaid], extension: Literal[EXTENSIONS]) -> None:
-        _log.info(f'loading extension {extension}')
-
-        try:
-            await self.bot.load_extension(f'{extension}')
-        except commands.ExtensionAlreadyLoaded:
-            raise AppCommandError(f"The extension is already loaded.")
-        except Exception as e:
-            raise AppCommandError('The extension load failed') from e
+        await self.bot.load_extension(f'{extension}')
 
         embed = Embed(description=f"**Loaded**: `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
@@ -96,16 +89,9 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_unload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
-        _log.info(f'unloading extension {extension}')
+        await self.bot.unload_extension(f'{extension}')
 
-        try:
-            await self.bot.unload_extension(f'{extension}')
-        except commands.ExtensionNotLoaded:
-            raise AppCommandError(f'The extension was not loaded.')
-        except Exception as e:
-            raise AppCommandError('The extension unload failed') from e
-
-        embed = Embed(description=f"**Unloaded**: `{extension}`").success()
+        embed = Embed(description=f'**Unloaded**: `{extension}`').success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
 
     @extension.command(name=_T('reload'))
@@ -116,14 +102,7 @@ class Developer(commands.Cog, name='developer'):
     async def extension_reload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
         """Reloads an extension."""
 
-        try:
-            await self.bot.reload_extension(f'{extension}')
-        except commands.ExtensionNotLoaded:
-            raise AppCommandError(f'The extension was not loaded.')
-        except commands.ExtensionNotFound:
-            raise AppCommandError(f'The Extension Not Found')
-        except Exception as e:
-            raise AppCommandError('The extension reload failed') from e
+        await self.bot.reload_extension(f'{extension}')
 
         embed = Embed(description=f"**Reloaded**: `{extension}`").success()
         await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
@@ -144,10 +123,10 @@ class Developer(commands.Cog, name='developer'):
             return
         synced = await self.bot.tree.sync()
 
-        embed = Embed(description=f"sync tree: {len(synced)}").success()
+        embed = Embed(description=f'sync tree: {len(synced)}').success()
         if guild_id is not None:
             assert embed.description is not None
-            embed.description += f" : `{guild_id}`"
+            embed.description += f' : `{guild_id}`'
 
         # refresh application commands model
         await self.bot.tree.insert_model_to_commands()
@@ -195,8 +174,8 @@ class Developer(commands.Cog, name='developer'):
 
         blacklist = (
             self.bot.get_user(int(object_id))
-            or await self.bot.fetch_user(int(object_id))
             or self.bot.get_guild(int(object_id))
+            or await self.bot.fetch_user(int(object_id))
             or await self.bot.fetch_guild(int(object_id))
             or object_id
         )
@@ -204,7 +183,7 @@ class Developer(commands.Cog, name='developer'):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
         embed = Embed(
-            description=f"{blacklist} are now blacklisted.",
+            description=f'{blacklist} are now blacklisted.',
         ).success()
 
         await interaction.followup.send(embed=embed, silent=True)
@@ -222,7 +201,7 @@ class Developer(commands.Cog, name='developer'):
         if int(object_id) not in self.bot.db._blacklist:
             raise AppCommandError(f'`{object_id}` is not in blacklist')
 
-        await self.bot.db.delete_blacklist(int(object_id))
+        await self.bot.db.remove_blacklist(int(object_id))
 
         blacklist = (
             self.bot.get_user(int(object_id))
@@ -233,9 +212,9 @@ class Developer(commands.Cog, name='developer'):
         )
 
         if isinstance(blacklist, (discord.User, discord.Guild)):
-            blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
+            blacklist = f'{blacklist} {inline(f"({blacklist.id})")}'
 
-        embed = Embed(description=f"{blacklist} are now unblacklisted.").success()
+        embed = Embed(description=f'{blacklist} are now unblacklisted.').success()
 
         await interaction.followup.send(embed=embed, silent=True)
 
@@ -267,7 +246,7 @@ class Developer(commands.Cog, name='developer'):
             blacklists.append(blacklist)
 
         source = BlackListPageSource(blacklists)
-        pages = BlackListPages(source=source, interaction=interaction)
+        pages = BlackListPages(source, interaction=interaction)
 
         await pages.start()
 
