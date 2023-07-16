@@ -30,8 +30,7 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, autoincrement=True, primary_key=True)
-    user_id: Mapped[int] = mapped_column('user_id', nullable=False, unique=True)
+    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
     user_settings: Mapped[UserSettings | None] = relationship(
         'UserSettings',
@@ -47,8 +46,8 @@ class User(Base):
     )
     blacklist: Mapped[BlackList | None] = relationship(
         'BlackList',
-        back_populates='object',
         lazy='joined',
+        back_populates='object',
         viewonly=True,
     )
     app_command_uses: Mapped[list[AppCommand]] = relationship(
@@ -108,18 +107,18 @@ class User(Base):
     @classmethod
     async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls).options()
-        stream = await session.stream_scalars(stmt.order_by(cls.id).distinct())
+        stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream.unique():
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, user_id: int) -> Self | None:
-        stmt = select(cls).where(cls.user_id == user_id)
+    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
+        stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def create(cls, session: AsyncSession, user_id: int) -> Self:
-        user = User(user_id=user_id)
+    async def create(cls, session: AsyncSession, id: int) -> Self:
+        user = User(id=id)
         session.add(user)
         await session.flush()
         # To fetch accounts
@@ -130,7 +129,5 @@ class User(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, user: Self) -> None:
-        stmt = delete(cls).where(cls.id == user.id)
-        # await session.delete(user)
-        await session.execute(stmt)
+        await session.delete(user)
         await session.flush()
