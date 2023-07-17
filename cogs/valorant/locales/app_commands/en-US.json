@@ -1,4 +1,8 @@
 {
+    "accounts": {
+        "name": "accounts",
+        "description": "Manage your accounts"
+    },
     "agents": {
         "name": "agents",
         "description": "Agent Contracts"
@@ -54,20 +58,6 @@
             "event": {
                 "display_name": "event",
                 "description": "Select event to view"
-            }
-        }
-    },
-    "login": {
-        "name": "login",
-        "description": "Log in with your Riot accounts"
-    },
-    "logout": {
-        "name": "logout",
-        "description": "Logout and Delete your accounts from database",
-        "options": {
-            "puuid": {
-                "display_name": "account",
-                "description": "Select account to logout"
             }
         }
     },
@@ -128,6 +118,10 @@
                 "description": "Show the message only to you"
             }
         }
+    },
+    "register": {
+        "name": "register",
+        "description": "Log in with your Riot accounts"
     },
     "settings": {
         "name": "settings",
