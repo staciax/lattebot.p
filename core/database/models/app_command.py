@@ -28,7 +28,7 @@ class AppCommand(Base):
     type: Mapped[int] = mapped_column('type', default=1)
     guild: Mapped[int | None] = mapped_column('guild_id')
     channel: Mapped[int | None] = mapped_column('channel')
-    author_id: Mapped[int] = mapped_column('author_id', ForeignKey('users.id'), nullable=False)
+    author_id: Mapped[int] = mapped_column('author_id', ForeignKey('users.id'))
     used: Mapped[datetime.datetime] = mapped_column('used', default=datetime.datetime.utcnow)
     command: Mapped[str] = mapped_column('command', String(length=256))
     failed: Mapped[bool] = mapped_column('failed', default=False)
