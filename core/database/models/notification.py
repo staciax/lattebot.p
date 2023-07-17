@@ -80,3 +80,9 @@ class Notification(Base):
     async def delete(cls, session: AsyncSession, notification: Self) -> None:
         await session.delete(notification)
         await session.flush()
+
+    @classmethod
+    async def delete_all_by_owner_id(cls, session: AsyncSession, owner_id: int) -> None:
+        stmt = delete(cls).where(cls.owner_id == owner_id)
+        await session.execute(stmt)
+        await session.flush()

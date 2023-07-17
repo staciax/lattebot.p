@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, AsyncIterator
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,8 +30,8 @@ __all__ = (
 class User(Base):
     __tablename__ = 'users'
 
-    id: Mapped[int] = mapped_column('id', nullable=False, unique=True, primary_key=True)
-    created_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
+    id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=False)
+    created_at: Mapped[datetime.datetime] = mapped_column('created_at', default=datetime.datetime.utcnow)
     user_settings: Mapped[UserSettings | None] = relationship(
         'UserSettings',
         back_populates='user',
@@ -87,16 +87,8 @@ class User(Base):
                 return account
         return None
 
-    async def update(
-        self,
-        session: AsyncSession,
-        locale: str | None = None,
-        main_riot_account_id: int | None = None,
-    ) -> Self:
-        if locale is not None:
-            self.locale = locale
-        if main_riot_account_id is not None:
-            self.main_riot_account_id = main_riot_account_id
+    async def update(self, session: AsyncSession) -> Self:
+        # self.locale = locale
         await session.flush()
         # To fetch the new object
         new = await self.read_by_id(session, self.id)

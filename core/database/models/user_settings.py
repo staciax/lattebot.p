@@ -24,6 +24,7 @@ __all__ = (
 class UserSettings(Base):
     __tablename__ = 'user_settings'
 
-    user_id: Mapped[int] = mapped_column('user_id', ForeignKey('users.id'), nullable=False, primary_key=True, unique=True)
+    user_id: Mapped[int] = mapped_column('user_id', ForeignKey('users.id'), primary_key=True, autoincrement=False)
     user: Mapped[User] = relationship('User', lazy='joined')
     locale: Mapped[str | None] = mapped_column('locale', String(length=10), nullable=False)
+    notification: Mapped[bool] = mapped_column('notification', default=False)

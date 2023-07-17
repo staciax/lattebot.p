@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, AsyncIterator
 
-from sqlalchemy import ForeignKey, String, delete, select
+from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,16 +24,11 @@ __all__ = (
 
 class BlackList(Base):
     __tablename__ = 'blacklist'
-    object_id: Mapped[int] = mapped_column(
-        'object_id',
-        ForeignKey('users.id'),
-        nullable=False,
-        unique=True,
-        primary_key=True,
-    )
+
+    object_id: Mapped[int] = mapped_column('object_id', ForeignKey('users.id'), primary_key=True, autoincrement=False)
     object: Mapped[User | None] = relationship('User', lazy='joined', viewonly=True, back_populates='blacklist')
     reason: Mapped[str | None] = mapped_column('reason', String(length=2000), nullable=True, default=None)
-    banned_at: Mapped[datetime.datetime] = mapped_column('banned_at', nullable=False, default=datetime.datetime.utcnow)
+    banned_at: Mapped[datetime.datetime] = mapped_column('banned_at', default=datetime.datetime.utcnow)
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} object_id={self.object_id} reason={self.reason!r}>'
