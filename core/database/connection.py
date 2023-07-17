@@ -87,7 +87,7 @@ class DatabaseConnection:
 
     async def add_user(self, id: int, /) -> User:
         async with self._async_session() as session:
-            exist_user = await User.read_by_id(session, id)
+            exist_user = await User.find_by_id(session, id)
             if exist_user:
                 raise UserAlreadyExists(id)
             user = await User.create(session=session, id=id)
@@ -97,17 +97,17 @@ class DatabaseConnection:
 
     async def fetch_user(self, id: int, /) -> User | None:
         async with self._async_session() as session:
-            user = await User.read_by_id(session, id)
+            user = await User.find_by_id(session, id)
             return user
 
     async def fetch_users(self) -> AsyncIterator[User]:
         async with self._async_session() as session:
-            async for user in User.read_all(session):
+            async for user in User.find_all(session):
                 yield user
 
     async def update_user(self, id: int, /) -> User | None:
         async with self._async_session() as session:
-            user = await User.read_by_id(session, id)
+            user = await User.find_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(id)
             try:
@@ -124,7 +124,7 @@ class DatabaseConnection:
 
     async def remove_user(self, id: int, /) -> bool:
         async with self._async_session() as session:
-            user = await User.read_by_id(session, id)
+            user = await User.find_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(id)
             try:
@@ -142,7 +142,7 @@ class DatabaseConnection:
 
     async def add_blacklist(self, object_id: int, *, reason: str | None = None) -> BlackList:
         async with self._async_session() as session:
-            exist_blacklist = await BlackList.read_by_id(session, object_id)
+            exist_blacklist = await BlackList.find_by_id(session, object_id)
             if exist_blacklist:
                 raise BlacklistAlreadyExists(object_id)
             blacklist = await BlackList.create(session=session, object_id=object_id, reason=reason)
@@ -158,12 +158,12 @@ class DatabaseConnection:
 
     async def fetch_blacklists(self) -> AsyncIterator[BlackList]:
         async with self._async_session() as session:
-            async for blacklist in BlackList.read_all(session):
+            async for blacklist in BlackList.find_all(session):
                 yield blacklist
 
     async def remove_blacklist(self, id: int, /) -> None:
         async with self._async_session() as session:
-            blacklist = await BlackList.read_by_id(session, id)
+            blacklist = await BlackList.find_by_id(session, id)
             if not blacklist:
                 raise BlacklistDoesNotExist(id)
             await BlackList.delete(session, blacklist)
@@ -199,12 +199,12 @@ class DatabaseConnection:
 
     async def fetch_app_commands(self) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for app_command in AppCommand.read_all(session):
+            async for app_command in AppCommand.find_all(session):
                 yield app_command
 
     async def fetch_app_commands_by_name(self, name: str) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for app_command in AppCommand.read_all_by_name(session, name):
+            async for app_command in AppCommand.find_all_by_name(session, name):
                 yield app_command
 
     # riot account
@@ -228,7 +228,7 @@ class DatabaseConnection:
         notify: bool = False,
     ) -> RiotAccount:
         async with self._async_session() as session:
-            exist_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            exist_account = await RiotAccount.find_by_puuid_and_owner_id(session, puuid, owner_id)
             if exist_account:
                 raise RiotAccountAlreadyExists(puuid, owner_id)
             riot_account = await RiotAccount.create(
@@ -255,17 +255,17 @@ class DatabaseConnection:
 
     async def fetch_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
-            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            riot_account = await RiotAccount.find_by_puuid_and_owner_id(session, puuid, owner_id)
             return riot_account
 
     async def fetch_riot_accounts_by_puuid_and_owner_id(self, id: int, /) -> AsyncIterator[RiotAccount]:
         async with self._async_session() as session:
-            async for riot_account in RiotAccount.read_all_by_owner_id(session, id):
+            async for riot_account in RiotAccount.find_all_by_owner_id(session, id):
                 yield riot_account
 
     async def fetch_riot_accounts(self) -> AsyncIterator[RiotAccount]:
         async with self._async_session() as session:
-            async for riot_account in RiotAccount.read_all(session):
+            async for riot_account in RiotAccount.find_all(session):
                 yield riot_account
 
     async def update_riot_account(
@@ -288,7 +288,7 @@ class DatabaseConnection:
         display_name: str | None = None,
     ) -> bool:
         async with self._async_session() as session:
-            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            riot_account = await RiotAccount.find_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
                 raise RiotAccountDoesNotExist(puuid, owner_id)
             try:
@@ -319,7 +319,7 @@ class DatabaseConnection:
 
     async def remove_riot_account(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
-            riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
+            riot_account = await RiotAccount.find_by_puuid_and_owner_id(session, puuid, owner_id)
             if not riot_account:
                 raise RiotAccountDoesNotExist(puuid, owner_id)
 
@@ -357,7 +357,7 @@ class DatabaseConnection:
         type: str,
     ) -> Notification:
         async with self._async_session() as session:
-            existing_notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            existing_notification = await Notification.find_by_owner_id_and_item_id(session, owner_id, item_id)
             if existing_notification:
                 raise NotificationAlreadyExists(owner_id, item_id)
             notification = await Notification.create(
@@ -372,22 +372,22 @@ class DatabaseConnection:
 
     async def fetch_notifications_by_owner_id(self, owner_id: int, /) -> AsyncIterator[Notification]:
         async with self._async_session() as session:
-            async for notification in Notification.read_all_by_owner_id(session, owner_id):
+            async for notification in Notification.find_all_by_owner_id(session, owner_id):
                 yield notification
 
     async def fetch_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Notification | None:
         async with self._async_session() as session:
-            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            notification = await Notification.find_by_owner_id_and_item_id(session, owner_id, item_id)
             return notification
 
     async def fetch_notifications_by_owner_id_and_type(self, owner_id: int, /, *, type: str) -> AsyncIterator[Notification]:
         async with self._async_session() as session:
-            async for notification in Notification.read_all_by_owner_id_and_type(session, owner_id, type):
+            async for notification in Notification.find_all_by_owner_id_and_type(session, owner_id, type):
                 yield notification
 
     async def remove_notification(self, owner_id: int, /, *, item_id: str, type: str) -> bool:
         async with self._async_session() as session:
-            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            notification = await Notification.find_by_owner_id_and_item_id(session, owner_id, item_id)
             if not notification:
                 raise NotificationDoesNotExist(owner_id, item_id)
 
@@ -404,7 +404,7 @@ class DatabaseConnection:
 
     async def remove_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> bool:
         async with self._async_session() as session:
-            notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
+            notification = await Notification.find_by_owner_id_and_item_id(session, owner_id, item_id)
             if not notification:
                 raise NotificationDoesNotExist(owner_id, item_id)
 
@@ -443,7 +443,7 @@ class DatabaseConnection:
         enabled: bool,
     ) -> NotificationSettings:
         async with self._async_session() as session:
-            existing_settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            existing_settings = await NotificationSettings.find_by_owner_id(session, owner_id)
             if existing_settings:
                 raise NotificationSettingsAlreadyExists(owner_id)
             settings = await NotificationSettings.create(
@@ -459,7 +459,7 @@ class DatabaseConnection:
 
     async def fetch_notification_settings_by_owner_id(self, owner_id: int, /) -> NotificationSettings | None:
         async with self._async_session() as session:
-            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            settings = await NotificationSettings.find_by_owner_id(session, owner_id)
             return settings
 
     async def update_notification_settings(
@@ -471,7 +471,7 @@ class DatabaseConnection:
         enabled: bool | None = None,
     ) -> NotificationSettings | None:
         async with self._async_session() as session:
-            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            settings = await NotificationSettings.find_by_owner_id(session, owner_id)
             if not settings:
                 raise NotificationSettingsDoesNotExist(owner_id)
 
@@ -488,7 +488,7 @@ class DatabaseConnection:
 
     async def remove_notification_settings(self, owner_id: int, /) -> bool:
         async with self._async_session() as session:
-            settings = await NotificationSettings.read_by_owner_id(session, owner_id)
+            settings = await NotificationSettings.find_by_owner_id(session, owner_id)
             if not settings:
                 raise NotificationSettingsDoesNotExist(owner_id)
 

@@ -91,20 +91,20 @@ class User(Base):
         # self.locale = locale
         await session.flush()
         # To fetch the new object
-        new = await self.read_by_id(session, self.id)
+        new = await self.find_by_id(session, self.id)
         if not new:
             raise RuntimeError()
         return new
 
     @classmethod
-    async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls).options()
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream.unique():
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
+    async def find_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
@@ -114,7 +114,7 @@ class User(Base):
         session.add(user)
         await session.flush()
         # To fetch accounts
-        new = await cls.read_by_id(session, user.id)
+        new = await cls.find_by_id(session, user.id)
         if not new:
             raise RuntimeError()
         return new

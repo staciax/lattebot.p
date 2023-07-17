@@ -100,26 +100,26 @@ class RiotAccount(Base):
         return self.owner.main_riot_account_id == self.id
 
     @classmethod
-    async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream:
             yield row
 
     @classmethod
-    async def read_all_by_owner_id(cls, session: AsyncSession, owner_id: int) -> AsyncIterator[Self]:
+    async def find_all_by_owner_id(cls, session: AsyncSession, owner_id: int) -> AsyncIterator[Self]:
         stmt = select(cls).where(cls.owner_id == owner_id)
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream:
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
+    async def find_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def read_by_puuid_and_owner_id(cls, session: AsyncSession, puuid: str, owner_id: int) -> Self | None:
+    async def find_by_puuid_and_owner_id(cls, session: AsyncSession, puuid: str, owner_id: int) -> Self | None:
         stmt = select(cls).where(cls.puuid == puuid).where(cls.owner_id == owner_id)
         return await session.scalar(stmt.order_by(cls.id))
 
@@ -161,7 +161,7 @@ class RiotAccount(Base):
         session.add(riot_account)
         await session.flush()
         # To fetch the new object
-        new = await cls.read_by_id(session, riot_account.id)
+        new = await cls.find_by_id(session, riot_account.id)
         if not new:
             raise RuntimeError()
         return riot_account
@@ -211,7 +211,7 @@ class RiotAccount(Base):
             self.display_name = display_name
         await session.flush()
         # To fetch the new object
-        new = await self.read_by_id(session, self.id)
+        new = await self.find_by_id(session, self.id)
         if not new:
             raise RuntimeError()
         return new

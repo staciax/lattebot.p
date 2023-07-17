@@ -42,14 +42,14 @@ class BlackList(Base):
         return self.object is not None
 
     @classmethod
-    async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
         stream = await session.stream_scalars(stmt.order_by(cls.object_id))
         async for row in stream.unique():
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, object_id: int) -> Self | None:
+    async def find_by_id(cls, session: AsyncSession, object_id: int) -> Self | None:
         stmt = select(cls).where(cls.object_id == object_id)
         return await session.scalar(stmt.order_by(cls.object_id))
 
@@ -61,7 +61,7 @@ class BlackList(Base):
         )
         session.add(blacklist)
         await session.flush()
-        new = await cls.read_by_id(session, blacklist.object_id)
+        new = await cls.find_by_id(session, blacklist.object_id)
         if not new:
             raise RuntimeError()
         return new

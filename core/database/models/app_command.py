@@ -35,29 +35,29 @@ class AppCommand(Base):
     author: Mapped[User] = relationship('User', back_populates='app_command_uses')
 
     @classmethod
-    async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
         stream = await session.stream_scalars(stmt.order_by(cls.used))
         async for row in stream:
             yield row
 
     @classmethod
-    async def read_by_id(cls, session: AsyncSession, id: int) -> Self | None:
+    async def find_by_id(cls, session: AsyncSession, id: int) -> Self | None:
         stmt = select(cls).where(cls.id == id)
         return await session.scalar(stmt.order_by(cls.used))
 
     @classmethod
-    async def read_by_guild_id(cls, session: AsyncSession, guild_id: int) -> Self | None:
+    async def find_by_guild_id(cls, session: AsyncSession, guild_id: int) -> Self | None:
         stmt = select(cls).where(cls.guild == guild_id)
         return await session.scalar(stmt.order_by(cls.used))
 
     @classmethod
-    async def read_by_name(cls, session: AsyncSession, name: str) -> Self | None:
+    async def find_by_name(cls, session: AsyncSession, name: str) -> Self | None:
         stmt = select(cls).where(cls.command == name)
         return await session.scalar(stmt.order_by(cls.used))
 
     @classmethod
-    async def read_all_by_name(cls, session: AsyncSession, name: str) -> AsyncIterator[Self]:
+    async def find_all_by_name(cls, session: AsyncSession, name: str) -> AsyncIterator[Self]:
         stmt = select(cls).where(cls.command == name)
         stream = await session.stream_scalars(stmt.order_by(cls.used))
         async for row in stream:
@@ -87,7 +87,7 @@ class AppCommand(Base):
         session.add(cmd)
         await session.flush()
         # To fetch the new object from the database, we need to refresh it.
-        new = await cls.read_by_id(session, cmd.id)
+        new = await cls.find_by_id(session, cmd.id)
         if not new:
             raise RuntimeError()
         return new

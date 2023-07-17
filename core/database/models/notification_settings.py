@@ -55,14 +55,14 @@ class NotificationSettings(Base):
         return self.count == 0
 
     @classmethod
-    async def read_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
         stmt = select(cls)
         stream = await session.stream_scalars(stmt)
         async for row in stream:
             yield row
 
     @classmethod
-    async def read_by_owner_id(cls, session: AsyncSession, owner_id: int) -> Self | None:
+    async def find_by_owner_id(cls, session: AsyncSession, owner_id: int) -> Self | None:
         stmt = select(cls).where(cls.owner_id == owner_id)
         return await session.scalar(stmt)
 
@@ -96,7 +96,7 @@ class NotificationSettings(Base):
         if enabled is not None:
             self.enabled = enabled
         await session.commit()
-        new = await self.read_by_owner_id(session, self.owner_id)
+        new = await self.find_by_owner_id(session, self.owner_id)
         if not new:
             raise RuntimeError()
         return new
