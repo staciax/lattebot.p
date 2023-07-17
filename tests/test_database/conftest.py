@@ -9,9 +9,9 @@ from core.database.connection import DatabaseConnection
 
 load_dotenv()
 
-DATABASE_URI_TEST = os.getenv('DATABASE_URI_TEST')
-if DATABASE_URI_TEST is None:
-    raise EnvironmentError('DATABASE_URI_TEST is not set')
+DATABASE_URL_TEST = os.getenv('DATABASE_URL_TEST')
+if DATABASE_URL_TEST is None:
+    raise EnvironmentError('DATABASE_URL_TEST is not set')
 
 
 @pytest.fixture(scope='session')
@@ -24,7 +24,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope='class')
 async def db():
-    _db = DatabaseConnection(DATABASE_URI_TEST)
+    _db = DatabaseConnection(DATABASE_URL_TEST)
     yield _db
     await _db.close()
 
