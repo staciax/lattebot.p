@@ -159,7 +159,7 @@ class BaseSwitchAccountView(BaseValorantView):
         return self.bot.valorant_client
 
     def _build_buttons(self) -> None:
-        for index, acc in enumerate(self.account_manager.riot_accounts, start=1):
+        for index, acc in enumerate(self.account_manager.accounts, start=1):
             if index >= 4:
                 self.row += 1
             self.add_item(
@@ -181,7 +181,7 @@ class BaseSwitchAccountView(BaseValorantView):
 
     def get_riot_auth(self, puuid: Optional[str]) -> Optional[RiotAuth]:
         if puuid is not None:
-            return self.account_manager.get_riot_account(puuid)
+            return self.account_manager.get_account(puuid)
         return self.account_manager.main_account
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
@@ -214,7 +214,7 @@ class StoreFrontView(BaseSwitchAccountView):
         storefront = await self.valorant_client.fetch_storefront(riot_auth)
         embeds = e.store_featured_e(
             storefront.skins_panel_layout,
-            riot_id=riot_auth.display_name,
+            riot_id=riot_auth.riot_id,
             locale=self.locale,
         )
         return embeds
@@ -237,7 +237,7 @@ class NightMarketView(BaseSwitchAccountView):
         if storefront.bonus_store is None:
             raise AppCommandError(f'{chat.bold("Nightmarket")} is not available.')
 
-        self.front_embed = e.nightmarket_front_e(storefront.bonus_store, riot_auth.display_name, locale=self.locale)
+        self.front_embed = e.nightmarket_front_e(storefront.bonus_store, riot_auth.riot_id, locale=self.locale)
         self.embeds = embeds = [e.skin_e(skin, locale=self.locale) for skin in storefront.bonus_store.skins]
 
         if self.hide:
@@ -344,7 +344,7 @@ class WalletView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         wallet = await self.valorant_client.fetch_wallet(riot_auth)
-        embed = e.wallet_e(wallet, riot_auth.display_name, locale=self.locale)
+        embed = e.wallet_e(wallet, riot_auth.riot_id, locale=self.locale)
         return embed
 
 
@@ -505,7 +505,7 @@ class GamePassView(BaseSwitchAccountView, LattePages):
         if contract is None:
             raise AppCommandError(f'{chat.bold(self.relation_type.value)} is not available.')
 
-        self.source = GamePassPageSource(contract, riot_auth.display_name, locale=self.locale)
+        self.source = GamePassPageSource(contract, riot_auth.riot_id, locale=self.locale)
         self.compact = True
         await self.start(page_number=contract.current_level)
 
@@ -517,7 +517,7 @@ class MissionView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         contracts = await self.valorant_client.fetch_contracts(riot_auth)
-        embed = e.mission_e(contracts, riot_auth.display_name, locale=self.locale)
+        embed = e.mission_e(contracts, riot_auth.riot_id, locale=self.locale)
         return embed
 
 
@@ -699,7 +699,7 @@ class CollectionView(BaseSwitchAccountView):
         self.embed = embed = e.collection_front_e(
             loadout,
             # mmr,
-            riot_auth.display_name,
+            riot_auth.riot_id,
             locale=locale_converter.to_valorant(self.locale),
         )
         return embed
@@ -916,6 +916,10 @@ class CarrierView(BaseSwitchAccountView, LattePages):
         )
         # mmr = await client.fetch_mmr(riot_auth)
         self.source = CarrierPageSource(puuid=riot_auth.puuid, data=match_history.match_details)  # type: ignore
+
+        for item in self.children:
+            if isinstance(item, ui.Button):
+                item.label = 'Account: ' + riot_auth.riot_id
 
         await self.start()
 

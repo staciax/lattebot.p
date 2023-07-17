@@ -52,7 +52,7 @@ class AccountManager:
         return not self.__eq__(other)
 
     async def _init(self) -> None:
-        for riot_account in sorted(self.author.riot_accounts, key=lambda x: x.created_at):
+        for index, riot_account in enumerate(sorted(self.author.riot_accounts, key=lambda x: x.created_at)):
             riot_auth = RiotAuth.from_database(riot_account)
 
             # for dispatching events to the bot when reauthorizing
@@ -68,6 +68,8 @@ class AccountManager:
                 #     continue
 
             self._accounts[riot_auth.puuid] = riot_auth
+            if not index:
+                self.main_account = riot_auth
             # if self.author.main_riot_account_id == riot_account.id:
             #     self.main_account = riot_auth
 

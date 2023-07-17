@@ -1,21 +1,24 @@
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+import aiohttp
 import discord
 from discord import ui
 from discord.enums import ButtonStyle
-from discord.utils import MISSING
 
 from core.bot import LatteMaid
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.modal import Modal
 from core.ui.views import ViewAuthor
+from valorantx2.errors import RiotMultifactorError
 
 from ..account_manager import AccountManager
+from ..auth import RiotAuth
 from ..error import (
     ErrorHandler,
     RiotAuthAlreadyLinked,
@@ -29,14 +32,11 @@ if TYPE_CHECKING:
 
     from core.bot import LatteMaid
 
-    from ..auth import RiotAuth
 
+_log = logging.getLogger(__name__)
 
 _ = I18n('valorant.ui.auth', Path(__file__).resolve().parent, read_only=True)
 
-
-# username: app_commands.Range[str, 1, 24],
-# password: app_commands.Range[str, 1, 128],
 # region: app_commands.Choice[str] | None
 
 # riot_auth = RiotAuth()
@@ -141,8 +141,44 @@ RIOT_PASSWORD_REGEX = re.compile(r'^.{8,128}$')
 RIOT_USERNAME_REGEX = re.compile(r'^.{4,24}$')
 
 
-def validate_riot_password(password: str) -> bool:
-    return bool(re.match(RIOT_PASSWORD_REGEX, password))
+class RiotAuthManageView(ViewAuthor):
+    account_manager: AccountManager
+
+    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
+        super().__init__(interaction, timeout=timeout)
+
+    async def _init(self) -> None:
+        user = await self.bot.db.fetch_user(self.author.id)
+        if user is None:
+            raise RuntimeError('User not found')
+        self.account_manager = AccountManager(user, self.bot, re_authorize=False)
+        await self.account_manager.wait_until_ready()
+
+    async def start(self) -> None:
+        await self._init()
+        self.fill_itmes()
+        embed = self.front_embed()
+        await self.interaction.response.send_message(embed=embed, view=self)
+        self.message = await self.interaction.original_response()
+
+    def fill_itmes(self) -> None:
+        self.clear_items()
+        self.add_items(
+            AddAccountView(locale=self.locale),
+            RemoveAccountView(locale=self.locale),
+            AccountSelect(locale=self.locale).add_options(self.account_manager.accounts),
+        )
+
+    def front_embed(self) -> Embed:
+        embed = Embed(description=_('- You don\'t have any accounts yet', self.locale)).white()
+        embed.set_author(name=_('account.manager', self.locale), icon_url=self.author.display_avatar)
+
+        if len(self.account_manager.accounts) > 0:
+            embed.description = ''
+            for account in self.account_manager.accounts:
+                embed.description += f'- {account.region} - {account.riot_id}\n'
+
+        return embed
 
 
 class RiotMultiFactorModal(Modal):
@@ -188,16 +224,17 @@ class RiotMultiFactorModal(Modal):
         self.stop()
 
 
-class RiotAuthModalLogin(Modal):
+class RiotAuthUsernamePasswordModal(Modal):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
+        title: str,
+        custom_id: str,
         *,
-        title: str = ...,
         timeout: float | None = None,
-        custom_id: str = ...,
     ) -> None:
-        super().__init__(interaction, title=title, timeout=timeout, custom_id=custom_id)
+        super().__init__(interaction, title=title, custom_id=custom_id, timeout=timeout)
+        self.interaction: discord.Interaction[LatteMaid] | None = None
         self.username = ui.TextInput(
             label=_('Username', self.locale),
             max_length=24,
@@ -212,6 +249,8 @@ class RiotAuthModalLogin(Modal):
             style=discord.TextStyle.short,
             placeholder=_('password'),
         )
+        self.add_item(self.username)
+        self.add_item(self.password)
 
     async def on_submit(self, interaction: discord.Interaction[LatteMaid]) -> None:
         if not self.username.value:
@@ -229,45 +268,189 @@ class RiotAuthModalLogin(Modal):
             await interaction.response.send_message(_('Password must be at least 8 characters'), ephemeral=True)
             return
 
+        self.interaction = interaction
+        self.stop()
 
-class RiotAuthManageView(ViewAuthor):
-    account_manager: AccountManager
 
-    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
-        super().__init__(interaction, timeout=timeout)
+class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        assert self.view is not None
 
-    async def _init(self) -> None:
-        user = await self.bot.db.get_user(self.author.id)
-        if user is None:
-            raise RuntimeError('User not found')
-        self.account_manager = AccountManager(user, self.bot, re_authorize=False)
-        await self.account_manager.wait_until_ready()
+        login_modal = RiotAuthUsernamePasswordModal(
+            interaction,
+            title=_('login', interaction.locale),
+            custom_id='modal_riot_auth_login',
+        )
+        await interaction.response.send_modal(login_modal)
+        await login_modal.wait()
 
-    async def start(self) -> None:
-        await self._init()
-        self.add_components()
-        embed = self.front_embed()
-        await self.interaction.response.send_message(embed=embed, view=self)
-        self.message = await self.interaction.original_response()
+        if login_modal.interaction is None:
+            return
 
-    def add_components(self) -> None:
-        self.clear_items()
-        self.add_items(
-            AddAccountView(locale=self.locale),
-            RemoveAccountView(locale=self.locale),
-            AccountSelect(locale=self.locale).add_options(self.account_manager.accounts),
+        await login_modal.interaction.response.defer(ephemeral=True, thinking=True)
+
+        riot_auth = RiotAuth()
+
+        try:
+            await riot_auth.authorize(login_modal.username.value.strip(), login_modal.password.value.strip(), remember=True)
+        except RiotMultifactorError:
+            multi_modal = RiotMultiFactorModal(riot_auth, interaction)
+            await interaction.response.send_modal(multi_modal)
+            await multi_modal.wait()
+
+            if multi_modal.code is None:
+                raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
+
+            interaction = multi_modal.interaction or interaction
+
+            if multi_modal.interaction is not None:
+                await interaction.response.defer(ephemeral=True, thinking=True)
+
+            try:
+                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
+            except Exception as e:
+                await multi_modal.on_error(interaction, e)
+                return
+            finally:
+                multi_modal.stop()
+
+        # check if already linked
+        riot_account = await self.view.bot.db.fetch_riot_account_by_puuid_and_owner_id(
+            puuid=riot_auth.puuid, owner_id=interaction.user.id
+        )
+        if riot_account is not None:
+            await self.view.bot.db.update_riot_account(
+                puuid=riot_auth.puuid,
+                owner_id=interaction.user.id,
+                game_name=riot_auth.game_name,
+                tag_line=riot_auth.tag_line,
+                region=riot_auth.region or riot_account.region,
+                token_type=riot_auth.token_type,
+                expires_at=riot_auth.expires_at,
+                id_token=riot_auth.id_token,
+                access_token=riot_auth.access_token,
+                entitlements_token=riot_auth.entitlements_token,
+                ssid=riot_auth.get_ssid(),
+            )
+            raise RiotAuthAlreadyLinked('You already have this account linked.')
+
+        # fetch userinfo and region
+        try:
+            await riot_auth.fetch_userinfo()
+        except aiohttp.ClientResponseError as e:
+            _log.error('riot auth error fetching userinfo', exc_info=e)
+
+        # # set region if specified
+        # if region is not None:
+        #     riot_auth.region = region.value
+        # else:
+        # fetch region if not specified
+        try:
+            await riot_auth.fetch_region()
+        except aiohttp.ClientResponseError as e:
+            riot_auth.region = 'ap'  # default to ap
+            _log.error('riot auth error fetching region', exc_info=e)
+        assert riot_auth.region is not None
+
+        embed = Embed().blurple()
+        embed.add_field(name='Riot ID', value=riot_auth.riot_id, inline=False)
+        embed.add_field(name='Region', value=riot_auth.region, inline=False)
+        embed.set_footer(text='ID: ' + riot_auth.puuid)
+
+        view = RiotAuthConfirmView(interaction)
+        message = await login_modal.interaction.followup.send(embed=embed, ephemeral=True, view=view, wait=True)
+        await view.wait()
+
+        if not view.value:
+            await interaction.followup.send(_('You did not confirm the login.'), ephemeral=True)
+            return
+
+        await message.delete()
+
+        riot_account = await self.view.bot.db.add_riot_account(
+            interaction.user.id,
+            puuid=riot_auth.puuid,
+            game_name=riot_auth.game_name,
+            tag_line=riot_auth.tag_line,
+            region=riot_auth.region,
+            scope=riot_auth.scope,  # type: ignore
+            token_type=riot_auth.token_type,  # type: ignore
+            expires_at=riot_auth.expires_at,
+            id_token=riot_auth.id_token,  # type: ignore
+            access_token=riot_auth.access_token,  # type: ignore
+            entitlements_token=riot_auth.entitlements_token,  # type: ignore
+            ssid=riot_auth.get_ssid(),
+            notify=False,
         )
 
-    def front_embed(self) -> Embed:
-        embed = Embed(description=_('- You don\'t have any accounts yet', self.locale)).white()
-        embed.set_author(name=_('account.manager', self.locale), icon_url=self.author.display_avatar)
+        if not len(self.view.account_manager.accounts):
+            ...
+            # set main account
 
-        if len(self.account_manager.accounts) > 0:
-            embed.description = ''
-            for account in self.account_manager.accounts:
-                embed.description += f'- {account.region} - {account.riot_id}\n'
+        user = await self.view.bot.db.fetch_user(interaction.user.id)
+        if user is None:
+            raise RuntimeError('User not found')
 
-        return embed
+        self.view.account_manager = AccountManager(user, self.view.bot, re_authorize=False)
+        await self.view.account_manager.wait_until_ready()
+        embed = self.view.front_embed()
+        assert self.view.message is not None
+        await self.view.message.edit(embed=embed, view=self.view)
+
+
+class RiotAuthConfirmView(ViewAuthor):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
+        super().__init__(interaction, timeout=timeout)
+        self.value: bool | None = None
+        self.region: str | None = None
+        self.add_item(RegionSelect(locale=self.locale))
+
+    @ui.button(label='Confirm', style=discord.ButtonStyle.green, row=1)
+    async def confirm(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
+        self.value = True
+        await interaction.response.defer()
+        self.stop()
+
+    @ui.button(label='Cancel', style=discord.ButtonStyle.red, row=1)
+    async def cancel(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
+        self.value = False
+        await interaction.response.defer()
+        self.stop()
+
+
+class RegionSelect(ui.Select):
+    def __init__(self, *, locale: discord.Locale) -> None:
+        super().__init__(placeholder=_('select.riot_auth.region', locale), row=0)
+        self.locale = locale
+        self.add_options()
+
+    def add_options(self) -> Self:
+        self.add_option(label='Asia Pacific', value='ap', emoji='🌏')
+        self.add_option(label='Europe', value='eu', emoji='🇪🇺')
+        self.add_option(label='North America / Latin America / Brazil', value='na', emoji='🇺🇸')
+        self.add_option(label='Korea', value='kr', emoji='🇰🇷')
+        # self.add_option(label='Public Beta Environment', value='pbe', emoji='🔧')
+        return self
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        assert self.view is not None
+        value = self.values[0]
+        self.view.region = value
+        await interaction.response.defer()
+
+
+class PreviousButton(ui.Button['RiotAuthManageView']):
+    def __init__(self, row: int = 1, **kwargs: Any) -> None:
+        super().__init__(label='<', row=row, **kwargs)
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        assert self.view is not None
+
+        self.view.clear_items()
+        self.view.fill_itmes()
+        embed = self.view.front_embed()
+
+        await interaction.response.edit_message(embed=embed, view=self.view)
 
 
 class AddAccountView(ui.Button['RiotAuthManageView']):
@@ -280,9 +463,23 @@ class AddAccountView(ui.Button['RiotAuthManageView']):
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
+
         if len(self.view.account_manager.accounts) >= 10:
             ...
             # raise RiotAuthMaxLimitReached('You can only link up to 10 accounts.')
+
+        self.view.clear_items()
+        self.view.add_items(RitoAuthUsernamePasswordButton(label='login'), PreviousButton())
+
+        embed = Embed().white()
+        embed.set_author(name=_('add.an.account', self.locale), icon_url=interaction.user.display_avatar)
+        # latte bot privacy policy and terms of service
+        embed.description = _(
+            '- Before you start, please read our [Privacy Policy](https://latte.gg/privacy) and [Terms of Service](https://latte.gg/terms).',
+            interaction.locale,
+        )
+
+        await interaction.response.edit_message(embed=embed, view=self.view)
 
 
 class RemoveAccountView(ui.Button['RiotAuthManageView']):
@@ -311,6 +508,7 @@ class AccountSelect(ui.Select['RiotAuthManageView']):
             self.add_option(label='-', value='-')
             self.disabled = True
 
+        # ☆
         for account in riot_account:
             label = str(account.riot_id)
             if account.display_name is not None:
@@ -326,21 +524,3 @@ class AccountSelect(ui.Select['RiotAuthManageView']):
         assert self.view is not None
         value = self.values[0]
         row_id, puuid = value.split(':')
-
-
-class RiotAuthConfirmView(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
-        super().__init__(interaction, timeout=timeout)
-        self.value: bool | None = None
-
-    @ui.button(label='Confirm', style=discord.ButtonStyle.green)
-    async def confirm(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
-        self.value = True
-        await interaction.response.defer()
-        self.stop()
-
-    @ui.button(label='Cancel', style=discord.ButtonStyle.red)
-    async def cancel(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
-        self.value = False
-        await interaction.response.defer()
-        self.stop()

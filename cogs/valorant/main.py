@@ -119,77 +119,87 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
     # app commands
 
-    @app_commands.command(name=_T('login'), description=_T('Log in with your Riot accounts'))
+    @app_commands.command(name=_T('register'), description=_T('Register you valorant account to use commands'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_medium)
-    async def login(
+    async def register(
         self,
         interaction: discord.Interaction[LatteMaid],
     ) -> None:
         view = RiotAuthManageView(interaction)
         await view.start()
 
-    @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
-    @app_commands.rename(puuid=_T('account'))
-    @app_commands.describe(puuid=_T('Select account to logout'))
+    @app_commands.command(name=_T('accounts'), description=_T('Manage your accounts'))
     @app_commands.guild_only()
-    @dynamic_cooldown(cooldown_short)
-    async def logout(self, interaction: discord.Interaction[LatteMaid], puuid: str | None = None) -> None:
-        await interaction.response.defer(ephemeral=True)
+    @dynamic_cooldown(cooldown_medium)
+    async def accounts(
+        self,
+        interaction: discord.Interaction[LatteMaid],
+    ) -> None:
+        view = RiotAuthManageView(interaction)
+        await view.start()
 
-        user = await self.fetch_user(interaction.user.id, check_linked=False)
-        if user is None:
-            raise RiotAuthNotLinked('You do not have any accounts linked.')
+    # @app_commands.command(name=_T('logout'), description=_T('Logout and Delete your accounts from database'))
+    # @app_commands.rename(puuid=_T('account'))
+    # @app_commands.describe(puuid=_T('Select account to logout'))
+    # @app_commands.guild_only()
+    # @dynamic_cooldown(cooldown_short)
+    # async def logout(self, interaction: discord.Interaction[LatteMaid], puuid: str | None = None) -> None:
+    #     await interaction.response.defer(ephemeral=True)
 
-        e = Embed(description='Successfully logged out all accounts')
-        view = discord.utils.MISSING
+    #     user = await self.fetch_user(interaction.user.id, check_linked=False)
+    #     if user is None:
+    #         raise RiotAuthNotLinked('You do not have any accounts linked.')
 
-        if puuid is None:
-            await self.bot.db.remove_riot_accounts(owner_id=interaction.user.id)
-        else:
-            puuid, riot_id = puuid.split(';')
-            e.description = f'Successfully logged out account {chat.bold(riot_id)}'
-            delete = await self.bot.db.remove_riot_account(puuid=puuid, owner_id=interaction.user.id)
+    #     e = Embed(description='Successfully logged out all accounts')
+    #     view = discord.utils.MISSING
 
-            # if delete is None:
-            #     raise Exception(f'Failed to delete account {riot_id} from database')
+    #     if puuid is None:
+    #         await self.bot.db.remove_riot_accounts(owner_id=interaction.user.id)
+    #     else:
+    #         puuid, riot_id = puuid.split(';')
+    #         e.description = f'Successfully logged out account {chat.bold(riot_id)}'
+    #         delete = await self.bot.db.remove_riot_account(puuid=puuid, owner_id=interaction.user.id)
 
-            # if delete.id == user.main_riot_account_id:
-            #     for riot_acc in sorted(user.riot_accounts, key=lambda x: x.created_at):
-            #         if riot_acc.puuid == puuid:
-            #             continue
-            #         await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
-            #         e.description += f'\n{chat.bold(riot_acc.riot_id)} is now your main account.'
-            #         _log.info(
-            #             f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
-            #         )
-            #         break
+    #         # if delete is None:
+    #         #     raise Exception(f'Failed to delete account {riot_id} from database')
 
-            # TODO: view to select main account
+    #         # if delete.id == user.main_riot_account_id:
+    #         #     for riot_acc in sorted(user.riot_accounts, key=lambda x: x.created_at):
+    #         #         if riot_acc.puuid == puuid:
+    #         #             continue
+    #         #         await self.bot.db.update_user(user.id, main_account_id=riot_acc.id)
+    #         #         e.description += f'\n{chat.bold(riot_acc.riot_id)} is now your main account.'
+    #         #         _log.info(
+    #         #             f'{interaction.user}({interaction.user.id}) main account switched to {riot_acc.riot_id}({riot_acc.puuid})'
+    #         #         )
+    #         #         break
 
-        await interaction.followup.send(embed=e, view=view, ephemeral=True)
+    #         # TODO: view to select main account
 
-        # # invalidate cache
-        # self.fetch_user.invalidate(self, id=interaction.user.id)
+    #     await interaction.followup.send(embed=e, view=view, ephemeral=True)
 
-    @logout.autocomplete('puuid')
-    async def logout_autocomplete(
-        self, interaction: discord.Interaction[LatteMaid], current: str
-    ) -> list[app_commands.Choice[str]]:
-        user = await self.bot.db.fetch_user(interaction.user.id)
-        if user is None:
-            return []
+    #     # # invalidate cache
+    #     # self.fetch_user.invalidate(self, id=interaction.user.id)
 
-        if not len(user.riot_accounts):
-            return [app_commands.Choice(name=_('You have no accounts linked.', interaction.locale), value="-")]
+    # @logout.autocomplete('puuid')
+    # async def logout_autocomplete(
+    #     self, interaction: discord.Interaction[LatteMaid], current: str
+    # ) -> list[app_commands.Choice[str]]:
+    #     user = await self.bot.db.fetch_user(interaction.user.id)
+    #     if user is None:
+    #         return []
 
-        return [
-            app_commands.Choice(
-                name=f'{account.game_name}#{account.tag_line}',
-                value=account.puuid + ';' + f'{account.game_name}#{account.tag_line}',
-            )
-            for account in user.riot_accounts
-        ]
+    #     if not len(user.riot_accounts):
+    #         return [app_commands.Choice(name=_('You have no accounts linked.', interaction.locale), value="-")]
+
+    #     return [
+    #         app_commands.Choice(
+    #             name=f'{account.game_name}#{account.tag_line}',
+    #             value=account.puuid + ';' + f'{account.game_name}#{account.tag_line}',
+    #         )
+    #         for account in user.riot_accounts
+    #     ]
 
     # TODO: remove defer first
 

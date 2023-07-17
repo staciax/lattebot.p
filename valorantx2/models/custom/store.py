@@ -15,7 +15,9 @@ class AgentStore(_AgentStore):
         _client: Client
 
     async def fetch_featured_agent_recruitment_progress(
-        self, riot_auth: RiotAuth | None
+        self,
+        *,
+        riot_auth: RiotAuth | None = None,
     ) -> RecruitmentProgressUpdate | None:
         contracts = await self._client.fetch_contracts(riot_auth=riot_auth)
         for processed_match in sorted(
