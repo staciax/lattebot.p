@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import discord
-
 from discord import ui
+
 from core.i18n import I18n
 from core.ui.views import ViewAuthor
 
