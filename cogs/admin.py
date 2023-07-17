@@ -241,9 +241,7 @@ class Developer(commands.Cog, name='developer'):
     async def blacklist_list(self, interaction: Interaction[LatteMaid]):
         await interaction.response.defer(ephemeral=True)
 
-        blacklists = []
-        async for blacklist in self.bot.db.get_blacklists():
-            blacklists.append(blacklist)
+        blacklists = await self.bot.db.fetch_blacklists()
 
         source = BlackListPageSource(blacklists)
         pages = BlackListPages(source, interaction=interaction)

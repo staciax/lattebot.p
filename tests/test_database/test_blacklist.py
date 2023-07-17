@@ -27,30 +27,30 @@ class TestBlackList(DatabaseSetup):
 
     @pytest.mark.asyncio
     async def test_get_blacklist(self, db: DatabaseConnection) -> None:
-        blacklist = await db.get_blacklist(1)
+        blacklist = await db.fetch_blacklist(1)
         assert blacklist is not None
         assert blacklist.id == 1
         assert blacklist.reason == 'test'
 
-        blacklist = await db.get_blacklist(2)
+        blacklist = await db.fetch_blacklist(2)
         assert blacklist is not None
         assert blacklist.id == 2
         assert blacklist.reason == 'test'
 
     @pytest.mark.asyncio
     async def test_get_blacklists(self, db: DatabaseConnection) -> None:
-        async for blacklist in db.get_blacklists():
+        async for blacklist in db.fetch_blacklists():
             assert blacklist is not None
             assert blacklist.reason == 'test'
 
     @pytest.mark.asyncio
     async def test_remove_blacklist(self, db: DatabaseConnection) -> None:
         await db.remove_blacklist(1)
-        blacklist = await db.get_blacklist(1)
+        blacklist = await db.fetch_blacklist(1)
         assert blacklist is None
 
         await db.remove_blacklist(2)
-        blacklist = await db.get_blacklist(2)
+        blacklist = await db.fetch_blacklist(2)
         assert blacklist is None
 
         try:
@@ -60,6 +60,6 @@ class TestBlackList(DatabaseSetup):
 
     @pytest.mark.asyncio
     async def test_blacklist_is_deleted(self, db: DatabaseConnection) -> None:
-        assert await db.get_blacklist(1) is None
-        assert await db.get_blacklist(2) is None
-        assert await db.get_blacklist(3) is not None
+        assert await db.fetch_blacklist(1) is None
+        assert await db.fetch_blacklist(2) is None
+        assert await db.fetch_blacklist(3) is not None

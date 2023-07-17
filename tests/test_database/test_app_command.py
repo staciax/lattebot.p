@@ -21,7 +21,7 @@ class TestCommand(DatabaseSetup):
     @pytest.mark.asyncio
     async def test_get_commands(self, db: DatabaseConnection) -> None:
         commands = []
-        async for command in db.get_app_commands():
+        async for command in db.fetch_app_commands():
             assert command is not None
             commands.append(command)
         assert len(commands) == len(APP_COMMAND_DATA)
@@ -29,7 +29,7 @@ class TestCommand(DatabaseSetup):
     @pytest.mark.asyncio
     async def test_get_commands_by_name(self, db: DatabaseConnection) -> None:
         commands = []
-        async for command in db.get_app_commands_by_name(name='test 1'):
+        async for command in db.fetch_app_commands_by_name(name='test 1'):
             assert command is not None
             commands.append(command)
         assert len(commands) == 1

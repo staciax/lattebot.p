@@ -32,7 +32,7 @@ class Notifications(MixinMeta):
         ...
 
     async def do_notify_handle(self):
-        async for user in self.bot.db.get_users():
+        async for user in self.bot.db.fetch_users():
             if len(user.riot_accounts) <= 0:
                 continue
 
@@ -46,18 +46,18 @@ class Notifications(MixinMeta):
             account_manager = AccountManager(user, self.bot)
             await account_manager.wait_until_ready()
 
-            for riot_auth in account_manager.riot_accounts:
-                try:
-                    sf = self.valorant_client.fetch_storefront(riot_auth)
-                except BadRequest:
-                    # token expired
-                    continue
-                except RateLimited:
-                    # await asyncio.sleep(e.retry_after)  # TODO: retry_after in RateLimited
-                    await asyncio.sleep(60 * 5)  # 5 minutes
-                else:
-                    await self.send_notify()
-                    # TODO: send webhook
+            # for riot_auth in account_manager.riot_accounts:
+            #     try:
+            #         sf = self.valorant_client.fetch_storefront(riot_auth)
+            #     except BadRequest:
+            #         # token expired
+            #         continue
+            #     except RateLimited:
+            #         # await asyncio.sleep(e.retry_after)  # TODO: retry_after in RateLimited
+            #         await asyncio.sleep(60 * 5)  # 5 minutes
+            #     else:
+            #         await self.send_notify()
+            #         # TODO: send webhook
 
     @tasks.loop(time=time(hour=0, minute=1, second=00))  # utc 00:01:00
     async def notify_alert(self) -> None:

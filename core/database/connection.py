@@ -334,7 +334,7 @@ class DatabaseConnection:
                 self._log.info(f'deleted riot account with puuid {puuid!r} for user with id {owner_id!r}')
                 return riot_account
 
-    async def remove_riot_accounts(self, owner_id: int, /) -> bool:
+    async def remove_riot_accounts(self, owner_id: int) -> bool:
         async with self._async_session() as session:
             try:
                 await RiotAccount.delete_all_by_owner_id(session, owner_id)

@@ -6,7 +6,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
-import aiohttp
 import discord
 from discord import app_commands, ui
 from discord.app_commands import Choice, locale_str as _T
@@ -20,25 +19,17 @@ from core.errors import BadArgument, UserInputError
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from valorantx2.client import Client as ValorantClient
-from valorantx2.errors import RiotMultifactorError
 from valorantx2.utils import locale_converter, validate_riot_id
 
 from .account_manager import AccountManager
 from .admin import Admin
-from .auth import RiotAuth
 from .context_menu import ContextMenu
-from .error import (
-    ErrorHandler,
-    RiotAuthAlreadyLinked,
-    RiotAuthMaxLimitReached,
-    RiotAuthMultiFactorTimeout,
-    RiotAuthNotLinked,
-)
+from .error import ErrorHandler, RiotAuthNotLinked
 from .events import Events
 from .notifications import Notifications
 from .schedule import Schedule
 from .ui import embeds as e
-from .ui.auth import RiotAuthConfirmView, RiotAuthManageView, RiotMultiFactorModal
+from .ui.auth import RiotAuthManageView
 from .ui.settings import SettingsView
 from .ui.views import (
     CarrierView,
@@ -106,8 +97,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
     # user
 
-    async def get_user(self, id: int, /, *, check_linked: bool = True) -> User | None:
-        user = await self.bot.db.get_user(id)
+    async def fetch_user(self, id: int, /, *, check_linked: bool = True) -> User | None:
+        user = await self.bot.db.fetch_user(id)
 
         if user is None:
             _log.info(f'User {id} not found in database.')
@@ -118,11 +109,11 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
         return user
 
-    async def get_or_create_user(self, id: int, /, locale: discord.Locale) -> User:
-        user = await self.get_user(id)
+    async def fetch_or_create_user(self, id: int, /) -> User:
+        user = await self.fetch_user(id)
         if user is None:
-            await self.bot.db.create_user(id, locale=locale)
-            raise RiotAuthNotLinked(_('You have not linked any riot accounts.', locale))
+            await self.bot.db.add_user(id)
+            raise RiotAuthNotLinked('You have not linked any riot accounts.')
 
         return user
 
@@ -146,7 +137,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     async def logout(self, interaction: discord.Interaction[LatteMaid], puuid: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
-        user = await self.get_user(interaction.user.id, check_linked=False)
+        user = await self.fetch_user(interaction.user.id, check_linked=False)
         if user is None:
             raise RiotAuthNotLinked('You do not have any accounts linked.')
 
@@ -154,11 +145,11 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         view = discord.utils.MISSING
 
         if puuid is None:
-            await self.bot.db.delete_all_riot_accounts(owner_id=interaction.user.id)
+            await self.bot.db.remove_riot_accounts(owner_id=interaction.user.id)
         else:
             puuid, riot_id = puuid.split(';')
             e.description = f'Successfully logged out account {chat.bold(riot_id)}'
-            delete = await self.bot.db.delete_riot_account(puuid=puuid, owner_id=interaction.user.id)
+            delete = await self.bot.db.remove_riot_account(puuid=puuid, owner_id=interaction.user.id)
 
             # if delete is None:
             #     raise Exception(f'Failed to delete account {riot_id} from database')
@@ -185,7 +176,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     async def logout_autocomplete(
         self, interaction: discord.Interaction[LatteMaid], current: str
     ) -> list[app_commands.Choice[str]]:
-        user = await self.bot.db.get_user(interaction.user.id)
+        user = await self.bot.db.fetch_user(interaction.user.id)
         if user is None:
             return []
 
@@ -211,7 +202,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         view = NewStoreFrontView(interaction, sf, ags)
         await view.start()
 
-        # user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        # user = user = await self.fetch_or_create_user(interaction.user.id)
         # await interaction.response.defer()
         # view = StoreFrontView(interaction, AccountManager(user, self.bot))
         # await view.callback(interaction)
@@ -226,7 +217,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = NightMarketView(interaction, AccountManager(user, self.bot), hide)
         await view.callback(interaction)
@@ -251,7 +242,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer(ephemeral=private)
         view = WalletView(interaction, AccountManager(user, self.bot))
         await view.callback(interaction)
@@ -266,7 +257,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
@@ -281,7 +272,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
@@ -294,7 +285,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = MissionView(
             interaction,
@@ -306,7 +297,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = CollectionView(
             interaction,
@@ -318,7 +309,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
             interaction,
@@ -352,7 +343,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = user = await self.fetch_or_create_user(interaction.user.id)
 
         await interaction.response.defer()
         queue = mode.value if mode is not None else None
@@ -388,7 +379,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = await self.get_or_create_user(interaction.user.id, interaction.locale)
+        user = user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
 
         queue_id = mode.value if mode is not None else None

@@ -68,8 +68,8 @@ class AccountManager:
                 #     continue
 
             self._accounts[riot_auth.puuid] = riot_auth
-            if self.author.main_riot_account_id == riot_account.id:
-                self.main_account = riot_auth
+            # if self.author.main_riot_account_id == riot_account.id:
+            #     self.main_account = riot_auth
 
         self._ready.set()
 
@@ -91,7 +91,7 @@ class AccountManager:
         return self._accounts.get(puuid)
 
     async def add_account(self, riot_auth: RiotAuth, /) -> None:
-        await self.bot.db.create_riot_account(
+        await self.bot.db.add_riot_account(
             self.author.id,
             puuid=riot_auth.puuid,
             game_name=riot_auth.game_name,
@@ -109,7 +109,7 @@ class AccountManager:
         self._accounts[riot_auth.puuid] = riot_auth
 
     async def remove_account(self, puuid: str, /) -> None:
-        await self.bot.db.delete_riot_account(puuid, self.author.id)
+        await self.bot.db.remove_riot_account(puuid, self.author.id)
 
         try:
             self._accounts.pop(puuid)
