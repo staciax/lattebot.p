@@ -1,4 +1,8 @@
 {
+    "accounts": {
+        "name": "accounts",
+        "description": "Manage your accounts"
+    },
     "agents": {
         "name": "agents",
         "description": "แสดงสัญญาของเอเจนท์"
@@ -54,20 +58,6 @@
             "event": {
                 "display_name": "อีเว้นท์",
                 "description": "เลือกอีเว้นท์ที่ต้องการดู"
-            }
-        }
-    },
-    "login": {
-        "name": "login",
-        "description": "เข้าสู่ระบบด้วยบัญชี riot games"
-    },
-    "logout": {
-        "name": "logout",
-        "description": "ออกจากระบบและลบบัญชีของคุณจากฐานข้อมูล",
-        "options": {
-            "puuid": {
-                "display_name": "บัญชี",
-                "description": "เลือกบัญชีที่จะออกจากระบบ"
             }
         }
     },
@@ -128,6 +118,10 @@
                 "description": "แสดงข้อความเฉพาะคุณเท่านั้น"
             }
         }
+    },
+    "register": {
+        "name": "register",
+        "description": "Log in with your Riot accounts"
     },
     "settings": {
         "name": "settings",
