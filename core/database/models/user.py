@@ -32,10 +32,10 @@ class User(Base):
 
     id: Mapped[int] = mapped_column('id', primary_key=True, autoincrement=False)
     created_at: Mapped[datetime.datetime] = mapped_column('created_at', default=datetime.datetime.utcnow)
-    user_settings: Mapped[UserSettings | None] = relationship(
+    settings: Mapped[UserSettings | None] = relationship(
         'UserSettings',
-        back_populates='user',
         lazy='joined',
+        back_populates='user',
         cascade='save-update, merge, refresh-expire, expunge, delete, delete-orphan',
     )
     notification_settings: Mapped[NotificationSettings | None] = relationship(
@@ -72,9 +72,9 @@ class User(Base):
 
     @hybrid_property
     def locale(self) -> str | None:
-        if self.user_settings is None:
+        if self.settings is None:
             return None
-        return self.user_settings.locale
+        return self.settings.locale
 
     @hybrid_method
     def is_blacklisted(self) -> bool:
@@ -98,7 +98,7 @@ class User(Base):
 
     @classmethod
     async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
-        stmt = select(cls).options()
+        stmt = select(cls)
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream.unique():
             yield row

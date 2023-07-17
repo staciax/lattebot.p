@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, AsyncIterator
 
-from sqlalchemy import ForeignKey, String, delete, select
+from sqlalchemy import ForeignKey, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import Mapped, mapped_column, relationship  # foreign, _
 
 from .base import Base
@@ -33,3 +32,40 @@ class RiotAccountSettings(Base):
         ForeignKey('riot_accounts.id'),
         default=None,
     )
+
+    @classmethod
+    async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
+        stmt = select(cls)
+        stream = await session.stream_scalars(stmt)
+        async for row in stream:
+            yield row
+
+    @classmethod
+    async def find_by_user_id(cls, session: AsyncSession, user_id: int) -> Self | None:
+        stmt = select(cls).where(cls.user_id == user_id)
+        return await session.scalar(stmt)
+
+    @classmethod
+    async def create(cls, session: AsyncSession, user_id: int) -> Self:
+        settings = RiotAccountSettings(user_id=user_id)
+        session.add(settings)
+        await session.flush()
+        # To fetch the new object
+        new = await cls.find_by_user_id(session, user_id)
+        if not new:
+            raise RuntimeError()
+        return new
+
+    async def update(self, session: AsyncSession, **kwargs) -> Self:
+        self.current_account_id = kwargs.get('current_account_id', self.current_account_id)
+        await session.flush()
+        # To fetch the new object
+        new = await self.find_by_user_id(session, self.user_id)
+        if not new:
+            raise RuntimeError()
+        return new
+
+    @classmethod
+    async def delete(cls, session: AsyncSession, riot_account_settings: Self) -> None:
+        await session.delete(riot_account_settings)
+        await session.flush()

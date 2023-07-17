@@ -95,9 +95,9 @@ class RiotAccount(Base):
     def is_main_account(self) -> bool:
         if self.owner is None:
             return False
-        if self.owner.main_riot_account_id is None:
+        if self.owner.riot_account_settings is None:
             return False
-        return self.owner.main_riot_account_id == self.id
+        return self.owner.riot_account_settings.current_account_id == self.id
 
     @classmethod
     async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
@@ -218,9 +218,7 @@ class RiotAccount(Base):
 
     @classmethod
     async def delete(cls, session: AsyncSession, riot_account: Self) -> None:
-        # await session.delete(riot_account)
-        stmt = delete(cls).where(cls.id == riot_account.id)
-        await session.execute(stmt)
+        await session.delete(riot_account)
         await session.flush()
 
     @classmethod
