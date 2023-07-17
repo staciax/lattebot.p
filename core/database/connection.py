@@ -80,7 +80,7 @@ class DatabaseConnection:
     async def wait_until_ready(self) -> None:
         await self._ready.wait()
 
-    async def get_session(self) -> AsyncSession:
+    async def fetch_session(self) -> AsyncSession:
         return self._async_session()
 
     # user
@@ -95,30 +95,23 @@ class DatabaseConnection:
             self._log.info(f'created user with id {id!r}')
             return user
 
-    async def get_user(self, id: int, /) -> User | None:
+    async def fetch_user(self, id: int, /) -> User | None:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             return user
 
-    async def get_users(self) -> AsyncIterator[User]:
+    async def fetch_users(self) -> AsyncIterator[User]:
         async with self._async_session() as session:
             async for user in User.read_all(session):
                 yield user
 
-    async def update_user(
-        self,
-        id: int,
-        /,
-        *,
-        locale: str | None = None,
-        main_account_id: int | None = None,
-    ) -> User | None:
+    async def update_user(self, id: int, /) -> User | None:
         async with self._async_session() as session:
             user = await User.read_by_id(session, id)
             if not user:
                 raise UserDoesNotExist(id)
             try:
-                new = await user.update(session, locale, main_account_id)
+                new = await user.update(session)
             except SQLAlchemyError as e:
                 await session.rollback()
                 self._log.error(f'failed to update user with id {id!r} due to {e!r}')
@@ -126,10 +119,6 @@ class DatabaseConnection:
             else:
                 await session.commit()
                 log_msg = f'updated user with id {id!r}'
-                if locale is not None:
-                    log_msg += f' locale to {locale!r}'
-                if main_account_id is not None:
-                    log_msg += f' main_account_id to {main_account_id!r}'
                 self._log.info(log_msg)
                 return new
 
@@ -161,13 +150,13 @@ class DatabaseConnection:
             self._log.info(f'created blacklist with id {id!r}')
             return blacklist
 
-    async def get_blacklist(self, id: int, /) -> BlackList | None:
+    async def fetch_blacklist(self, id: int, /) -> BlackList | None:
         async with self._async_session() as session:
             stmt = select(BlackList).where(BlackList.id == id)
             result = await session.execute(stmt)
             return result.scalars().first()
 
-    async def get_blacklists(self) -> AsyncIterator[BlackList]:
+    async def fetch_blacklists(self) -> AsyncIterator[BlackList]:
         async with self._async_session() as session:
             async for blacklist in BlackList.read_all(session):
                 yield blacklist
@@ -194,9 +183,9 @@ class DatabaseConnection:
         failed: bool,
     ) -> AppCommand:
         async with self._async_session() as session:
-            command = await AppCommand.create(
-                type=type,
+            app_command = await AppCommand.create(
                 session=session,
+                type=type,
                 guild=guild,
                 channel=channel,
                 author=author,
@@ -205,18 +194,18 @@ class DatabaseConnection:
                 failed=failed,
             )
             await session.commit()
-            self._log.info(f'created app command {command.command!r}')
-            return command
+            self._log.info(f'created app command {app_command.command!r}')
+            return app_command
 
-    async def get_app_commands(self) -> AsyncIterator[AppCommand]:
+    async def fetch_app_commands(self) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for command in AppCommand.read_all(session):
-                yield command
+            async for app_command in AppCommand.read_all(session):
+                yield app_command
 
-    async def get_app_commands_by_name(self, name: str) -> AsyncIterator[AppCommand]:
+    async def fetch_app_commands_by_name(self, name: str) -> AsyncIterator[AppCommand]:
         async with self._async_session() as session:
-            async for command in AppCommand.read_all_by_name(session, name):
-                yield command
+            async for app_command in AppCommand.read_all_by_name(session, name):
+                yield app_command
 
     # riot account
 
@@ -264,17 +253,17 @@ class DatabaseConnection:
             self._log.info(f'created riot account {game_name}#{tag_line}({puuid}) for user with id {owner_id}')
             return riot_account
 
-    async def get_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> RiotAccount | None:
+    async def fetch_riot_account_by_puuid_and_owner_id(self, puuid: str, owner_id: int) -> RiotAccount | None:
         async with self._async_session() as session:
             riot_account = await RiotAccount.read_by_puuid_and_owner_id(session, puuid, owner_id)
             return riot_account
 
-    async def get_riot_accounts_by_puuid_and_owner_id(self, id: int, /) -> AsyncIterator[RiotAccount]:
+    async def fetch_riot_accounts_by_puuid_and_owner_id(self, id: int, /) -> AsyncIterator[RiotAccount]:
         async with self._async_session() as session:
             async for riot_account in RiotAccount.read_all_by_owner_id(session, id):
                 yield riot_account
 
-    async def get_riot_accounts(self) -> AsyncIterator[RiotAccount]:
+    async def fetch_riot_accounts(self) -> AsyncIterator[RiotAccount]:
         async with self._async_session() as session:
             async for riot_account in RiotAccount.read_all(session):
                 yield riot_account
@@ -381,17 +370,17 @@ class DatabaseConnection:
             self._log.info(f'created notification for user with id {owner_id}')
             return notification
 
-    async def get_notifications_by_owner_id(self, owner_id: int, /) -> AsyncIterator[Notification]:
+    async def fetch_notifications_by_owner_id(self, owner_id: int, /) -> AsyncIterator[Notification]:
         async with self._async_session() as session:
             async for notification in Notification.read_all_by_owner_id(session, owner_id):
                 yield notification
 
-    async def get_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Notification | None:
+    async def fetch_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Notification | None:
         async with self._async_session() as session:
             notification = await Notification.read_by_owner_id_and_item_id(session, owner_id, item_id)
             return notification
 
-    async def get_notifications_by_owner_id_and_type(self, owner_id: int, /, *, type: str) -> AsyncIterator[Notification]:
+    async def fetch_notifications_by_owner_id_and_type(self, owner_id: int, /, *, type: str) -> AsyncIterator[Notification]:
         async with self._async_session() as session:
             async for notification in Notification.read_all_by_owner_id_and_type(session, owner_id, type):
                 yield notification
@@ -468,7 +457,7 @@ class DatabaseConnection:
             self._log.info(f'created notification settings for user with id {owner_id}')
             return settings
 
-    async def get_notification_settings_by_owner_id(self, owner_id: int, /) -> NotificationSettings | None:
+    async def fetch_notification_settings_by_owner_id(self, owner_id: int, /) -> NotificationSettings | None:
         async with self._async_session() as session:
             settings = await NotificationSettings.read_by_owner_id(session, owner_id)
             return settings

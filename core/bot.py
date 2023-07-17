@@ -116,7 +116,9 @@ class LatteMaid(commands.AutoShardedBot):
         # self.encryption: Encryption = Encryption(config.cryptography)
 
         # database
-        self.db: DatabaseConnection = DatabaseConnection(os.getenv('DATABASE_URI_TEST'))  # type: ignore TODO: debug mode check and change
+        self.db: DatabaseConnection = DatabaseConnection(
+            os.environ['DATABASE_URL' + ('_TEST' if debug_mode else '')],
+        )
 
         # valorant
         self.valorant_client: valorantx.Client = valorantx.Client(self)

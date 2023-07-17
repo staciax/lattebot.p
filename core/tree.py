@@ -18,6 +18,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         user = interaction.user
         guild = interaction.guild
         locale = interaction.locale
+        command = interaction.command
 
         if await self.client.is_owner(user):
             return True
@@ -51,8 +52,8 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
             )
 
             # remove user from database
-            if _ := await self.client.db.get_user(user.id):
-                self.client.loop.create_task(self.client.db.delete_user(user.id))
+            if _ := await self.client.db.fetch_user(user.id):
+                self.client.loop.create_task(self.client.db.remove_user(user.id))
 
             return False
 
@@ -75,13 +76,16 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         #     return False
 
         # if interaction.type is discord.InteractionType.application_command:
-        if isinstance(interaction.command, app_commands.Command) and interaction.user:  # TODO: context menu support
-            user_db = await self.client.db.get_user(interaction.user.id)
+        if interaction.user and isinstance(command, (app_commands.ContextMenu, app_commands.Command)):
+            user_db = await self.client.db.fetch_user(interaction.user.id)
             if user_db is None:
-                await self.client.db.add_user(interaction.user.id, locale=locale.value)
+                await self.client.db.add_user(interaction.user.id)
+                # settings = await self.client.db.add_user_settings(interaction.user.id)
                 # self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
-            elif user_db.locale != interaction.locale.value:
-                self.client.loop.create_task(self.client.db.update_user(interaction.user.id, locale=locale.value))
+            elif user_db.locale is None:
+                ...
+                # await database.update_user_settings(interaction.user.id, locale=locale)
+                # self.client.loop.create_task(self.client.db.update_user(interaction.user.id))
 
         return True
 

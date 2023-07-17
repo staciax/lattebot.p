@@ -28,7 +28,7 @@ class DatabaseConnection(_DatabaseConnection):
         self._log.info('initialized database')
 
     async def _cache_blacklist(self) -> None:
-        async for blacklist in super().get_blacklists():
+        async for blacklist in super().fetch_blacklists():
             self._blacklist[blacklist.id] = blacklist
         self._log.debug('cached %d blacklists', len(self._blacklist))
 
@@ -39,13 +39,13 @@ class DatabaseConnection(_DatabaseConnection):
         return list(self._blacklist.values())
 
     async def fetch_blacklists(self) -> list[BlackList]:
-        async for blacklist in super().get_blacklists():
+        async for blacklist in super().fetch_blacklists():
             self._blacklist[blacklist.id] = blacklist
 
         return self.blacklists
 
     async def add_blacklist(self, id: int, /, *, reason: str | None = None) -> BlackList:
-        blacklist = await super().add_blacklist(id=id)
+        blacklist = await super().add_blacklist(id)
         self._blacklist[blacklist.id] = blacklist
         return blacklist
 
@@ -53,7 +53,7 @@ class DatabaseConnection(_DatabaseConnection):
         return self._blacklist.get(id)
 
     async def remove_blacklist(self, id: int, /) -> None:
-        await super().delete_blacklist(id)
+        await super().remove_blacklist(id)
         try:
             del self._blacklist[id]
         except KeyError:
