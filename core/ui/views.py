@@ -53,7 +53,7 @@ class BaseView(ui.View):
         try:
             item._refresh_state(interaction, interaction.data)  # type: ignore
 
-            allow = await self.interaction_check(interaction)
+            allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
             if not allow:
                 return await self.on_check_failure(interaction)
 
