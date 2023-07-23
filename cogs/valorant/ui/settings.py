@@ -10,13 +10,13 @@ from core.i18n import I18n
 from core.ui.views import ViewAuthor
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _ = I18n('valorant.ui.settings', Path(__file__).resolve().parent, read_only=True)
 
 
 class SettingsView(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], *args: Any, **kwargs: Any) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMiad], *args: Any, **kwargs: Any) -> None:
         super().__init__(interaction, *args, **kwargs)
         self.fill_items()
 
@@ -32,7 +32,7 @@ class LanguageButton(ui.Button['SettingsView']):
         super().__init__(label=_('button.language', locale=locale), emoji='🌐', **kwargs)
         self.locale = locale
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
         self.view.clear_items()
         self.view.add_items(PreviousButton(), LanguageSelect(support_locales=()))
@@ -43,7 +43,7 @@ class NotificationButton(ui.Button['SettingsView']):
         super().__init__(label=_('button.notification', locale=locale), emoji='🔔', **kwargs)
         self.locale = locale
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         ...
 
 
@@ -51,7 +51,7 @@ class PreviousButton(ui.Button['SettingsView']):
     def __init__(self, row: int = 0, **kwargs: Any) -> None:
         super().__init__(label='<', row=row, **kwargs)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         ...
 
 
@@ -66,7 +66,7 @@ class LanguageSelect(ui.Select['SettingsView']):
         for locale in self.support_locales:
             self.add_option(label=locale.name, value=locale.value)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
         value = self.values[0]
         self.view.locale = discord.Locale(value)

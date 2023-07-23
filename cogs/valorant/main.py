@@ -44,7 +44,7 @@ from .ui.views import (
 from .ui.views_7 import NewStoreFrontView
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
     from valorantx2.client import Client as ValorantClient
 
 _ = I18n('valorant', __file__)
@@ -64,8 +64,8 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 @cog_i18n(_)
 class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, Cog, metaclass=CompositeMetaClass):
-    def __init__(self, bot: LatteMaid) -> None:
-        self.bot: LatteMaid = bot
+    def __init__(self, bot: LatteMiad) -> None:
+        self.bot: LatteMiad = bot
         self._lock: asyncio.Lock = asyncio.Lock()
 
     @property
@@ -88,7 +88,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
     # check
 
-    async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[LatteMiad]) -> bool:
         if await interaction.client.is_owner(interaction.user):
             return True
         if not self.valorant_client.is_ready():
@@ -124,7 +124,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @dynamic_cooldown(cooldown_medium)
     async def register(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
     ) -> None:
         view = RiotAuthManageView(interaction)
         await view.start()
@@ -134,7 +134,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @dynamic_cooldown(cooldown_medium)
     async def accounts(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
     ) -> None:
         view = RiotAuthManageView(interaction)
         await view.start()
@@ -206,7 +206,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('store'), description=_T('Shows your daily store in your accounts'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def store(self, interaction: discord.Interaction[LatteMiad]) -> None:
         sf = await self.valorant_client.fetch_storefront()
         ags = await self.valorant_client.fetch_agent_store()
         view = NewStoreFrontView(interaction, sf, ags)
@@ -226,7 +226,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.describe(hide=_T('Hide the skin offers'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
+    async def nightmarket(self, interaction: discord.Interaction[LatteMiad], hide: bool = False) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = NightMarketView(interaction, AccountManager(user, self.bot), hide)
@@ -241,7 +241,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('bundles'), description=_T('Show the current featured bundles'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def bundles(self, interaction: discord.Interaction[LatteMiad]) -> None:
         await interaction.response.defer()
         view = FeaturedBundleView(interaction, self.valorant_client)
         await view.start()
@@ -251,7 +251,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.describe(private=_T('Show the message only to you'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
+    async def point(self, interaction: discord.Interaction[LatteMiad], private: bool = True) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer(ephemeral=private)
         view = WalletView(interaction, AccountManager(user, self.bot))
@@ -266,7 +266,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.describe(season=_T('Select season to view'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
+    async def battlepass(self, interaction: discord.Interaction[LatteMiad], season: str | None = None) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
@@ -281,7 +281,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.describe(event=_T('Select event to view'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
+    async def eventpass(self, interaction: discord.Interaction[LatteMiad], event: str | None = None) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
@@ -294,7 +294,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def mission(self, interaction: discord.Interaction[LatteMiad]) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = MissionView(
@@ -306,7 +306,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def collection(self, interaction: discord.Interaction[LatteMiad]) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = CollectionView(
@@ -318,7 +318,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def agents(self, interaction: discord.Interaction[LatteMiad]) -> None:
         user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
         view = GamePassView(
@@ -349,7 +349,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @dynamic_cooldown(cooldown_long)
     async def carrier(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
@@ -385,7 +385,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @dynamic_cooldown(cooldown_medium)
     async def match(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
@@ -414,7 +414,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def patchnote(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def patchnote(self, interaction: discord.Interaction[LatteMiad]) -> None:
         await interaction.response.defer()
 
         patch_notes = await self.valorant_client.fetch_patch_notes(locale_converter.to_valorant(interaction.locale))
@@ -444,7 +444,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.command(name='settings', description='Change your settings')
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
-    async def settings(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def settings(self, interaction: discord.Interaction[LatteMiad]) -> None:
         view = SettingsView(interaction)
         await view.start()
 

@@ -20,10 +20,10 @@ else:
     del bs4, lxml
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 
-async def setup(bot: LatteMaid) -> None:
+async def setup(bot: LatteMiad) -> None:
     if not skip:
         await bot.add_cog(Valorant(bot))
         return

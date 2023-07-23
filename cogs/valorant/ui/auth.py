@@ -10,7 +10,7 @@ import discord
 from discord import ui
 from discord.enums import ButtonStyle
 
-from core.bot import LatteMaid
+from core.bot import LatteMiad
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.modal import Modal
@@ -30,7 +30,7 @@ from ..error import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 
 _log = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ RIOT_USERNAME_REGEX = re.compile(r'^.{4,24}$')
 class RiotAuthManageView(ViewAuthor):
     account_manager: AccountManager
 
-    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMiad], timeout: float = 180.0) -> None:
         super().__init__(interaction, timeout=timeout)
 
     async def _init(self) -> None:
@@ -184,7 +184,7 @@ class RiotAuthManageView(ViewAuthor):
 class RiotMultiFactorModal(Modal):
     """Modal for riot login with multifactorial authentication"""
 
-    def __init__(self, try_auth: RiotAuth, interaction: discord.Interaction[LatteMaid]) -> None:
+    def __init__(self, try_auth: RiotAuth, interaction: discord.Interaction[LatteMiad]) -> None:
         super().__init__(
             interaction=interaction,
             title=_('Two-factor authentication'),
@@ -193,7 +193,7 @@ class RiotMultiFactorModal(Modal):
         )
         self.try_auth: RiotAuth = try_auth
         self.code: str | None = None
-        self.interaction: discord.Interaction[LatteMaid] | None = None
+        self.interaction: discord.Interaction[LatteMiad] | None = None
         self.two2fa = ui.TextInput(
             label=_('Input 2FA Code', self.locale),
             max_length=6,
@@ -208,7 +208,7 @@ class RiotMultiFactorModal(Modal):
         )
         self.add_item(self.two2fa)
 
-    async def on_submit(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def on_submit(self, interaction: discord.Interaction[LatteMiad]) -> None:
         code = self.two2fa.value
 
         if not code:
@@ -227,14 +227,14 @@ class RiotMultiFactorModal(Modal):
 class RiotAuthUsernamePasswordModal(Modal):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         title: str,
         custom_id: str,
         *,
         timeout: float | None = None,
     ) -> None:
         super().__init__(interaction, title=title, custom_id=custom_id, timeout=timeout)
-        self.interaction: discord.Interaction[LatteMaid] | None = None
+        self.interaction: discord.Interaction[LatteMiad] | None = None
         self.username = ui.TextInput(
             label=_('Username', self.locale),
             max_length=24,
@@ -252,7 +252,7 @@ class RiotAuthUsernamePasswordModal(Modal):
         self.add_item(self.username)
         self.add_item(self.password)
 
-    async def on_submit(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def on_submit(self, interaction: discord.Interaction[LatteMiad]) -> None:
         if not self.username.value:
             await interaction.response.send_message(_('Please input username'), ephemeral=True)
             return
@@ -273,7 +273,7 @@ class RiotAuthUsernamePasswordModal(Modal):
 
 
 class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
 
         login_modal = RiotAuthUsernamePasswordModal(
@@ -399,20 +399,20 @@ class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
 
 
 class RiotAuthConfirmView(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMiad], timeout: float = 180.0) -> None:
         super().__init__(interaction, timeout=timeout)
         self.value: bool | None = None
         self.region: str | None = None
         self.add_item(RegionSelect(locale=self.locale))
 
     @ui.button(label='Confirm', style=discord.ButtonStyle.green, row=1)
-    async def confirm(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
+    async def confirm(self, interaction: discord.Interaction[LatteMiad], button: discord.ui.Button):
         self.value = True
         await interaction.response.defer()
         self.stop()
 
     @ui.button(label='Cancel', style=discord.ButtonStyle.red, row=1)
-    async def cancel(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button):
+    async def cancel(self, interaction: discord.Interaction[LatteMiad], button: discord.ui.Button):
         self.value = False
         await interaction.response.defer()
         self.stop()
@@ -432,7 +432,7 @@ class RegionSelect(ui.Select):
         # self.add_option(label='Public Beta Environment', value='pbe', emoji='🔧')
         return self
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
         value = self.values[0]
         self.view.region = value
@@ -443,7 +443,7 @@ class PreviousButton(ui.Button['RiotAuthManageView']):
     def __init__(self, row: int = 1, **kwargs: Any) -> None:
         super().__init__(label='<', row=row, **kwargs)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
 
         self.view.clear_items()
@@ -461,7 +461,7 @@ class AddAccountView(ui.Button['RiotAuthManageView']):
         )
         self.locale = locale
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
 
         if len(self.view.account_manager.accounts) >= 10:
@@ -490,7 +490,7 @@ class RemoveAccountView(ui.Button['RiotAuthManageView']):
         )
         self.locale = locale
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]):
+    async def callback(self, interaction: discord.Interaction[LatteMiad]):
         assert self.view is not None
 
 
@@ -520,7 +520,7 @@ class AccountSelect(ui.Select['RiotAuthManageView']):
             )
         return self
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
         value = self.values[0]
         row_id, puuid = value.split(':')

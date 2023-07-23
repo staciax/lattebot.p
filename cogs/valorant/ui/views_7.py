@@ -5,21 +5,21 @@ from typing import TYPE_CHECKING
 import discord
 from discord import ui
 
-from core.bot import LatteMaid
+from core.bot import LatteMiad
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
 
 from . import embeds as e
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
     from valorantx2.models import AgentStore, StoreFront
 
 
 class NewStoreFrontView(ViewAuthor):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         store_front: StoreFront,
         agent_store: AgentStore,
     ) -> None:
@@ -51,21 +51,21 @@ class NewStoreFrontView(ViewAuthor):
         self.agents.disabled = False
 
     @ui.button(label='Featured', disabled=True)
-    async def featured(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+    async def featured(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
         self.enable_buttons()
         button.disabled = True
         embeds = self.embeds = self.get_featured()
         await interaction.response.edit_message(embeds=embeds, view=self)
 
     @ui.button(label='Accessories')
-    async def accessories(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+    async def accessories(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
         self.enable_buttons()
         button.disabled = True
         embeds = self.embeds = self.get_accessories()
         await interaction.response.edit_message(embeds=embeds, view=self)
 
     @ui.button(label='Agents')
-    async def agents(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+    async def agents(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
         self.enable_buttons()
         button.disabled = True
         embeds = self.embeds = [await self.get_agents()]

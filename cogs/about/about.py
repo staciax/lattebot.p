@@ -21,7 +21,7 @@ from core.ui.views import BaseView
 from core.utils.useful import count_python
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _ = I18n('about', __file__)
 
@@ -56,8 +56,8 @@ class About(Cog, name='about'):
 
     """Latte's About command"""
 
-    def __init__(self, bot: LatteMaid) -> None:
-        self.bot: LatteMaid = bot
+    def __init__(self, bot: LatteMiad) -> None:
+        self.bot: LatteMiad = bot
         self.process = psutil.Process()
 
     @property
@@ -66,7 +66,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('invite'), description=_T('Invite bot'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def invite(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def invite(self, interaction: discord.Interaction[LatteMiad]) -> None:
         locale = interaction.locale
         embed = MiadEmbed().secondary()
         embed.set_author(
@@ -85,7 +85,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('about'), description=_T('Shows bot information'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def about(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def about(self, interaction: discord.Interaction[LatteMiad]) -> None:
         # await interaction.response.defer()
 
         locale = interaction.locale
@@ -153,7 +153,7 @@ class About(Cog, name='about'):
 
     @app_commands.command(name=_T('support'), description=_T('Sends the support server of the bot.'))
     @bot_has_permissions(send_messages=True, embed_links=True)
-    async def support(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def support(self, interaction: discord.Interaction[LatteMiad]) -> None:
         locale = interaction.locale
         embed = MiadEmbed()
         embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore

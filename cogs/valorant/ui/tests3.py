@@ -11,7 +11,7 @@ from discord.enums import ButtonStyle
 
 import core.utils.chat_formatting as chat
 from cogs.valorant.ui.tests2 import ValorantPageSource
-from core.bot import LatteMaid
+from core.bot import LatteMiad
 from core.errors import AppCommandError
 from core.translator import _
 from core.ui.embed import MiadEmbed as Embed
@@ -29,7 +29,7 @@ from ..account_manager import AccountManager
 from . import embeds as e
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
     from valorantx2.models import Contract, RewardValorantAPI
 
 T = TypeVar('T')
@@ -107,7 +107,7 @@ class ButtonAccountSwitch(ui.Button['ValorantSwitchAccountView']):
     ) -> None:
         super().__init__(style=discord.ButtonStyle.gray, label=label, disabled=disabled, custom_id=custom_id, row=row)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         assert self.view is not None
 
         async with self.view.lock:
@@ -130,7 +130,7 @@ class ValorantSwitchAccountView(ViewAuthor):
         user: DBUser,
         source: ValorantPageSource = MISSING,
         *,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         row: int = 0,
         check_accounts: bool = True,
     ) -> None:
@@ -222,7 +222,7 @@ class ValorantSwitchAccountView(ViewAuthor):
     #         else:
     #             await interaction.response.edit_message(**kwargs, view=self)
 
-    async def switch_account(self, interaction: discord.Interaction[LatteMaid], puuid: Optional[str]) -> None:
+    async def switch_account(self, interaction: discord.Interaction[LatteMiad], puuid: Optional[str]) -> None:
         riot_auth = self.account_manager.get_riot_account(puuid)
         # kwargs = await self._get_kwargs_from_riot_auth(riot_auth)
         # if kwargs:

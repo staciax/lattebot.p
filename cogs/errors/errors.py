@@ -20,7 +20,7 @@ from core.utils.chat_formatting import code_block
 if TYPE_CHECKING:
     from discord.ui import Item, Modal
 
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ _ = I18n('errors', __file__)
 
 
 async def application_error_handler(
-    interaction: discord.Interaction[LatteMaid],
+    interaction: discord.Interaction[LatteMiad],
     error: Exception | app_commands.AppCommandError,
 ) -> None:
     locale = interaction.locale
@@ -153,7 +153,7 @@ def get_error_handle_embed(
     return embed
 
 
-def _log_error(interaction: discord.Interaction[LatteMaid], error: Exception) -> None:
+def _log_error(interaction: discord.Interaction[LatteMiad], error: Exception) -> None:
     command = interaction.command
     if command is not None:
         # if command._has_any_error_handlers():
@@ -167,10 +167,10 @@ def _log_error(interaction: discord.Interaction[LatteMaid], error: Exception) ->
 class Errors(Cog, name='errors'):
     """Developer commands"""
 
-    def __init__(self, bot: LatteMaid) -> None:
+    def __init__(self, bot: LatteMiad) -> None:
         self.bot = bot
 
-    async def send_traceback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def send_traceback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         embed = MiadEmbed(timestamp=interaction.created_at).error()
         embed.set_author(name=f'{interaction.user} | {interaction.user.id}', icon_url=interaction.user.avatar)
 
@@ -194,20 +194,20 @@ class Errors(Cog, name='errors'):
 
     @Cog.listener('on_app_command_error')
     async def on_app_command_error(
-        self, interaction: discord.Interaction[LatteMaid], error: Exception | app_commands.errors.AppCommandError
+        self, interaction: discord.Interaction[LatteMiad], error: Exception | app_commands.errors.AppCommandError
     ) -> None:
         _log_error(interaction, error)
         await application_error_handler(interaction, error)
         # self.bot.loop.create_task(self.send_traceback(interaction))
 
     @Cog.listener('on_view_error')
-    async def on_view_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, item: Item) -> None:
+    async def on_view_error(self, interaction: discord.Interaction[LatteMiad], error: Exception, item: Item) -> None:
         _log_error(interaction, error)
         interaction.extras['item'] = item
         await application_error_handler(interaction, error)
 
     @Cog.listener('on_modal_error')
-    async def on_modal_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, modal: Modal) -> None:
+    async def on_modal_error(self, interaction: discord.Interaction[LatteMiad], error: Exception, modal: Modal) -> None:
         _log_error(interaction, error)
         interaction.extras['modal'] = modal
         await application_error_handler(interaction, error)

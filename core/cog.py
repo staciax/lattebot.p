@@ -13,7 +13,7 @@ from discord.utils import MISSING
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from .bot import LatteMaid
+    from .bot import LatteMiad
 
 
 T = TypeVar('T')
@@ -69,7 +69,7 @@ class Cog(commands.Cog):
 
     async def cog_app_command_error(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         error: app_commands.AppCommandError,
     ) -> None:
         if interaction.client.is_debug_mode():
@@ -82,7 +82,7 @@ class Cog(commands.Cog):
 
     async def _inject(
         self,
-        bot: LatteMaid,
+        bot: LatteMiad,
         override: bool,
         guild: discord.abc.Snowflake | None,
         guilds: list[discord.abc.Snowflake],
@@ -122,7 +122,7 @@ class Cog(commands.Cog):
 
         return self
 
-    async def _eject(self, bot: LatteMaid, guild_ids: Iterable[int] | None) -> None:
+    async def _eject(self, bot: LatteMiad, guild_ids: Iterable[int] | None) -> None:
         await super()._eject(bot, guild_ids)
 
         # context menus in cog

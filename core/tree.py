@@ -7,14 +7,14 @@ import discord
 from discord import app_commands
 
 if TYPE_CHECKING:
-    from .bot import LatteMaid
+    from .bot import LatteMiad
 
 
 _log = logging.getLogger(__name__)
 
 
 class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
-    async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[LatteMiad], /) -> bool:
         user = interaction.user
         guild = interaction.guild
         locale = interaction.locale
@@ -97,7 +97,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
 
     async def on_error(
         self,
-        interaction: discord.Interaction['LatteMaid'],
+        interaction: discord.Interaction['LatteMiad'],
         error: app_commands.AppCommandError,
         /,
     ) -> None:

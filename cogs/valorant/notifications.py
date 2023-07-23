@@ -20,7 +20,7 @@ from .account_manager import AccountManager
 from .ui.notifications import NotifyView
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class Notifications(MixinMeta):
         description=_T('Setting notification'),
     )  # type: ignore
     @dynamic_cooldown(cooldown_short)
-    async def notify(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def notify(self, interaction: discord.Interaction[LatteMiad]) -> None:
         """Setting notification"""
         view = NotifyView(interaction)
         await view.start()

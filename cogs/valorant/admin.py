@@ -16,7 +16,7 @@ from core.i18n import I18n
 from .abc import MixinMeta
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 
 _log = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class Admin(MixinMeta):
     @owner_only()
     async def valorant_run(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         username: str | None,
         password: str | None,
     ) -> None:
@@ -69,7 +69,7 @@ class Admin(MixinMeta):
 
     @vcm.command(name=_T('close'), description=_T('Close valorant client'))  # type: ignore
     @owner_only()
-    async def valorant_close(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def valorant_close(self, interaction: discord.Interaction[LatteMiad]) -> None:
         await interaction.response.defer(ephemeral=True)
 
         try:
@@ -81,7 +81,7 @@ class Admin(MixinMeta):
 
     @vcm.command(name=_T('clear'), description=_T('Clear valorant client'))  # type: ignore
     @owner_only()
-    async def valorant_clear(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def valorant_clear(self, interaction: discord.Interaction[LatteMiad]) -> None:
         await interaction.response.defer(ephemeral=True)
 
         try:
@@ -93,7 +93,7 @@ class Admin(MixinMeta):
 
     @vcm.command(name=_T('cache_clear'), description=_T('Clear valorant client cache'))  # type: ignore
     @owner_only()
-    async def valorant_cache_clear(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def valorant_cache_clear(self, interaction: discord.Interaction[LatteMiad]) -> None:
         await interaction.response.defer(ephemeral=True)
 
         try:

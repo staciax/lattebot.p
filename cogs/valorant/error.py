@@ -13,7 +13,7 @@ from valorantx2 import valorant_api
 from .abc import MixinMeta
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _log = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class RiotAuthUnknownError(ValorantError):
 
 class ErrorHandler(MixinMeta):
     async def cog_app_command_error(
-        self, interaction: discord.Interaction[LatteMaid], error: app_commands.AppCommandError | Exception
+        self, interaction: discord.Interaction[LatteMiad], error: app_commands.AppCommandError | Exception
     ) -> None:
         if isinstance(error, app_commands.errors.CommandInvokeError):
             error = error.original

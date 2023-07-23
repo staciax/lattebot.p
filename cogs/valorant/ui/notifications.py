@@ -11,7 +11,7 @@ from core.i18n import I18n
 from core.ui.views import ViewAuthor
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
     from core.database.models import User
 
 _log = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ _ = I18n('valorant.ui.notifications', Path(__file__).resolve().parent, read_only
 class NotifyView(ViewAuthor):
     user: User
 
-    def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMiad]) -> None:
         super().__init__(interaction)
 
     async def _init(self) -> None:
@@ -48,15 +48,15 @@ class NotifyView(ViewAuthor):
 
 
 class StoreNotify(ui.Button['NotifyView']):
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         ...
 
 
 class AccessorieNotify(ui.Button['NotifyView']):
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         ...
 
 
 class PatchNoteNotify(ui.Button['NotifyView']):
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
         ...

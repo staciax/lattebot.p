@@ -19,7 +19,7 @@ from .abc import MixinMeta
 from .account_manager import AccountManager
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 SUPPORT_GUILD_ID = 1097859504906965042
 
@@ -33,7 +33,7 @@ class ContextMenu(MixinMeta):
     @dynamic_cooldown(cooldown_medium)
     async def message_invite_to_party(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         message: discord.Message,
     ) -> None:
         """Invite the author of the message to the party."""
@@ -69,7 +69,7 @@ class ContextMenu(MixinMeta):
     @context_menu(name=_T('party request'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
     @dynamic_cooldown(cooldown_medium)
     async def user_request_to_party(
-        self, interaction: discord.Interaction[LatteMaid], user: discord.User | discord.Member
+        self, interaction: discord.Interaction[LatteMiad], user: discord.User | discord.Member
     ) -> None:
         # author
         author = await self.get_user(interaction.user.id)  # type: ignore
@@ -103,7 +103,7 @@ class ContextMenu(MixinMeta):
 
     @context_menu(name=_T('match history'))
     @dynamic_cooldown(cooldown_medium)
-    async def message_match_history(self, interaction: discord.Interaction[LatteMaid], message: discord.Message) -> None:
+    async def message_match_history(self, interaction: discord.Interaction[LatteMiad], message: discord.Message) -> None:
         try:
             game_name, tag_line = validate_riot_id(message.content)
         except ValueError:

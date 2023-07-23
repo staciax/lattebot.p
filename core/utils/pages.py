@@ -7,7 +7,7 @@ import discord
 from discord.utils import MISSING
 
 if TYPE_CHECKING:
-    from ..bot import LatteMaid
+    from ..bot import LatteMiad
 
 T = TypeVar('T')
 
@@ -24,7 +24,7 @@ class NumberedPageModal(discord.ui.Modal, title='Go to page'):
             self.page.placeholder = f'Enter a number between 1 and {as_string}'
             self.page.max_length = len(as_string)
 
-    async def on_submit(self, interaction: discord.Interaction[LatteMaid]) -> None:
+    async def on_submit(self, interaction: discord.Interaction[LatteMiad]) -> None:
         self.interaction = interaction
         self.stop()
 
@@ -182,7 +182,7 @@ class LattePages(discord.ui.View):
         self,
         source: PageSource = MISSING,
         *,
-        interaction: discord.Interaction[LatteMaid] = MISSING,
+        interaction: discord.Interaction[LatteMiad] = MISSING,
         check_embeds: bool = True,
         compact: bool = False,
         **kwargs,
@@ -194,7 +194,7 @@ class LattePages(discord.ui.View):
             self.interaction = interaction
         else:
             self.interaction = MISSING
-        self.interaction: discord.Interaction[LatteMaid] = interaction
+        self.interaction: discord.Interaction[LatteMiad] = interaction
         self.message: Optional[discord.Message] = None
         self.current_page: int = 0
         self.compact: bool = compact

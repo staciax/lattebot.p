@@ -9,7 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _log = logging.getLogger(__name__)
 
@@ -17,14 +17,14 @@ _log = logging.getLogger(__name__)
 class Stats(commands.Cog, name='stats'):
     """Stats cog"""
 
-    def __init__(self, bot: LatteMaid) -> None:
+    def __init__(self, bot: LatteMiad) -> None:
         load_dotenv()
-        self.bot: LatteMaid = bot
+        self.bot: LatteMiad = bot
 
     @commands.Cog.listener('on_app_command_completion')
     async def on_latte_app_command(
         self,
-        interaction: discord.Interaction[LatteMaid],
+        interaction: discord.Interaction[LatteMiad],
         app_command: Command | ContextMenu,
     ) -> None:
         if self.bot.is_debug_mode():
@@ -60,5 +60,5 @@ class Stats(commands.Cog, name='stats'):
         )
 
 
-async def setup(bot: LatteMaid) -> None:
+async def setup(bot: LatteMiad) -> None:
     await bot.add_cog(Stats(bot))

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from core.ui.embed import MiadEmbed as Embed
 
 if TYPE_CHECKING:
-    from core.bot import LatteMaid
+    from core.bot import LatteMiad
 
 _log = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ _log = logging.getLogger(__name__)
 class Event(commands.Cog, name='events'):
     """Bot Events"""
 
-    def __init__(self, bot: LatteMaid) -> None:
-        self.bot: LatteMaid = bot
+    def __init__(self, bot: LatteMiad) -> None:
+        self.bot: LatteMiad = bot
 
     @discord.utils.cached_property
     def webhook(self) -> discord.Webhook:
@@ -67,5 +67,5 @@ class Event(commands.Cog, name='events'):
         await self.send_guild_stats(embed, guild)
 
 
-async def setup(bot: LatteMaid) -> None:
+async def setup(bot: LatteMiad) -> None:
     await bot.add_cog(Event(bot))

@@ -8,7 +8,7 @@ import discord
 from discord import Interaction, ui
 from discord.ext import commands
 
-from core.bot import LatteMaid
+from core.bot import LatteMiad
 
 from ..errors import CheckFailure, ComponentOnCooldown
 
@@ -41,19 +41,19 @@ class BaseView(ui.View):
     def reset_timeout(self) -> None:
         self.timeout = self.timeout
 
-    async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
+    async def before_callback(self, interaction: Interaction[LatteMiad]) -> None:
         """A callback that is called before the callback is called."""
         pass
 
-    async def after_callback(self, interaction: Interaction[LatteMaid]) -> None:
+    async def after_callback(self, interaction: Interaction[LatteMiad]) -> None:
         """A callback that is called after the callback is called."""
         pass
 
-    async def _scheduled_task(self, item: discord.ui.Item, interaction: Interaction[LatteMaid]):
+    async def _scheduled_task(self, item: discord.ui.Item, interaction: Interaction[LatteMiad]):
         try:
             item._refresh_state(interaction, interaction.data)  # type: ignore
 
-            allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
+            allow =  await self.interaction_check(interaction) # await item.interaction_check(interaction) and
             if not allow:
                 return await self.on_check_failure(interaction)
 
@@ -181,22 +181,22 @@ class BaseView(ui.View):
 
 # thanks stella_bot
 class ViewAuthor(BaseView):
-    def __init__(self, interaction: Interaction[LatteMaid], *args: Any, **kwargs: Any) -> None:
+    def __init__(self, interaction: Interaction[LatteMiad], *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.interaction: Interaction[LatteMaid] = interaction
+        self.interaction: Interaction[LatteMiad] = interaction
         self.locale: discord.Locale = interaction.locale
-        self.bot: LatteMaid = interaction.client
+        self.bot: LatteMiad = interaction.client
         self._author: discord.Member | discord.User = interaction.user
         # self.is_command = interaction.command is not None
         self.cooldown = commands.CooldownMapping.from_cooldown(3.0, 10.0, key)
         self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
 
-    async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
+    async def before_callback(self, interaction: Interaction[LatteMiad]) -> None:
         if self.locale == interaction.locale:
             return
         self.locale = interaction.locale
 
-    async def interaction_check(self, interaction: Interaction[LatteMaid]) -> bool:
+    async def interaction_check(self, interaction: Interaction[LatteMiad]) -> bool:
         """Only allowing the context author to interact with the view"""
 
         user = interaction.user
@@ -216,7 +216,7 @@ class ViewAuthor(BaseView):
 
         return True
 
-    async def on_check_failure(self, interaction: Interaction[LatteMaid]) -> None:
+    async def on_check_failure(self, interaction: Interaction[LatteMiad]) -> None:
         """Handles the error when the check fails"""
         command = interaction.command or self.interaction.command
         raise CheckFailure(command, self.author)

@@ -53,7 +53,7 @@ initial_extensions = (
 )
 
 
-class LatteMaid(commands.AutoShardedBot):
+class LatteMiad(commands.AutoShardedBot):
     if TYPE_CHECKING:
         tree: LatteMaidTree
 
