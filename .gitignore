@@ -134,6 +134,9 @@ dmypy.json
 # vscode
 .vscode/
 
+# pycharm
+.idea/
+
 # local db for test
 test.db
 test.py
@@ -144,3 +147,4 @@ cogs/test/*
 
 # playground
 playground.py
+
