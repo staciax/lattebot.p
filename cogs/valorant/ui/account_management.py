@@ -23,7 +23,12 @@ _ = I18n('valorant.ui.account_management', Path(__file__).resolve().parent, read
 
 class AccountSelect(ui.Select[V]):
     def __init__(
-        self, options: list[SelectOption], *, row: int | None = None, locale: Locale | None = None, **kwargs: Any
+        self,
+        *,
+        options: list[SelectOption],
+        row: int | None = None,
+        locale: Locale | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             placeholder=_('account_select_placeholder', locale),
@@ -52,10 +57,7 @@ class BaseView(ViewAuthor):
 
         # build options
         options = [
-            SelectOption(
-                label=account.display_name or account.riot_id,
-                value=account.puuid,
-            )
+            SelectOption(label=account.display_name or account.riot_id, value=account.puuid)
             for account in self.account_manager.accounts
         ]
 
@@ -63,7 +65,7 @@ class BaseView(ViewAuthor):
         for item in self.children:
             item.row += 1
 
-        self.add_item(AccountSelect(options, row=0, locale=self.locale))
+        self.add_item(AccountSelect(options=options, row=0, locale=self.locale))
 
     async def _init(self) -> None:
         user = await self.bot.db.fetch_user(self.author.id)
