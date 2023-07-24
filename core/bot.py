@@ -36,7 +36,7 @@ _log = logging.getLogger(__name__)
 os.environ['JISHAKU_NO_UNDERSCORE'] = 'True'
 os.environ['JISHAKU_HIDE'] = 'True'
 
-description = 'Hello, I\'m latte, a bot made by @ꜱᴛᴀᴄɪᴀ.#7475 (240059262297047041)'
+description = 'Hello, I\'m latte maid, a bot made by discord: stacia.(240059262297047041)'
 
 
 initial_extensions = (
@@ -54,11 +54,10 @@ initial_extensions = (
 
 
 class LatteMaid(commands.AutoShardedBot):
-    if TYPE_CHECKING:
-        tree: LatteMaidTree
-
-    db: DatabaseConnection
+    user: discord.ClientUser
     bot_app_info: discord.AppInfo
+    tree: LatteMaidTree
+    db: DatabaseConnection
 
     def __init__(
         self,
@@ -72,7 +71,7 @@ class LatteMaid(commands.AutoShardedBot):
         # intents.dm_messages = True # wait for implementation modmail?
 
         # allowed_mentions
-        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
+        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, replied_user=False, users=True)
 
         super().__init__(
             command_prefix=[],
@@ -81,9 +80,9 @@ class LatteMaid(commands.AutoShardedBot):
             case_insensitive=True,
             intents=intents,
             description=description,
-            application_id=os.getenv('CLIENT_ID'),
+            application_id=os.getenv('CLIENT_ID') if not debug_mode else os.getenv('CLIENT_ID_TEST'),
             tree_cls=LatteMaidTree,
-            activity=discord.Activity(type=discord.ActivityType.listening, name='nyanpasu ♡ ₊˚'),
+            activity=discord.Activity(type=discord.ActivityType.listening, name='luna ♡ ₊˚'),
         )
 
         # config
@@ -111,9 +110,6 @@ class LatteMaid(commands.AutoShardedBot):
 
         # colour
         self.colors: dict[str, list[discord.Colour]] = {}
-
-        # encryption
-        # self.encryption: Encryption = Encryption(config.cryptography)
 
         # database
         self.db: DatabaseConnection = DatabaseConnection(
@@ -388,7 +384,7 @@ class LatteMaid(commands.AutoShardedBot):
 
     async def start(self) -> None:
         if self.is_debug_mode():
-            token = os.getenv('DISCORD_TOKEN_DEBUG')
+            token = os.getenv('DISCORD_TOKEN_TEST')
         else:
             token = os.getenv('DISCORD_TOKEN')
         if token is None:

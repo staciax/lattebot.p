@@ -106,8 +106,8 @@ async def setup_webhook():
     assert wh_token is not None, 'Webhook token is not set.'
 
     session = aiohttp.ClientSession()
+    webhook = Webhook.partial(int(wh_id), wh_token, session=session)
     try:
-        webhook = Webhook.partial(int(wh_id), wh_token, session=session)
         await webhook.send('☕ LatteMaid is drinking coffee!')
         yield
     finally:
