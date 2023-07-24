@@ -8,7 +8,7 @@ from discord import Interaction, app_commands
 from discord.app_commands import locale_str as _T
 from discord.ext import commands
 
-from core.bot import LatteMiad
+from core.bot import LatteMaid
 from core.checks import bot_has_permissions, owner_only
 from core.database.models.blacklist import BlackList
 from core.errors import AppCommandError
@@ -17,7 +17,7 @@ from core.utils.chat_formatting import inline
 from core.utils.pages import LattePages, ListPageSource
 
 if TYPE_CHECKING:
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
 
 _log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class BlackListPageSource(ListPageSource):
 
 
 class BlackListPages(LattePages):
-    def __init__(self, source: BlackListPageSource, *, interaction: Interaction[LatteMiad]):
+    def __init__(self, source: BlackListPageSource, *, interaction: Interaction[LatteMaid]):
         super().__init__(source, interaction=interaction)
         self.embed: Embed = Embed(title='Blacklist').dark()
 
@@ -60,7 +60,7 @@ class BlackListPages(LattePages):
 class Developer(commands.Cog, name='developer'):
     """Developer commands"""
 
-    def __init__(self, bot: LatteMiad) -> None:
+    def __init__(self, bot: LatteMaid) -> None:
         self.bot = bot
 
     extension = app_commands.Group(
@@ -77,7 +77,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.rename(extension=_T('extension'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
-    async def extension_load(self, interaction: Interaction[LatteMiad], extension: Literal[EXTENSIONS]) -> None:
+    async def extension_load(self, interaction: Interaction[LatteMaid], extension: Literal[EXTENSIONS]) -> None:
         await self.bot.load_extension(f'{extension}')
 
         embed = Embed(description=f"**Loaded**: `{extension}`").success()
@@ -88,7 +88,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.rename(extension=_T('extension'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
-    async def extension_unload(self, interaction: Interaction[LatteMiad], extension: EXTENSIONS) -> None:
+    async def extension_unload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
         await self.bot.unload_extension(f'{extension}')
 
         embed = Embed(description=f'**Unloaded**: `{extension}`').success()
@@ -99,7 +99,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.rename(extension=_T('extension'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
-    async def extension_reload(self, interaction: Interaction[LatteMiad], extension: EXTENSIONS) -> None:
+    async def extension_reload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
         """Reloads an extension."""
 
         await self.bot.reload_extension(f'{extension}')
@@ -114,7 +114,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.default_permissions(administrator=True)
     @app_commands.guild_only()
     @owner_only()
-    async def sync_tree(self, interaction: Interaction[LatteMiad], guild_id: str | None = None) -> None:
+    async def sync_tree(self, interaction: Interaction[LatteMaid], guild_id: str | None = None) -> None:
         await interaction.response.defer(ephemeral=True)
 
         if guild_id is not None and guild_id.isdigit():
@@ -159,7 +159,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.describe(object_id=_T('Object ID'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
-    async def blacklist_add(self, interaction: Interaction[LatteMiad], object_id: str) -> None:
+    async def blacklist_add(self, interaction: Interaction[LatteMaid], object_id: str) -> None:
         # NOTE: int maximum length is 18 but currently discord object id more than 18
 
         if not object_id.isdigit():
@@ -192,7 +192,7 @@ class Developer(commands.Cog, name='developer'):
     @app_commands.describe(object_id=_T('Object ID'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
-    async def blacklist_remove(self, interaction: Interaction[LatteMiad], object_id: str):
+    async def blacklist_remove(self, interaction: Interaction[LatteMaid], object_id: str):
         if not object_id.isdigit():
             raise AppCommandError(f'`{object_id}` is not a valid ID')
 
@@ -238,7 +238,7 @@ class Developer(commands.Cog, name='developer'):
 
     @blacklist.command(name=_T('list'), description=_T('Lists all blacklisted users'))
     @owner_only()
-    async def blacklist_list(self, interaction: Interaction[LatteMiad]):
+    async def blacklist_list(self, interaction: Interaction[LatteMaid]):
         await interaction.response.defer(ephemeral=True)
 
         blacklists = await self.bot.db.fetch_blacklists()
@@ -249,7 +249,7 @@ class Developer(commands.Cog, name='developer'):
         await pages.start()
 
 
-async def setup(bot: LatteMiad) -> None:
+async def setup(bot: LatteMaid) -> None:
     if bot.support_guild_id is not None:
         await bot.add_cog(Developer(bot), guilds=[discord.Object(id=bot.support_guild_id)])
     else:

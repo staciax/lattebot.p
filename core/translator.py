@@ -16,7 +16,7 @@ from discord.ext import commands
 if TYPE_CHECKING:
     from discord.app_commands import TranslationContext
 
-    from .bot import LatteMiad
+    from .bot import LatteMaid
 
     Localizable = Command | Group | ContextMenu | Parameter | Choice
 
@@ -119,14 +119,14 @@ def get_app_command_payload(
 class Translator(_Translator):
     def __init__(
         self,
-        bot: LatteMiad,
+        bot: LatteMaid,
         supported_locales: list[Locale] = [
             Locale.american_english,  # default
             Locale.thai,
         ],
     ) -> None:
         super().__init__()
-        self.bot: LatteMiad = bot
+        self.bot: LatteMaid = bot
         self.supported_locales: list[Locale] = supported_locales
         self._app_command_localizations: dict[str, dict[str, AppCommandLocalization]] = {}
         self._context_menu_localizations: dict[str, dict[str, ContextMenuLocalization]] = {}

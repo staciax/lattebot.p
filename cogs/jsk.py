@@ -24,7 +24,7 @@ from core.checks import owner_only
 from core.errors import UserInputError
 
 if TYPE_CHECKING:
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
 
 _log = logging.getLogger(__file__)
 
@@ -33,7 +33,7 @@ _log = logging.getLogger(__file__)
 
 class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
     if TYPE_CHECKING:
-        bot: LatteMiad
+        bot: LatteMaid
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -61,22 +61,22 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         await super().cog_unload()
 
     async def cog_app_command_error(
-        self, interaction: discord.Interaction[LatteMiad], error: app_commands.AppCommandError
+        self, interaction: discord.Interaction[LatteMaid], error: app_commands.AppCommandError
     ) -> None:
         interaction.client.dispatch('app_command_error', interaction, error)
 
-    async def cog_check(self, ctx: commands.Context[LatteMiad]):
+    async def cog_check(self, ctx: commands.Context[LatteMaid]):
         if not await ctx.bot.is_owner(ctx.author):
             raise commands.NotOwner('You must own this bot to use Jishaku.')
         return True
 
-    async def interaction_check(self, interaction: discord.Interaction[LatteMiad]) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
         if not await interaction.client.is_owner(interaction.user):
             raise UserInputError('You must own this bot to use Jishaku.')
         return super().interaction_check(interaction)
 
     @Feature.Command(name='jishaku', aliases=['jsk'], invoke_without_command=True, ignore_extra=False)
-    async def jsk(self, ctx: commands.Context[LatteMiad]) -> None:
+    async def jsk(self, ctx: commands.Context[LatteMaid]) -> None:
         """
         The Jishaku debug and diagnostic commands.
 
@@ -91,7 +91,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         await ctx.send(embed=embed, silent=True)
 
     @Feature.Command(parent='jsk', name='source', aliases=['src'])
-    async def jsk_source(self, ctx: commands.Context[LatteMiad], *, command_name: str) -> None:
+    async def jsk_source(self, ctx: commands.Context[LatteMaid], *, command_name: str) -> None:
         """
         Displays the source code for an app command.
         """
@@ -128,7 +128,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
             await interface.send_to(ctx)
 
     @Feature.Command(parent='jsk', name='py', aliases=['python'])
-    async def jsk_python(self, ctx: commands.Context[LatteMiad], *, argument: codeblock_converter):  # type: ignore
+    async def jsk_python(self, ctx: commands.Context[LatteMaid], *, argument: codeblock_converter):  # type: ignore
         if TYPE_CHECKING:
             argument: Codeblock = argument
 
@@ -164,7 +164,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
     @owner_only()
     async def jishaku_app(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         sub: app_commands.Range[str, 1, 20] | None = None,
         args: str | None = None,
     ) -> None:
@@ -217,7 +217,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
     @owner_only()
     async def ctx_message_jishaku_python(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         message: discord.Message,
     ) -> None:
         if not message.content:
@@ -238,7 +238,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
             raise UserInputError('Invalid Python code.') from e
 
 
-async def setup(bot: LatteMiad) -> None:
+async def setup(bot: LatteMaid) -> None:
     if bot.support_guild_id is not None:
         await bot.add_cog(Jishaku(bot=bot), guilds=[discord.Object(id=bot.support_guild_id)])
     else:

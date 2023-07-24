@@ -23,7 +23,7 @@ from ..account_manager import AccountManager
 from . import embeds as e, utils
 
 if TYPE_CHECKING:
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
     from valorantx2.client import Client as ValorantClient
     from valorantx2.models import (
         Contract,
@@ -61,7 +61,7 @@ _ = I18n('valorant.ui.views', Path(__file__).resolve().parent, read_only=True)
 class BaseValorantView(ViewAuthor):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         account_manager: AccountManager,
         *,
         check_embeds: bool = True,
@@ -100,7 +100,7 @@ class ButtonAccountSwitch(ui.Button['BaseSwitchAccountView']):
     ) -> None:
         super().__init__(style=discord.ButtonStyle.gray, label=label, disabled=disabled, custom_id=custom_id, row=row)
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
 
         async with self.view.lock:
@@ -120,7 +120,7 @@ class ButtonAccountSwitch(ui.Button['BaseSwitchAccountView']):
 class BaseSwitchAccountView(BaseValorantView):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         account_manager: AccountManager,
         row: int = 0,
     ) -> None:
@@ -184,7 +184,7 @@ class BaseSwitchAccountView(BaseValorantView):
             return self.account_manager.get_account(puuid)
         return self.account_manager.main_account
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         # if self.check_embeds and not interaction.channel.permissions_for(interaction.guild.me).embed_links:
         #     await interaction.response.send_message(
         #         'Bot does not have embed links permission in this channel.', ephemeral=True
@@ -207,7 +207,7 @@ class BaseSwitchAccountView(BaseValorantView):
 
 
 class StoreFrontView(BaseSwitchAccountView):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], account_manager: AccountManager) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
     async def format_page(self, riot_auth: RiotAuth) -> List[Embed]:
@@ -221,7 +221,7 @@ class StoreFrontView(BaseSwitchAccountView):
 
 
 class NightMarketView(BaseSwitchAccountView):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], account_manager: AccountManager, hide: bool) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager, hide: bool) -> None:
         super().__init__(interaction, account_manager, row=1)
         self.hide: bool = hide
         self.front_embed: Optional[Embed] = None
@@ -339,7 +339,7 @@ class NightMarketView(BaseSwitchAccountView):
 
 
 class WalletView(BaseSwitchAccountView):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], account_manager: AccountManager) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
@@ -353,7 +353,7 @@ class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
         super().__init__(label=label, style=discord.ButtonStyle.blurple, **kwargs)
         self.uuid: str = uuid
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
         self.view.selected = True
 
@@ -366,7 +366,7 @@ class FeaturedBundleButton(ui.Button['FeaturedBundleView']):
 
 
 class FeaturedBundleView(ViewAuthor):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], valorant_client: ValorantClient) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], valorant_client: ValorantClient) -> None:
         super().__init__(interaction)
         self.valorant_client = valorant_client  # interaction.client.valorant_client
         self.selected: bool = False
@@ -426,10 +426,10 @@ class FeaturedBundlePageSource(ListPageSource['Embed']):
 class FeaturedBundlePageView(LattePages):
     source: FeaturedBundlePageSource
 
-    def __init__(self, source: FeaturedBundlePageSource, *, interaction: discord.Interaction[LatteMiad], **kwargs):
+    def __init__(self, source: FeaturedBundlePageSource, *, interaction: discord.Interaction[LatteMaid], **kwargs):
         super().__init__(source, interaction=interaction, check_embeds=True, compact=True, **kwargs)
 
-    async def interaction_check(self, interaction: discord.Interaction[LatteMiad], /) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
         if await super().interaction_check(interaction):
             if self.source.locale != interaction.locale:
                 self.source.rebuild(interaction.locale)
@@ -480,14 +480,14 @@ class GamePassPageSource(ListPageSource['RewardValorantAPI']):
 class GamePassView(BaseSwitchAccountView, LattePages):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         account_manager: AccountManager,
         relation_type: RelationType,
     ) -> None:
         super().__init__(interaction, account_manager, row=2)
         self.relation_type = relation_type
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await super().callback(interaction)
 
         riot_auth: Optional[RiotAuth] = self.get_riot_auth(interaction.extras.get('puuid'))
@@ -511,7 +511,7 @@ class GamePassView(BaseSwitchAccountView, LattePages):
 
 
 class MissionView(BaseSwitchAccountView):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], account_manager: AccountManager) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager)
         # self.row = 1
 
@@ -604,7 +604,7 @@ class SkinCollectionView(ViewAuthor, LattePages):
         self.add_item(self.back)
 
     @ui.button(label=_('Back'), style=discord.ButtonStyle.green, custom_id='back', row=1)
-    async def back(self, interaction: discord.Interaction[LatteMiad], button: ui.Button):
+    async def back(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         self.collection_view.reset_timeout()
         await interaction.response.defer()
         if self.collection_view.message is None:
@@ -655,7 +655,7 @@ class SprayCollectionView(ViewAuthor):
         return embeds
 
     @ui.button(label=_('Back'), style=ButtonStyle.green, custom_id='back', row=0)
-    async def back(self, interaction: discord.Interaction[LatteMiad], button: ui.Button):
+    async def back(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         self.collection_view.reset_timeout()
         await interaction.response.defer()
         if self.collection_view.message is None:
@@ -680,7 +680,7 @@ class SprayCollectionView(ViewAuthor):
 
 
 class CollectionView(BaseSwitchAccountView):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], account_manager: AccountManager) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], account_manager: AccountManager) -> None:
         super().__init__(interaction, account_manager, row=1)
         self.loadout: Optional[Loadout] = None
         self.mmr: Optional[MatchmakingRating] = None
@@ -720,12 +720,12 @@ class CollectionView(BaseSwitchAccountView):
         return await super().on_timeout()
 
     @ui.button(label=_('Skins'), style=ButtonStyle.blurple)
-    async def skin_button(self, interaction: discord.Interaction[LatteMiad], button: ui.Button):
+    async def skin_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         await interaction.response.defer()
         await self.skin_view.start_view()
 
     @ui.button(label=_('Sprays'), style=ButtonStyle.blurple)
-    async def spray_button(self, interaction: discord.Interaction[LatteMiad], button: ui.Button):
+    async def spray_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button):
         await interaction.response.defer()
         await self.spray_view.start_view()
 
@@ -734,7 +734,7 @@ class CollectionView(BaseSwitchAccountView):
 
 
 class SelectMatchHistory(ui.Select['CarrierView']):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], carrier_view: CarrierView) -> None:
+    def __init__(self, interaction: discord.Interaction[LatteMaid], carrier_view: CarrierView) -> None:
         super().__init__(placeholder=_('Select Match to see details', interaction.locale), max_values=1, min_values=1, row=1)
         self.interaction = interaction
         self.carrier_view = carrier_view
@@ -786,7 +786,7 @@ class SelectMatchHistory(ui.Select['CarrierView']):
         self.add_option(label=_('No Match History', self.interaction.locale), value='0', emoji='📭')
         self.disabled = True
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
         async with self.view.lock:
             value = self.values[0]
@@ -845,7 +845,7 @@ class CarrierPageSource(ListPageSource):
 class CarrierView(BaseSwitchAccountView, LattePages):
     def __init__(
         self,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         account_manager: AccountManager,
         queue_id: Optional[str] = None,
     ) -> None:
@@ -899,7 +899,7 @@ class CarrierView(BaseSwitchAccountView, LattePages):
     #     # TODO: build tier embed
     #     await self.start_pages()
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         if not interaction.response.is_done():
             await interaction.response.defer()
         await self.wait_until_ready()
@@ -963,7 +963,7 @@ class MatchDetailsView(ViewAuthor, LattePages):
     def __init__(
         self,
         # source: MatchDetailsPageSource,
-        interaction: discord.Interaction[LatteMiad],
+        interaction: discord.Interaction[LatteMaid],
         carrier_view: Optional[CarrierView] = None,
     ) -> None:
         super().__init__(interaction)
@@ -984,7 +984,7 @@ class MatchDetailsView(ViewAuthor, LattePages):
         self.go_to_previous_page.label = self.go_to_first_page.label
         self.add_item(self.toggle_ui)
 
-    async def interaction_check(self, interaction: discord.Interaction[LatteMiad]) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
         if await super().interaction_check(interaction):
             self.valorant_locale = locale_converter.to_valorant(interaction.locale)
             return True
@@ -994,13 +994,13 @@ class MatchDetailsView(ViewAuthor, LattePages):
         return self.__view_on_mobile__
 
     @ui.button(emoji='📱', style=ButtonStyle.green)
-    async def toggle_ui(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
+    async def toggle_ui(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         button.emoji = '📱' if self.is_on_mobile() else '💻'
         self.__view_on_mobile__ = not self.is_on_mobile()
         await self.show_checked_page(interaction, self.current_page)
 
     @ui.button(label=_('Back'), style=ButtonStyle.gray, custom_id='home_button')
-    async def back_to_home(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
+    async def back_to_home(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         # assert self.carrier_view is not None
         await interaction.response.defer()
 

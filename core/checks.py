@@ -15,7 +15,7 @@ from discord.app_commands.checks import (
 )
 
 if TYPE_CHECKING:
-    from .bot import LatteMiad
+    from .bot import LatteMaid
 
 __all__ = (
     'owner_only',
@@ -40,31 +40,31 @@ def user(interaction: discord.Interaction) -> discord.User | discord.Member:
 
 
 def owner_only() -> Callable[[T], T]:
-    async def actual_check(interaction: Interaction[LatteMiad]):
+    async def actual_check(interaction: Interaction[LatteMaid]):
         return await interaction.client.is_owner(interaction.user)
 
     return app_commands.check(actual_check)
 
 
-def cooldown_short(interaction: discord.Interaction[LatteMiad]) -> Cooldown | None:
+def cooldown_short(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 5)
 
 
-def cooldown_medium(interaction: discord.Interaction[LatteMiad]) -> Cooldown | None:
+def cooldown_medium(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 10)
 
 
-def cooldown_long(interaction: discord.Interaction[LatteMiad]) -> Cooldown | None:
+def cooldown_long(interaction: discord.Interaction[LatteMaid]) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(1, 20)
 
 
-def custom_cooldown(interaction: discord.Interaction[LatteMiad], rate: float, per: float) -> Cooldown | None:
+def custom_cooldown(interaction: discord.Interaction[LatteMaid], rate: float, per: float) -> Cooldown | None:
     if interaction.user == interaction.client.owner:
         return None
     return Cooldown(rate, per)

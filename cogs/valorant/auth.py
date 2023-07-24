@@ -13,7 +13,7 @@ from valorantx2.auth import RiotAuth as RiotAuth_
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
     from core.database.models import RiotAccount
 
 # fmt: off
@@ -37,7 +37,7 @@ class RiotAuth(RiotAuth_):
         self.display_name: str | None = None
         self.owner_id: int | None = None
         self.notify: bool = False
-        self.bot: LatteMiad = MISSING
+        self.bot: LatteMaid = MISSING
         self._is_available: bool = True
 
     def __hash__(self) -> int:

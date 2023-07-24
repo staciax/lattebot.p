@@ -17,12 +17,12 @@ from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 
 if TYPE_CHECKING:
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
 
 _ = I18n('help', __file__)
 
 
-def help_command_embed(interaction: discord.Interaction[LatteMiad]) -> Embed:
+def help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
     bot = interaction.client
     embed = Embed(timestamp=interaction.created_at).white()
     embed.set_author(
@@ -82,7 +82,7 @@ class CogButton(ui.Button['HelpCommandView']):
         if self.emoji is None:
             self.label = cog.qualified_name
 
-    async def callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
         self.view.source = HelpPageSource(self.cog, self.entries)
 
@@ -102,7 +102,7 @@ class CogButton(ui.Button['HelpCommandView']):
 
 
 class HelpCommandView(ViewAuthor, LattePages):
-    def __init__(self, interaction: discord.Interaction[LatteMiad], allowed_cogs: tuple[str, ...]):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], allowed_cogs: tuple[str, ...]):
         super().__init__(interaction=interaction, timeout=60.0 * 30)  # 30 minutes
         self.allowed_cogs = allowed_cogs
         self.embed: Embed = help_command_embed(interaction)
@@ -197,7 +197,7 @@ class HelpCommandView(ViewAuthor, LattePages):
 
             self.add_item(CogButton(cog, entries))
 
-    async def before_callback(self, interaction: discord.Interaction[LatteMiad]) -> None:
+    async def before_callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         if self.locale == interaction.locale:
             return
         self.locale = interaction.locale
@@ -209,7 +209,7 @@ class HelpCommandView(ViewAuthor, LattePages):
         self.message = await self.interaction.original_response()
 
     @ui.button(emoji='🏘️', style=discord.ButtonStyle.primary, disabled=True)
-    async def home_button(self, interaction: discord.Interaction[LatteMiad], button: ui.Button) -> None:
+    async def home_button(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
         # disable home button
         button.disabled = True
 
@@ -228,17 +228,17 @@ class HelpCommandView(ViewAuthor, LattePages):
 class Help(Cog, name='help'):
     """Help command"""
 
-    def __init__(self, bot: LatteMiad):
-        self.bot: LatteMiad = bot
+    def __init__(self, bot: LatteMaid):
+        self.bot: LatteMaid = bot
 
     @app_commands.command(name=_T('help'), description=_T('help command'))
     @bot_has_permissions(send_messages=True, embed_links=True)
     @dynamic_cooldown(cooldown_short)
-    async def help_command(self, interaction: discord.Interaction[LatteMiad]):
+    async def help_command(self, interaction: discord.Interaction[LatteMaid]):
         cogs = ('about', 'valorant')
         help_command = HelpCommandView(interaction, cogs)
         await help_command.start()
 
 
-async def setup(bot: LatteMiad) -> None:
+async def setup(bot: LatteMaid) -> None:
     await bot.add_cog(Help(bot))

@@ -9,7 +9,7 @@ import aiohttp
 from discord import utils
 from discord.webhook import Webhook
 
-from core.bot import LatteMiad
+from core.bot import LatteMaid
 
 try:
     import uvloop  # type: ignore
@@ -116,7 +116,7 @@ async def setup_webhook():
 
 
 async def run_bot():
-    async with LatteMiad(
+    async with LatteMaid(
         debug_mode=not args.prod,
         tree_sync_at_startup=args.sync,
     ) as bot, setup_webhook():

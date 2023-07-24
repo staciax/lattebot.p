@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from valorantx.models.store import FeaturedBundle
     from valorantx.models.version import Version
 
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
 
     from .auth import RiotAuth
 
@@ -47,8 +47,8 @@ _log = logging.getLogger(__name__)
 
 # valorantx Client customized for lattemaid
 class Client(_Client):
-    def __init__(self, bot: LatteMiad = MISSING) -> None:
-        self.bot: LatteMiad = bot
+    def __init__(self, bot: LatteMaid = MISSING) -> None:
+        self.bot: LatteMaid = bot
         self.locale: Locale = Locale.english
         self.loop: asyncio.AbstractEventLoop = _loop
         self.http: HTTPClient = HTTPClient(self.loop)

@@ -12,7 +12,7 @@ from valorantx2.utils import MISSING
 from .auth import RiotAuth
 
 if TYPE_CHECKING:
-    from core.bot import LatteMiad
+    from core.bot import LatteMaid
 
 _ = I18n('valorant.account_manager', __file__, read_only=True)
 
@@ -21,13 +21,13 @@ class AccountManager:
     def __init__(
         self,
         user: UserDB,
-        bot: LatteMiad = MISSING,
+        bot: LatteMaid = MISSING,
         *,
         re_authorize: bool = True,
         init_later: bool = True,
     ) -> None:
         self.author: UserDB = user
-        self.bot: LatteMiad = bot
+        self.bot: LatteMaid = bot
         self.re_authorize: bool = re_authorize
         self.main_account: RiotAuth | None = None
         self._accounts: dict[str, RiotAuth] = {}
