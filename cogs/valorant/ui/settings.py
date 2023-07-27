@@ -26,6 +26,12 @@ class SettingsView(ViewAuthor):
             NotificationButton(locale=self.locale),
         )
 
+    async def start(self) -> None:
+        await self.interaction.response.send_message(
+            content=_('message.settings'),
+            view=self,
+        )
+
 
 class LanguageButton(ui.Button['SettingsView']):
     def __init__(self, *, locale: discord.Locale, **kwargs: Any) -> None:

@@ -517,7 +517,8 @@ class MissionView(BaseSwitchAccountView):
 
     async def format_page(self, riot_auth: RiotAuth) -> Embed:
         contracts = await self.valorant_client.fetch_contracts(riot_auth)
-        embed = e.mission_e(contracts, riot_auth.riot_id, locale=self.locale)
+        daily_ticket = await self.valorant_client.fetch_daily_ticket(renew=True, riot_auth=riot_auth)
+        embed = e.mission_e(contracts, daily_ticket, riot_auth.riot_id, locale=self.locale)
         return embed
 
 

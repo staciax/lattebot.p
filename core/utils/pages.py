@@ -342,7 +342,11 @@ class LattePages(discord.ui.View):
         if self.message is not None:
             await self.message.edit(**kwargs, view=self)
             return
-        self.message = await self.interaction.followup.send(**kwargs, view=self, ephemeral=ephemeral)
+        if self.interaction.response.is_done():
+            self.message = await self.interaction.followup.send(**kwargs, view=self, ephemeral=ephemeral)
+        else:
+            await self.interaction.response.send_message(**kwargs, view=self, ephemeral=ephemeral)
+            self.message = await self.interaction.original_response()
 
     @discord.ui.button(label='≪', style=discord.ButtonStyle.grey)
     async def go_to_first_page(self, interaction: discord.Interaction, button: discord.ui.Button):

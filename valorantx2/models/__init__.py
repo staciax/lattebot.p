@@ -13,6 +13,7 @@ from valorantx.models import (
     ContentTier as ContentTier,
     Contract as Contract,
     Contracts as Contracts,
+    DailyTicket as DailyTicket,
     FeaturedBundle as FeaturedBundle,
     GameMode as GameMode,
     Gun as Gun,

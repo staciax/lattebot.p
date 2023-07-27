@@ -33,7 +33,7 @@ class AccountManager:
         self._accounts: dict[str, RiotAuth] = {}
         self._hide_display_name: bool = False
         self._ready: asyncio.Event = asyncio.Event()
-        if init_later:
+        if init_later and self.bot is not MISSING:
             self.bot.loop.create_task(self._init())
 
     def __repr__(self) -> str:

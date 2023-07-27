@@ -492,6 +492,7 @@ class RemoveAccountView(ui.Button['RiotAuthManageView']):
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]):
         assert self.view is not None
+        await self.view.bot.db.remove_riot_accounts(interaction.user.id)
 
 
 class AccountSelect(ui.Select['RiotAuthManageView']):

@@ -23,6 +23,7 @@ from valorantx2.models import (
     BuddyLevelBundle,
     Bundle,
     BundleItemOffer,
+    DailyTicket,
     FeaturedBundle,
     PlayerCard,
     PlayerCardBundle,
@@ -359,6 +360,7 @@ def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
 
 def mission_e(
     contracts: valorantx.Contracts,
+    daily_ticket: DailyTicket,
     riot_id: str,
     *,
     locale: DiscordLocale = DiscordLocale.american_english,
@@ -369,20 +371,24 @@ def mission_e(
     weekly = []
     tutorial = []
     npe = []
-
     all_completed = True
 
-    daily_format = '{0} | **+ {1.xp_grant:,} XP**\n- **`{1.current_progress}/{1.total_progress}`**'
+    # daily
+    for milestone in sorted(daily_ticket.daily_rewards.milestones, key=lambda x: x.bonus_applied):
+        daily.append('✅' if milestone.bonus_applied else '❌')
+
+    # weekly, tutorial, npe
+    mission_format = '{0} | **+ {1.xp_grant:,} XP**\n- **`{1.current_progress}/{1.total_progress}`**'
     for mission in contracts.missions:
         title = mission.title.from_locale(valorant_locale)
-        if mission.type == MissionType.daily:
-            daily.append(daily_format.format(title, mission))
-        elif mission.type == MissionType.weekly:
-            weekly.append(daily_format.format(title, mission))
+        # if mission.type == MissionType.daily:
+        #     daily.append(daily_format.format(title, mission))
+        if mission.type == MissionType.weekly:
+            weekly.append(mission_format.format(title, mission))
         elif mission.type == MissionType.tutorial:
-            tutorial.append(daily_format.format(title, mission))
+            tutorial.append(mission_format.format(title, mission))
         elif mission.type == MissionType.npe:
-            npe.append(daily_format.format(title, mission))
+            npe.append(mission_format.format(title, mission))
 
         if not mission.is_completed():
             all_completed = False
@@ -394,7 +400,7 @@ def mission_e(
     if len(daily) > 0:
         embed.add_field(
             name="**Daily**",
-            value='\n'.join(daily),
+            value=' - '.join(daily),
             inline=False,
         )
 

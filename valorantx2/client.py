@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Iterator, overload
+from typing import TYPE_CHECKING, Iterator
 
 from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
 from valorantx.client import Client as _Client, _loop
 from valorantx.enums import Locale, QueueType
 from valorantx.models.contracts import Contracts
+from valorantx.models.daily_ticket import DailyTicket
 from valorantx.models.favorites import Favorites
 from valorantx.models.loadout import Loadout
 from valorantx.models.mmr import MatchmakingRating
 from valorantx.models.party import Party, PartyPlayer
-from valorantx.models.store import AgentStore as _AgentStore, StoreFront, Wallet
+from valorantx.models.store import StoreFront, Wallet
 from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
@@ -185,15 +186,7 @@ class Client(_Client):
         data = await self.http.post_store_storefront(riot_auth=riot_auth)
         return StoreFront(self.valorant_api.cache, data)
 
-    @overload
-    async def fetch_agent_store(self, riot_auth: RiotAuth) -> AgentStore:
-        ...
-
-    @overload
-    async def fetch_agent_store(self) -> _AgentStore:
-        ...
-
-    async def fetch_agent_store(self, riot_auth: RiotAuth | None = None) -> AgentStore | _AgentStore:
+    async def fetch_agent_store(self, riot_auth: RiotAuth | None = None) -> AgentStore:
         data = await self.http.get_store_storefronts_agent(riot_auth=riot_auth)
         return AgentStore(self, data['AgentStore'])
 
@@ -280,6 +273,15 @@ class Client(_Client):
             riot_auth=riot_auth,
         )
         return Party(self, data)
+
+    # daily
+
+    async def fetch_daily_ticket(self, *, renew: bool = False, riot_auth: RiotAuth | None = None) -> DailyTicket:
+        if renew:
+            data = await self.http.post_daily_ticket()
+        else:
+            data = await self.http.get_daily_ticket()
+        return DailyTicket(self, data)
 
     # cache
 

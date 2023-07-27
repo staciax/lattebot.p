@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
 
     from valorantx.http import Response
-    from valorantx.types import contracts, favorites, loadout, mmr, party, store
+    from valorantx.types import contracts, daily_ticket, favorites, loadout, mmr, party, store
 
     from .auth import RiotAuth
     from .types import account_henrikdev
@@ -47,6 +47,7 @@ class HTTPClient(_HTTPClient):
                     raise e
                 if tries < 2:
                     await riot_auth.reauthorize()
+                    kwargs['headers'] = self._get_headers(riot_auth)
                     continue
                 raise e
             else:
@@ -163,9 +164,25 @@ class HTTPClient(_HTTPClient):
         )
         return self.request(r, headers=headers, riot_auth=riot_auth)
 
-    # utils
+    # daily tickets
 
-    def _get_headers(self, riot_auth: RiotAuth, /) -> dict[str, str]:
+    def get_daily_ticket(self, *, riot_auth: RiotAuth | None = None) -> Response[daily_ticket.DailyTicket]:
+        riot_auth = riot_auth or self.riot_auth
+        headers = self._get_headers(riot_auth)
+        region = self._get_region(riot_auth)
+        r = Route('GET', '/daily-ticket/v1/{puuid}', region, EndpointType.pd, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers, riot_auth=riot_auth)
+
+    def post_daily_ticket(self, *, riot_auth: RiotAuth | None = None) -> Response[daily_ticket.DailyTicket]:
+        riot_auth = riot_auth or self.riot_auth
+        headers = self._get_headers(riot_auth)
+        region = self._get_region(riot_auth)
+        r = Route('POST', '/daily-ticket/v1/{puuid}/renew', region, EndpointType.pd, puuid=riot_auth.puuid)
+        return self.request(r, headers=headers, riot_auth=riot_auth)
+
+    # utils
+    @staticmethod
+    def _get_headers(riot_auth: RiotAuth, /) -> dict[str, str]:
         headers = {
             'Authorization': 'Bearer %s' % riot_auth.access_token,
             'X-Riot-Entitlements-JWT': riot_auth.entitlements_token,

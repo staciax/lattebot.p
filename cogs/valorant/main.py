@@ -10,7 +10,6 @@ import discord
 from discord import app_commands, ui
 from discord.app_commands import Choice, locale_str as _T
 
-import core.utils.chat_formatting as chat
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
 from core.cog import Cog
@@ -31,25 +30,57 @@ from .schedule import Schedule
 from .ui import embeds as e
 from .ui.auth import RiotAuthManageView
 from .ui.settings import SettingsView
-from .ui.views import (
-    CarrierView,
-    CollectionView,
-    FeaturedBundleView,
-    GamePassView,
-    MissionView,
-    NightMarketView,
-    StoreFrontView,
-    WalletView,
-)
-from .ui.views_7 import NewStoreFrontView
+from .ui.views import CarrierView, CollectionView, FeaturedBundleView
+from .ui.views_test import BaseView, GamePassView, ValorantPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from valorantx2.auth import RiotAuth
     from valorantx2.client import Client as ValorantClient
 
 _ = I18n('valorant', __file__)
 
 _log = logging.getLogger(__name__)
+
+
+class StoreFrontPageSource(ValorantPageSource):
+    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
+        storefront = await view.valorant_client.fetch_storefront(riot_auth)
+        embeds = e.store_featured_e(
+            storefront.skins_panel_layout,
+            riot_id=riot_auth.riot_id,
+            locale=view.locale,
+        )
+        return embeds
+
+
+class NightMarketPageSource(ValorantPageSource):
+    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
+        storefront = await view.valorant_client.fetch_storefront(riot_auth)
+        if storefront.bonus_store is None:
+            return [Embed(description=_('Nightmarket is not available', view.locale))]
+        embeds = [e.nightmarket_front_e(storefront.bonus_store, riot_auth.riot_id, locale=view.locale)]
+        embeds += [e.skin_e(skin, locale=view.locale) for skin in storefront.bonus_store.skins]
+        return embeds
+
+
+class WalletPageSource(ValorantPageSource):
+    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> Embed:
+        wallet = await view.valorant_client.fetch_wallet(riot_auth)
+        embed = e.wallet_e(
+            wallet,
+            riot_id=riot_auth.riot_id,
+            locale=view.locale,
+        )
+        return embed
+
+
+class MissionPageSource(ValorantPageSource):
+    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> Embed:
+        contracts = await view.valorant_client.fetch_contracts(riot_auth)
+        daily_ticket = await view.valorant_client.fetch_daily_ticket(renew=True, riot_auth=riot_auth)
+        embed = e.mission_e(contracts, daily_ticket, riot_auth.riot_id, locale=view.locale)
+        return embed
 
 
 # thanks for redbot
@@ -64,7 +95,8 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 @cog_i18n(_)
 class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, Cog, metaclass=CompositeMetaClass):
-    def __init__(self, bot: LatteMaid) -> None:
+    def __init__(self, bot: LatteMaid, *_args) -> None:
+        super().__init__(*_args)
         self.bot: LatteMaid = bot
         self._lock: asyncio.Lock = asyncio.Lock()
 
@@ -207,19 +239,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        sf = await self.valorant_client.fetch_storefront()
-        ags = await self.valorant_client.fetch_agent_store()
-        view = NewStoreFrontView(interaction, sf, ags)
-        await view.start()
-
-        # user = user = await self.fetch_or_create_user(interaction.user.id)
-        # await interaction.response.defer()
-        # view = StoreFrontView(interaction, AccountManager(user, self.bot))
-        # await view.callback(interaction)
-
-        # source = StoreFrontPageSource(user)
-        # view = ValorantSwitchAccountView(source, interaction)
-        # await view.start_valorant()
+        view = BaseView(interaction, source=StoreFrontPageSource())
+        await view.start_valorant()
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
     @app_commands.rename(hide=_T('hide'))
@@ -227,10 +248,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
-        view = NightMarketView(interaction, AccountManager(user, self.bot), hide)
-        await view.callback(interaction)
+        view = BaseView(interaction, source=NightMarketPageSource())
+        await view.start_valorant()
 
     # @app_commands.command(name=_T('agent_store'), description=_T('Show the current featured agents'))
     # @app_commands.guild_only()
@@ -252,14 +271,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer(ephemeral=private)
-        view = WalletView(interaction, AccountManager(user, self.bot))
-        await view.callback(interaction)
-
-        # source = WalletPageSource(user)
-        # view = ValorantSwitchAccountView(source, interaction)
-        # await view.start_valorant()
+        view = BaseView(interaction, source=WalletPageSource())
+        await view.start_valorant()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
     @app_commands.rename(season=_T('season'))
@@ -267,14 +280,11 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(user, self.bot),
             valorantx.RelationType.season,
         )
-        await view.callback(interaction)
+        await view.start_valorant()
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
     @app_commands.rename(event=_T('event'))
@@ -282,26 +292,18 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(user, self.bot),
             valorantx.RelationType.event,
         )
-        await view.callback(interaction)
+        await view.start_valorant()
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
-        view = MissionView(
-            interaction,
-            AccountManager(user, self.bot),
-        )
-        await view.callback(interaction)
+        view = BaseView(interaction, source=MissionPageSource())
+        await view.start_valorant()
 
     @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))
     @app_commands.guild_only()
@@ -319,14 +321,11 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
         view = GamePassView(
             interaction,
-            AccountManager(user, self.bot),
             valorantx.RelationType.agent,
         )
-        await view.callback(interaction)
+        await view.start_valorant()
 
     @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))
     @app_commands.choices(
@@ -353,7 +352,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = user = await self.fetch_or_create_user(interaction.user.id)
+        user = await self.fetch_or_create_user(interaction.user.id)
 
         await interaction.response.defer()
         queue = mode.value if mode is not None else None
@@ -389,7 +388,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = user = await self.fetch_or_create_user(interaction.user.id)
+        user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
 
         queue_id = mode.value if mode is not None else None
