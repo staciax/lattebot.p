@@ -30,8 +30,8 @@ from .schedule import Schedule
 from .ui import embeds as e
 from .ui.auth import RiotAuthManageView
 from .ui.settings import SettingsView
-from .ui.views import CarrierView, CollectionView, FeaturedBundleView
-from .ui.views_test import BaseView, GamePassView, ValorantPageSource
+from .ui.views import CarrierView, CollectionView
+from .ui.views_test import BaseView, FeaturedBundleView, GamePassView, ValorantPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
