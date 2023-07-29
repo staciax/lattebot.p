@@ -8,7 +8,9 @@ import discord
 from discord import ui
 from discord.components import SelectOption
 from discord.enums import ButtonStyle, Locale
+from discord.ui.item import Item
 
+from core.bot import LatteMaid
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
@@ -115,7 +117,6 @@ class AccountSelect(ui.Select[V]):
     def from_account_manager(
         cls,
         account_manager: AccountManager,
-        row: int = 0,
         locale: Locale | None = None,
     ) -> Self:
         options = [
@@ -125,7 +126,7 @@ class AccountSelect(ui.Select[V]):
         if account_manager.author.locale is not None:
             locale = discord.Locale(account_manager.author.locale)
 
-        return cls(options=options, row=row, locale=locale)
+        return cls(options=options, locale=locale)
 
 
 class BaseView(ViewAuthor):
@@ -150,18 +151,19 @@ class BaseView(ViewAuthor):
         if not len(self.account_manager.accounts):
             return
 
-        # move all children down by 1
-        for item in self.children:
-            if item.row is None:
-                continue
-            item.row += 1
+        self.add_item(AccountSelect.from_account_manager(account_manager=self.account_manager, locale=self.locale))
 
-        self.add_item(
-            AccountSelect.from_account_manager(
-                account_manager=self.account_manager,
-                locale=self.locale,
-            )
-        )
+    # async def show_page_valorant(self, interaction: discord.Interaction[LatteMaid], page_number: int) -> None:
+    #     page = await self.source.get_page(page_number)
+    #     self.current_page = page_number
+    #     kwargs = await self._get_kwargs_from_valorant_page(page)
+    #     # self._update_labels(page_number)
+    #     if kwargs:
+    #         if interaction.response.is_done():
+    #             if self.message:
+    #                 await self.message.edit(**kwargs, view=self)
+    #         else:
+    #             await interaction.response.edit_message(**kwargs, view=self)
 
     async def _get_kwargs_from_valorant_page(self, page: int) -> dict[str, Any]:
         if self.account_manager is None:
@@ -197,7 +199,8 @@ class BaseView(ViewAuthor):
 
     async def switch_account_to(self, puuid: str, /) -> None:
         self.current_puuid = puuid
-        kwargs = await self._get_kwargs_from_valorant_page(0)
+        page = getattr(self, 'current_page', 0)
+        kwargs = await self._get_kwargs_from_valorant_page(page)
         if self.message is not None:
             await self.message.edit(**kwargs, view=self)
 
@@ -328,16 +331,13 @@ class GamePassView(BaseView, LattePages):
         self.relation_type = relation_type
 
     async def switch_account_to(self, puuid: str, /) -> None:
-        self.current_puuid = puuid
-        await self.set_source()
-        kwargs = await self._get_kwargs_from_page(self.current_page)
-        if self.message is not None:
-            await self.message.edit(**kwargs, view=self)
+        await self.set_source(puuid)
+        await super().switch_account_to(puuid)
 
-    async def set_source(self) -> None:
+    async def set_source(self, puuid: str | None, /) -> None:
         assert self.account_manager is not None
         assert self.current_puuid is not None
-        riot_auth = self.account_manager.get_account(self.current_puuid)
+        riot_auth = self.account_manager.get_account(puuid)  # type: ignore
         assert riot_auth is not None
         contracts = await self.valorant_client.fetch_contracts(riot_auth)
         contract = (
@@ -352,8 +352,44 @@ class GamePassView(BaseView, LattePages):
 
     async def start_valorant(self) -> None:
         await self._init()
-        await self.set_source()
+        await self.set_source(self.current_puuid)
         await self.start(self.current_page)
+
+
+# storefront
+
+
+class StoreFrontView(BaseView):
+    def __init__(
+        self, interaction: discord.Interaction[LatteMaid], source: ValorantPageSource = discord.utils.MISSING
+    ) -> None:
+        super().__init__(interaction, source)
+        self.current_page: int = 0
+
+    async def _get_kwargs_from_valorant_page(self, page: int) -> dict[str, Any]:
+        kwargs = await super()._get_kwargs_from_valorant_page(page)
+        self.current_page = page
+        return kwargs
+
+    @ui.button(label='Featured', disabled=True)
+    async def featured(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+        await interaction.response.defer()
+        if self.message is None:
+            return
+        button.disabled = True
+        self.accessories.disabled = False
+        kwargs = await self._get_kwargs_from_valorant_page(0)
+        await self.message.edit(**kwargs, view=self)
+
+    @ui.button(label='Accessories')
+    async def accessories(self, interaction: discord.Interaction[LatteMaid], button: ui.Button) -> None:
+        await interaction.response.defer()
+        if self.message is None:
+            return
+        button.disabled = True
+        self.featured.disabled = False
+        kwargs = await self._get_kwargs_from_valorant_page(1)
+        await self.message.edit(**kwargs, view=self)
 
 
 # carrirer

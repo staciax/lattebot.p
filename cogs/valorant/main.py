@@ -31,7 +31,7 @@ from .ui import embeds as e
 from .ui.auth import RiotAuthManageView
 from .ui.settings import SettingsView
 from .ui.views import CarrierView, CollectionView
-from .ui.views_test import BaseView, FeaturedBundleView, GamePassView, ValorantPageSource
+from .ui.views_test import BaseView, FeaturedBundleView, GamePassView, StoreFrontView, ValorantPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -44,6 +44,26 @@ _log = logging.getLogger(__name__)
 
 
 class StoreFrontPageSource(ValorantPageSource):
+    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
+        storefront = await view.valorant_client.fetch_storefront(riot_auth)
+        if page == 0:  # featured
+            embeds = e.store_featured_e(
+                storefront.skins_panel_layout,
+                riot_id=riot_auth.riot_id,
+                locale=view.locale,
+            )
+        elif page == 1:  # accessories
+            embeds = e.store_accessories_e(
+                storefront.accessory_store,
+                riot_id=riot_auth.riot_id,
+                locale=view.locale,
+            )
+        else:
+            embeds = [Embed(description=_('Page not found', view.locale))]
+        return embeds
+
+
+class AccessoriesStorePageSource(ValorantPageSource):
     async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
         storefront = await view.valorant_client.fetch_storefront(riot_auth)
         embeds = e.store_featured_e(
@@ -239,7 +259,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        view = BaseView(interaction, source=StoreFrontPageSource())
+        view = StoreFrontView(interaction, source=StoreFrontPageSource())
         await view.start_valorant()
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
