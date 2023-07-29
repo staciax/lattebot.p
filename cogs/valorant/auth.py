@@ -85,6 +85,7 @@ class RiotAuth(RiotAuth_):
     def from_database(cls, riot_account: RiotAccount, /) -> Self:
         self = cls()
         self.id = riot_account.id
+        self.owner_id = riot_account.owner_id
         self.display_name = riot_account.display_name
         self.access_token = riot_account.access_token
         self.id_token = riot_account.id_token
