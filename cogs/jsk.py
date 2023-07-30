@@ -32,8 +32,7 @@ _log = logging.getLogger(__file__)
 
 
 class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
-    if TYPE_CHECKING:
-        bot: LatteMaid
+    bot: LatteMaid
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

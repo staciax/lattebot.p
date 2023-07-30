@@ -8,9 +8,7 @@ from discord import Interaction, app_commands
 from discord.app_commands import locale_str as _T
 from discord.ext import commands
 
-from core.bot import LatteMaid
 from core.checks import bot_has_permissions, owner_only
-from core.database.models.blacklist import BlackList
 from core.errors import AppCommandError
 from core.ui.embed import MiadEmbed as Embed
 from core.utils.chat_formatting import inline
@@ -18,6 +16,7 @@ from core.utils.pages import LattePages, ListPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
+    from core.database.models.blacklist import BlackList
 
 _log = logging.getLogger(__name__)
 
