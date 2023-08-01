@@ -4,5 +4,7 @@
     "button.remove.account": "ลบบัญชี",
     "select.account": "เปลี่ยนบัญชี",
     "select.main.account": "เปลี่ยนบัญชีหลัก",
-    "select.region": "เปลี่ยนภูมิภาค"
+    "select.region": "เปลี่ยนภูมิภาค",
+    "button.collection.skins": "สกิน",
+    "button.collection.sprays": "สเปรย์"
 }
