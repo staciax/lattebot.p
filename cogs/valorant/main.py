@@ -30,8 +30,8 @@ from .schedule import Schedule
 from .ui import embeds as e
 from .ui.auth import ManageView as RiotAuthManageView
 from .ui.settings import SettingsView
-from .ui.views import CarrierView, CollectionView
-from .ui.views_test import BaseView, FeaturedBundleView, GamePassView, StoreFrontView, ValorantPageSource
+from .ui.views import CarrierView
+from .ui.views_test import BaseView, CollectionView, FeaturedBundleView, GamePassView, StoreFrontView, ValorantPageSource
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -329,13 +329,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def collection(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-        await interaction.response.defer()
-        view = CollectionView(
-            interaction,
-            AccountManager(user, self.bot),
-        )
-        await view.callback(interaction)
+        view = CollectionView(interaction)
+        await view.start_valorant()
 
     @app_commands.command(name=_T('agents'), description=_T('Agent Contracts'))
     @app_commands.guild_only()
