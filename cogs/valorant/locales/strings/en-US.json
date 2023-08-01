@@ -1,3 +1,8 @@
 {
-    "cog.description": "Valorant related commands"
+    "cog.description": "Valorant related commands",
+    "button.add.account": "Add account",
+    "button.remove.account": "Remove account",
+    "select.account": "Select account",
+    "select.main.account": "Switch main account",
+    "select.region": "Select region"
 }

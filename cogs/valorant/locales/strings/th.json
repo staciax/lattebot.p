@@ -1,3 +1,8 @@
 {
-    "cog.description": "คำสั่งที่เกี่ยวกับเกม Valorant"
+    "cog.description": "คำสั่งที่เกี่ยวกับเกม Valorant",
+    "button.add.account": "เพิ่มบัญชี",
+    "button.remove.account": "ลบบัญชี",
+    "select.account": "เปลี่ยนบัญชี",
+    "select.main.account": "เปลี่ยนบัญชีหลัก",
+    "select.region": "เปลี่ยนภูมิภาค"
 }
