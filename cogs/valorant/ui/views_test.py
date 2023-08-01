@@ -89,7 +89,7 @@ class AccountSelect(ui.Select[V]):
         **kwargs: Any,
     ) -> None:
         super().__init__(
-            placeholder=_('account_select_placeholder', locale),
+            placeholder=_('select.account', locale),
             options=options or [SelectOption(label=_('account_select_no_account'), value='no_account')],
             row=row,
             **kwargs,

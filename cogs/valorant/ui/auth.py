@@ -7,10 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import discord
-from discord import ui
-from discord.enums import ButtonStyle
+from discord import ButtonStyle, ui
 
-from core.bot import LatteMaid
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.modal import Modal
@@ -19,12 +17,9 @@ from valorantx2.errors import RiotMultifactorError
 
 from ..account_manager import AccountManager
 from ..auth import RiotAuth
-from ..error import (
-    ErrorHandler,
+from ..error import (  # ErrorHandler,; RiotAuthMaxLimitReached,; RiotAuthNotLinked,
     RiotAuthAlreadyLinked,
-    RiotAuthMaxLimitReached,
     RiotAuthMultiFactorTimeout,
-    RiotAuthNotLinked,
 )
 
 if TYPE_CHECKING:
@@ -37,111 +32,11 @@ _log = logging.getLogger(__name__)
 
 _ = I18n('valorant.ui.auth', Path(__file__).resolve().parent, read_only=True)
 
-# region: app_commands.Choice[str] | None
-
-# riot_auth = RiotAuth()
-
-# try:
-#     await riot_auth.authorize(username.strip(), password.strip(), remember=True)
-# except RiotMultifactorError:
-#     multi_modal = RiotMultiFactorModal(riot_auth, interaction)
-#     await interaction.response.send_modal(multi_modal)
-#     await multi_modal.wait()
-
-#     if multi_modal.code is None:
-#         raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
-
-#     interaction = multi_modal.interaction or interaction
-
-#     if multi_modal.interaction is not None:
-#         await interaction.response.defer(ephemeral=True, thinking=True)
-
-#     try:
-#         await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
-#     except Exception as e:
-#         await multi_modal.on_error(interaction, e)
-#         return
-#     finally:
-#         multi_modal.stop()
-
-# else:
-#     await interaction.response.defer(ephemeral=True)
-
-# # check if already linked
-# riot_account = await self.bot.db.get_riot_account_by_puuid_and_owner_id(
-#     puuid=riot_auth.puuid, owner_id=interaction.user.id
-# )
-# if riot_account is not None:
-#     raise RiotAuthAlreadyLinked('You already have this account linked.')
-
-# # fetch userinfo and region
-# try:
-#     await riot_auth.fetch_userinfo()
-# except aiohttp.ClientResponseError as e:
-#     _log.error('riot auth error fetching userinfo', exc_info=e)
-
-# # set region if specified
-# if region is not None:
-#     riot_auth.region = region.value
-# else:
-#     # fetch region if not specified
-#     try:
-#         await riot_auth.fetch_region()
-#     except aiohttp.ClientResponseError as e:
-#         riot_auth.region = 'ap'  # default to ap
-#         _log.error('riot auth error fetching region', exc_info=e)
-# assert riot_auth.region is not None
-
-# embed = Embed().blurple()
-# embed.add_field(name='Riot ID', value=riot_auth.riot_id, inline=False)
-# embed.add_field(name='Region', value=riot_auth.region, inline=False)
-# embed.set_footer(text='ID: ' + riot_auth.puuid)
-
-# view = RiotAuthConfirmView(interaction)
-# message = await interaction.followup.send(
-#     embed=embed,
-#     ephemeral=True,
-#     view=view,
-#     wait=True,
-# )
-# await view.wait()
-
-# if not view.value:
-#     raise BadArgument(_('You did not confirm the login.', interaction.locale))
-
-# riot_account = await self.bot.db.create_riot_account(
-#     interaction.user.id,
-#     puuid=riot_auth.puuid,
-#     game_name=riot_auth.game_name,
-#     tag_line=riot_auth.tag_line,
-#     region=riot_auth.region,
-#     scope=riot_auth.scope,  # type: ignore
-#     token_type=riot_auth.token_type,  # type: ignore
-#     expires_at=riot_auth.expires_at,
-#     id_token=riot_auth.id_token,  # type: ignore
-#     access_token=riot_auth.access_token,  # type: ignore
-#     entitlements_token=riot_auth.entitlements_token,  # type: ignore
-#     ssid=riot_auth.get_ssid(),
-#     notify=False,
-# )
-# if not len(user.riot_accounts):
-#     await self.bot.db.update_user(user.id, main_account_id=riot_account.id)
-
-# _log.info(
-#     f'{interaction.user}({interaction.user.id}) linked {riot_auth.riot_id}({riot_auth.puuid}) - {riot_auth.region}'
-# )
-# # invalidate cache
-# # self.??.invalidate(self, id=interaction.user.id)
-
-# e = Embed(description=f'Successfully logged in {chat.bold(riot_auth.riot_id)}')
-# await message.edit(embed=e, view=None)
-
-
 RIOT_PASSWORD_REGEX = re.compile(r'^.{8,128}$')
 RIOT_USERNAME_REGEX = re.compile(r'^.{4,24}$')
 
 
-class RiotAuthManageView(ViewAuthor):
+class ManageView(ViewAuthor):
     account_manager: AccountManager
 
     def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
@@ -160,6 +55,16 @@ class RiotAuthManageView(ViewAuthor):
         embed = self.front_embed()
         await self.interaction.response.send_message(embed=embed, view=self)
         self.message = await self.interaction.original_response()
+
+    async def refresh(self) -> None:
+        user = await self.bot.db.fetch_user(self.author.id)
+        if user is None:
+            raise RuntimeError('User not found')
+        self.account_manager = AccountManager(user, self.bot, re_authorize=False)
+        await self.account_manager.wait_until_ready()
+        embed = self.front_embed()
+        assert self.message is not None
+        await self.message.edit(embed=embed, view=self)
 
     def fill_itmes(self) -> None:
         self.clear_items()
@@ -224,7 +129,7 @@ class RiotMultiFactorModal(Modal):
         self.stop()
 
 
-class RiotAuthUsernamePasswordModal(Modal):
+class UsernamePasswordModal(Modal):
     def __init__(
         self,
         interaction: discord.Interaction[LatteMaid],
@@ -272,21 +177,18 @@ class RiotAuthUsernamePasswordModal(Modal):
         self.stop()
 
 
-class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
+class RitoAuthUsernamePasswordButton(ui.Button['ManageView']):
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
         assert self.view is not None
 
-        login_modal = RiotAuthUsernamePasswordModal(
+        login_modal = UsernamePasswordModal(
             interaction,
             title=_('login', interaction.locale),
             custom_id='modal_riot_auth_login',
         )
         await interaction.response.send_modal(login_modal)
         await login_modal.wait()
-
-        if login_modal.interaction is None:
-            return
-
+        assert login_modal.interaction is not None
         await login_modal.interaction.response.defer(ephemeral=True, thinking=True)
 
         riot_auth = RiotAuth()
@@ -294,25 +196,17 @@ class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
         try:
             await riot_auth.authorize(login_modal.username.value.strip(), login_modal.password.value.strip(), remember=True)
         except RiotMultifactorError:
-            multi_modal = RiotMultiFactorModal(riot_auth, interaction)
-            await interaction.response.send_modal(multi_modal)
-            await multi_modal.wait()
-
-            if multi_modal.code is None:
+            embed = Embed(title=_('Two-factor authentication'), description=_('You have 2FA enabled!')).blurple()
+            multi_view = MultiFactorView(interaction, riot_auth)
+            message_2fa = await login_modal.interaction.followup.send(
+                embed=embed, ephemeral=True, view=multi_view, wait=True
+            )
+            await multi_view.wait()
+            await message_2fa.delete()
+            if multi_view.code is None:
                 raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
 
-            interaction = multi_modal.interaction or interaction
-
-            if multi_modal.interaction is not None:
-                await interaction.response.defer(ephemeral=True, thinking=True)
-
-            try:
-                await riot_auth.authorize_multi_factor(multi_modal.code, remember=True)
-            except Exception as e:
-                await multi_modal.on_error(interaction, e)
-                return
-            finally:
-                multi_modal.stop()
+            await riot_auth.authorize_multi_factor(multi_view.code, remember=True)
 
         # check if already linked
         riot_account = await self.view.bot.db.fetch_riot_account_by_puuid_and_owner_id(
@@ -357,7 +251,7 @@ class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
         embed.add_field(name='Region', value=riot_auth.region, inline=False)
         embed.set_footer(text='ID: ' + riot_auth.puuid)
 
-        view = RiotAuthConfirmView(interaction)
+        view = ConfirmView(interaction)
         message = await login_modal.interaction.followup.send(embed=embed, ephemeral=True, view=view, wait=True)
         await view.wait()
 
@@ -391,14 +285,48 @@ class RitoAuthUsernamePasswordButton(ui.Button['RiotAuthManageView']):
         if user is None:
             raise RuntimeError('User not found')
 
-        self.view.account_manager = AccountManager(user, self.view.bot, re_authorize=False)
-        await self.view.account_manager.wait_until_ready()
-        embed = self.view.front_embed()
-        assert self.view.message is not None
-        await self.view.message.edit(embed=embed, view=self.view)
+        await self.view.refresh()
 
 
-class RiotAuthConfirmView(ViewAuthor):
+class MultiFactorView(ViewAuthor):
+    def __init__(self, interaction: discord.Interaction[LatteMaid], riot_auth: RiotAuth) -> None:
+        super().__init__(interaction, timeout=180.0)
+        self.riot_auth = riot_auth
+        self.code: str | None = None
+
+    @ui.button(label='Enter 2FA Code', style=discord.ButtonStyle.primary)
+    async def enter_2fa_code(self, interaction: discord.Interaction[LatteMaid], button: discord.ui.Button) -> None:
+        multi_modal = RiotMultiFactorModal(self.riot_auth, interaction)
+        await interaction.response.send_modal(multi_modal)
+        await multi_modal.wait()
+
+        assert multi_modal.interaction is not None
+        await multi_modal.interaction.response.defer(ephemeral=True)
+
+        if multi_modal.code is None:
+            raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
+
+        self.code = multi_modal.code
+
+        self.stop()
+
+
+class Enter2FACodeButton(ui.Button['ManageView']):
+    def __init__(
+        self,
+        label: str | None = None,
+        *,
+        style: discord.ButtonStyle = discord.ButtonStyle.primary,
+        disabled: bool = False,
+        emoji: str | discord.Emoji | discord.PartialEmoji | None = None,
+    ):
+        super().__init__(style=style, label=label, disabled=disabled, emoji=emoji)
+
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
+        return await super().callback(interaction)
+
+
+class ConfirmView(ViewAuthor):
     def __init__(self, interaction: discord.Interaction[LatteMaid], timeout: float = 180.0) -> None:
         super().__init__(interaction, timeout=timeout)
         self.value: bool | None = None
@@ -420,7 +348,7 @@ class RiotAuthConfirmView(ViewAuthor):
 
 class RegionSelect(ui.Select):
     def __init__(self, *, locale: discord.Locale) -> None:
-        super().__init__(placeholder=_('select.riot_auth.region', locale), row=0)
+        super().__init__(placeholder=_('select.region', locale), row=0)
         self.locale = locale
         self.add_options()
 
@@ -439,7 +367,7 @@ class RegionSelect(ui.Select):
         await interaction.response.defer()
 
 
-class PreviousButton(ui.Button['RiotAuthManageView']):
+class PreviousButton(ui.Button['ManageView']):
     def __init__(self, row: int = 1, **kwargs: Any) -> None:
         super().__init__(label='<', row=row, **kwargs)
 
@@ -453,10 +381,10 @@ class PreviousButton(ui.Button['RiotAuthManageView']):
         await interaction.response.edit_message(embed=embed, view=self.view)
 
 
-class AddAccountView(ui.Button['RiotAuthManageView']):
+class AddAccountView(ui.Button['ManageView']):
     def __init__(self, *, locale: discord.Locale = discord.Locale.american_english) -> None:
         super().__init__(
-            label=_('button.riot_auth.add.account', locale),
+            label=_('button.add.account', locale),
             style=ButtonStyle.blurple,
         )
         self.locale = locale
@@ -482,10 +410,10 @@ class AddAccountView(ui.Button['RiotAuthManageView']):
         await interaction.response.edit_message(embed=embed, view=self.view)
 
 
-class RemoveAccountView(ui.Button['RiotAuthManageView']):
+class RemoveAccountView(ui.Button['ManageView']):
     def __init__(self, *, locale: discord.Locale = discord.Locale.american_english) -> None:
         super().__init__(
-            label=_('button.riot_auth.remove.account', locale),
+            label=_('button.remove.account', locale),
             style=ButtonStyle.red,
         )
         self.locale = locale
@@ -495,13 +423,13 @@ class RemoveAccountView(ui.Button['RiotAuthManageView']):
         await self.view.bot.db.remove_riot_accounts(interaction.user.id)
 
 
-class AccountSelect(ui.Select['RiotAuthManageView']):
+class AccountSelect(ui.Select['ManageView']):
     def __init__(
         self,
         *,
         locale: discord.Locale,
     ) -> None:
-        super().__init__(placeholder=_('select.riot_auth.main.account', locale))
+        super().__init__(placeholder=_('select.main.account', locale))
         self.locale = locale
 
     def add_options(self, riot_account: list[RiotAuth]) -> Self:

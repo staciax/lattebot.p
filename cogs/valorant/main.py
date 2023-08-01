@@ -28,7 +28,7 @@ from .events import Events
 from .notifications import Notifications
 from .schedule import Schedule
 from .ui import embeds as e
-from .ui.auth import RiotAuthManageView
+from .ui.auth import ManageView as RiotAuthManageView
 from .ui.settings import SettingsView
 from .ui.views import CarrierView, CollectionView
 from .ui.views_test import BaseView, FeaturedBundleView, GamePassView, StoreFrontView, ValorantPageSource
