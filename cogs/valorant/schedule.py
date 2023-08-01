@@ -24,14 +24,9 @@ class Schedule(MixinMeta):
         _log.info(f'checking valorant version')
         version = await self.valorant_client.valorant_api.fetch_version()
 
-        if version is None:
-            _log.warning(f'failed to fetch valorant version')
-            return
-
         if version != self.valorant_client.version:
             self.valorant_client.version = version
-            # TODO: make method to update version
-            await self.valorant_client.valorant_api.cache.init()
+            await self.valorant_client.valorant_api.reload()
             RiotAuth.RIOT_CLIENT_USER_AGENT = f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
             _log.info(f'valorant client version updated to {version}')
 

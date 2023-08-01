@@ -9,7 +9,7 @@ from ...emojis import get_ability_emoji, get_agent_emoji
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.agents import Agent as AgentPayload
 
-    from ...valorant_api_cache import Cache
+    from ...valorant_api_cache import ValorantAPICache
 
 __all__ = (
     'Ability',
@@ -32,7 +32,7 @@ class Ability(ValorantAPIAbility):
 
 
 class Agent(ValorantAPIAgent):
-    def __init__(self, *, state: Cache, data: AgentPayload) -> None:
+    def __init__(self, *, state: ValorantAPICache, data: AgentPayload) -> None:
         super().__init__(state=state, data=data)
         self._abilities: dict[str, Ability] = {
             ability['slot'].lower(): Ability(state=self._state, data=ability, agent=self) for ability in data['abilities']

@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Iterator
 
 from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
 from valorantx.client import Client as _Client, _loop
-from valorantx.enums import Locale, QueueType
+from valorantx.enums import Locale, QueueType, Region
+from valorantx.models.config import Config
 from valorantx.models.contracts import Contracts
 from valorantx.models.daily_ticket import DailyTicket
 from valorantx.models.favorites import Favorites
@@ -21,7 +22,7 @@ from .http import HTTPClient
 from .models import PartialUser, PatchNoteScraper
 from .models.custom.match import MatchDetails
 from .models.custom.store import AgentStore
-from .valorant_api_client import Client as ValorantAPIClient
+from .valorant_api_client import ValorantAPIClient
 
 if TYPE_CHECKING:
     from valorantx.models.match import MatchHistory
@@ -60,6 +61,7 @@ class Client(_Client):
         self._authorized: asyncio.Event = MISSING
         self._season: Season = MISSING
         self._act: Season = MISSING
+        self._configs: dict[Region, Config] = {}
         self.me: ClientUser = MISSING
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self.lock: asyncio.Lock = asyncio.Lock()

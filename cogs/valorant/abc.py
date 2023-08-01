@@ -11,8 +11,9 @@ if TYPE_CHECKING:
 class MixinMeta(ABC):
     """Metaclass for mixin classes."""
 
+    bot: LatteMaid
+
     if TYPE_CHECKING:
-        bot: LatteMaid
 
         @property
         def valorant_client(self) -> valorantx.Client:

@@ -10,7 +10,7 @@ from ...emojis import get_game_mode_emoji
 if TYPE_CHECKING:
     from valorantx.valorant_api.types.gamemodes import GameMode as GameModePayload
 
-    from ...valorant_api_cache import Cache
+    from ...valorant_api_cache import ValorantAPICache
 
 # fmt: off
 __all__ = (
@@ -20,7 +20,7 @@ __all__ = (
 
 
 class GameMode(ValorantAPIGameMode):
-    def __init__(self, state: Cache, data: GameModePayload) -> None:
+    def __init__(self, state: ValorantAPICache, data: GameModePayload) -> None:
         super().__init__(state=state, data=data)
 
     @property

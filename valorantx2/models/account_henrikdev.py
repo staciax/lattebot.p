@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from valorantx.valorant_api.models import PlayerCard
 
     from ..types.account_henrikdev import Account as AccountPayload
-    from ..valorant_api_cache import Cache
+    from ..valorant_api_cache import ValorantAPICache
 
 # fmt: off
 __all__ = (
@@ -24,13 +24,13 @@ class PartialUser(ClientUser):
     _last_update: str
     _last_update_raw: int
 
-    def __init__(self, state: Cache, data: AccountPayload) -> None:
+    def __init__(self, state: ValorantAPICache, data: AccountPayload) -> None:
         self._update(state, data)
 
     def __repr__(self) -> str:
         return f'<PartialUser puuid={self.puuid!r} name={self.name!r} tag={self.tag!r}>'
 
-    def _update(self, state: Cache, data: AccountPayload) -> None:
+    def _update(self, state: ValorantAPICache, data: AccountPayload) -> None:
         self.puuid: str = data['puuid']
         self._username = data.get('name')
         self._tagline = data['tag']

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from valorantx.valorant_api_cache import CacheState as ValorantAPICacheState
+from valorantx.valorant_api_cache import CacheState
 
 from .models.custom.agents import Agent
 from .models.custom.competitive_tiers import CompetitiveTier
@@ -15,12 +15,12 @@ if TYPE_CHECKING:
 
 # fmt: off
 __all__ = (
-    'Cache',
+    'ValorantAPICache',
 )
 # fmt: on
 
 
-class Cache(ValorantAPICacheState):
+class ValorantAPICache(CacheState):
     def store_content_tier(self, data: content_tiers.ContentTier) -> ContentTier:
         content_tier_id = data['uuid']
         self._content_tiers[content_tier_id] = content_tier = ContentTier(state=self, data=data)
