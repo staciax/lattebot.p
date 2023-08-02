@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from secrets import token_urlsafe
 from typing import TYPE_CHECKING
 
+import aiohttp
 import yarl
 from valorantx.errors import RiotAuthenticationError
 from valorantx.utils import MISSING
 
 from valorantx2.auth import RiotAuth as RiotAuth_
+from valorantx2.errors import RiotAuthRateLimitedError
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -29,7 +32,7 @@ _log = logging.getLogger(__name__)
 
 
 class RiotAuth(RiotAuth_):
-    RIOT_CLIENT_USER_AGENT = 'RiotClient/67.0.0.5150528.1064 %s (Windows;10;;Professional, x64)'
+    RIOT_CLIENT_USER_AGENT = 'RiotClient/67.0.13.192.1064 %s (Windows;10;;Professional, x64)'
 
     def __init__(self) -> None:
         super().__init__()
@@ -45,6 +48,77 @@ class RiotAuth(RiotAuth_):
 
     def is_available(self) -> bool:
         return self._is_available
+
+    async def _authorize(
+        self,
+        username: str,
+        password: str,
+        use_query_response_mode: bool = False,
+        remember: bool = False,
+    ) -> bool:
+        """
+        Authenticate using username and password.
+        """
+        if username and password:
+            self._cookie_jar.clear()
+
+        conn = aiohttp.TCPConnector(ssl=self._auth_ssl_ctx)
+        async with aiohttp.ClientSession(connector=conn, raise_for_status=True, cookie_jar=self._cookie_jar) as session:
+            headers = {
+                "Accept-Encoding": "deflate, gzip, zstd",
+                "user-agent": RiotAuth.RIOT_CLIENT_USER_AGENT % "rso-auth",
+                "Cache-Control": "no-cache",
+                "Accept": "application/json",
+            }
+
+            # region Begin auth/Reauth
+            body = {
+                "acr_values": "",
+                "claims": "",
+                "client_id": "riot-client",
+                "code_challenge": "",
+                "code_challenge_method": "",
+                "nonce": token_urlsafe(16),
+                "redirect_uri": "http://localhost/redirect",
+                "response_type": "token id_token",
+                "scope": "openid link ban lol_region account",
+            }
+            if use_query_response_mode:
+                body["response_mode"] = "query"
+            async with session.post(
+                "https://auth.riotgames.com/api/v1/authorization",
+                json=body,
+                headers=headers,
+            ) as r:
+                data: dict = await r.json()
+            # endregion
+
+            body = {
+                "language": "en_US",
+                "password": password,
+                "region": None,
+                "remember": remember,
+                "type": "auth",
+                "username": username,
+            }
+            return await self.__fetch_access_token(session, body, headers, data)
+
+    async def authorize(
+        self,
+        username: str,
+        password: str,
+        use_query_response_mode: bool = False,
+        remember: bool = False,
+    ) -> None:
+        try:
+            await self._authorize(username, password, use_query_response_mode, remember)
+        except aiohttp.ClientResponseError as e:
+            if e.headers is None:
+                return
+            if e.status == 429:
+                retry_after = e.headers.get('Retry-After')
+                if retry_after and int(retry_after) >= 0:
+                    raise RiotAuthRateLimitedError(int(retry_after))
 
     async def reauthorize(self) -> None:
         _log.info(f're authorizing {self.game_name}#{self.tag_line}({self.puuid})')
