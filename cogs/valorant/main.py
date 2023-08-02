@@ -425,6 +425,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
             return
 
+    # patch notes
+
     @app_commands.command(name=_T('patchnote'), description=_T('Patch notes'))
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
@@ -454,6 +456,15 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
         else:
             raise UserInputError('Patch note not found')
+
+    # esports
+
+    @app_commands.command(name=_T('esports'), description=_T('Esports Hub'))
+    @dynamic_cooldown(cooldown_short)
+    async def esports(self, interaction: discord.Interaction[LatteMaid]) -> None:
+        ...
+
+    # settings
 
     @app_commands.command(name='settings', description='Change your settings')
     @app_commands.guild_only()
