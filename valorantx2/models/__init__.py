@@ -34,8 +34,10 @@ from valorantx.models import (
     PlayerTitleBundle as PlayerTitleBundle,
     ProcessedMatch as ProcessedMatch,
     Progression as Progression,
+    RecruitmentProgressUpdate as RecruitmentProgressUpdate,
     Reward as Reward,
     RewardValorantAPI as RewardValorantAPI,
+    ScheduleLeague as ScheduleLeague,
     Skin as Skin,
     SkinChroma as SkinChroma,
     SkinLevel as SkinLevel,
@@ -59,7 +61,10 @@ from valorantx.models import (
     competitive_tiers as competitive_tiers,
     content_tiers as content_tiers,
     contracts as contracts,
+    coregame as coregame,
     currencies as currencies,
+    daily_ticket as daily_ticket,
+    esports as esports,
     events as events,
     favorites as favorites,
     gamemodes as gamemodes,
@@ -69,9 +74,11 @@ from valorantx.models import (
     maps as maps,
     match as match,
     missions as missions,
+    party as party,
     patchnotes as patchnotes,
     player_cards as player_cards,
     player_titles as player_titles,
+    pregame as pregame,
     premiers as premiers,
     seasons as seasons,
     sprays as sprays,
@@ -81,7 +88,6 @@ from valorantx.models import (
     version as version,
     weapons as weapons,
 )
-from valorantx.models.contracts import RecruitmentProgressUpdate as RecruitmentProgressUpdate
 
 from .account_henrikdev import *
 from .patchnote_scraper import *
