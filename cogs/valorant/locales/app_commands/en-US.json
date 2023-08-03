@@ -51,6 +51,10 @@
         "name": "collection",
         "description": "Shows your collection"
     },
+    "esports": {
+        "name": "esports",
+        "description": "Esports Hub"
+    },
     "eventpass": {
         "name": "eventpass",
         "description": "View your Eventpass current tier",

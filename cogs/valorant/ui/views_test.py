@@ -5,12 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import discord
-from async_lru import alru_cache
-from discord import ui
-from discord.components import SelectOption
-from discord.emoji import Emoji
-from discord.enums import ButtonStyle, Locale
-from discord.partial_emoji import PartialEmoji
+from discord import ButtonStyle, Locale, SelectOption, ui
 
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
@@ -21,7 +16,8 @@ from valorantx2.utils import locale_converter
 
 from ..account_manager import AccountManager
 from . import embeds as e
-from .utils import find_match_score_by_player
+
+# from .utils import find_match_score_by_player
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -29,14 +25,12 @@ if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2.auth import RiotAuth
     from valorantx2.client import Client as ValorantClient
-    from valorantx2.models import (
+    from valorantx2.models import (  # MatchDetails,; MatchHistory,
         Contract,
         FeaturedBundle,
         Gun,
         GunsLoadout,
         Loadout,
-        MatchDetails,
-        MatchHistory,
         RewardValorantAPI,
     )
 
@@ -479,6 +473,7 @@ class SkinCollectionSource(ListPageSource):
                 return 18
 
         super().__init__(sorted(list(gun_loadout.to_list()), key=gun_priority), per_page=4)
+        self.current_page: int = 0
 
     async def format_page(
         self,
@@ -492,8 +487,14 @@ class CollectionView(BaseView):
     def __init__(self, interaction: discord.Interaction[LatteMaid]) -> None:
         super().__init__(interaction)
         self.source: CollectionFrontPageSource = CollectionFrontPageSource()
-        self.current_skin_page: int = 0
-        self.max_skin_pages: int = 0
+        self.skin_prev_button = CollectionSkinPrevButton()
+        self.skin_next_button = CollectionSkinNextButton()
+
+    async def switch_account_to(self, puuid: str) -> None:
+        await super().switch_account_to(puuid)
+        self.source.loadout = None
+        self.source.skin_source = None
+        self.source.embed = None
 
     def _fill_components(self) -> None:
         self.add_items(
@@ -505,37 +506,35 @@ class CollectionView(BaseView):
         self._fill_components()
         await super()._init()
 
-    # def get_skin_page(self, page_number: int) -> list[Gun | None]:
-    #     assert self.source.loadout is not None
-    #     assert self.source.loadout.guns is not None
-    #     guns = self.source.loadout.guns.to_list()
-    #     per_page = 4
-    #     base = page_number * per_page
-    #     return guns[base : base + per_page]
+    # skin pages
 
-    # async def show_page_skin(self, interaction: discord.Interaction[LatteMaid], page_number: int) -> None:
-    #     max_pages = self.max_skin_pages
-    #     try:
-    #         if max_pages is None:
-    #             # If it doesn't give maximum pages, it cannot be checked
-    #             await self.show_skin_page(interaction, page_number)
-    #         elif max_pages > page_number >= 0:
-    #             await self.show_skin_page(interaction, page_number)
-    #     except IndexError:
-    #         # An error happened that can be handled, so ignore it.
-    #         pass
+    async def show_skin_checked_page(self, interaction: discord.Interaction[LatteMaid], page_number: int) -> None:
+        if self.source.skin_source is None:
+            return
+        max_pages = self.source.skin_source.get_max_pages()
+        try:
+            if max_pages > page_number >= 0:
+                await self.show_skin_page(interaction, page_number)
+        except IndexError:
+            # An error happened that can be handled, so ignore it.
+            pass
 
-    # async def show_skin_page(self, interaction: discord.Interaction[LatteMaid], page_number: int) -> None:
-    #     page = await self.source.get_page(page_number)
-    #     self.current_page = page_number
-    #     kwargs = await self._get_kwargs_from_page(page)
-    #     self._update_labels(page_number)
-    #     if kwargs:
-    #         if interaction.response.is_done():
-    #             if self.message:
-    #                 await self.message.edit(**kwargs, view=self)
-    #         else:
-    #             await interaction.response.edit_message(**kwargs, view=self)
+    async def show_skin_page(self, interaction: discord.Interaction[LatteMaid], page_number: int) -> None:
+        assert self.source.skin_source is not None
+        source = self.source.skin_source
+        page = await source.get_page(page_number)
+        source.current_page = page_number
+        embeds = await source.format_page(self, page)
+
+        # update buttons
+        self.skin_prev_button.disabled = page_number == 0
+        self.skin_next_button.disabled = page_number == 4
+
+        if interaction.response.is_done():
+            if self.message:
+                await self.message.edit(embeds=embeds, view=self)
+        else:
+            await interaction.response.edit_message(embeds=embeds, view=self)
 
 
 class CollectionSkinsButton(ui.Button['CollectionView']):
@@ -546,14 +545,15 @@ class CollectionSkinsButton(ui.Button['CollectionView']):
         label: str | None = None,
         disabled: bool = False,
         custom_id: str | None = None,
-        emoji: str | Emoji | PartialEmoji | None = None,
+        # emoji: str | Emoji | PartialEmoji | None = None,
     ):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, emoji=emoji)
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id)
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
         assert self.view.message is not None
         assert self.view.source.loadout is not None
+        assert self.view.source.skin_source is not None
 
         await interaction.response.defer()
         if self.view.source.loadout.guns is None:
@@ -561,90 +561,12 @@ class CollectionSkinsButton(ui.Button['CollectionView']):
 
         self.view.clear_items()
         self.view.add_items(
-            CollectionSkinPrevButton(),
-            CollectionSkinNextButton(),
+            self.view.skin_prev_button,
+            self.view.skin_next_button,
             CollectionBackToFrontButton(row=1),
         )
 
-        def gun_priority(gun: Gun | None) -> int:
-            if gun is None:
-                return 19
-
-            # page 1
-            name = gun.display_name.default.lower()
-
-            if name == 'phantom':
-                return 0
-            elif name == 'vandal':
-                return 1
-            elif name == 'operator':
-                return 2
-            elif gun.is_melee():
-                return 3
-
-            # page 2
-            elif name == 'classic':
-                return 4
-            elif name == 'sheriff':
-                return 5
-            elif name == 'spectre':
-                return 6
-            elif name == 'marshal':
-                return 7
-
-            # page 3
-            elif name == 'stinger':
-                return 8
-            elif name == 'bucky':
-                return 9
-            elif name == 'guardian':
-                return 10
-            elif name == 'ares':
-                return 11
-
-            # page 4
-            elif name == 'shorty':
-                return 12
-            elif name == 'frenzy':
-                return 13
-            elif name == 'ghost':
-                return 14
-            elif name == 'judge':
-                return 15
-
-            # page 5
-            elif name == 'bulldog':
-                return 16
-            elif name == 'odin':
-                return 17
-            else:
-                return 18
-
-        guns = sorted(self.view.source.loadout.guns.to_list(), key=gun_priority)
-
-        per_page = 4
-        page_number = self.view.current_skin_page
-
-        pages, left_over = divmod(len(guns), per_page)
-        if left_over:
-            pages += 1
-
-        self.view.max_skin_pages = pages
-        base = page_number * per_page
-        entries = guns[base : base + per_page]
-
-        embeds = []
-        for gun in entries:
-            if gun is None:
-                continue
-            embeds.append(
-                e.skin_loadout_e(
-                    gun,
-                    locale=locale_converter.to_valorant(interaction.locale),
-                )
-            )
-
-        await self.view.message.edit(embeds=embeds, view=self.view)
+        await self.view.show_skin_page(interaction, 0)
 
 
 class CollectionSkinNextButton(ui.Button['CollectionView']):
@@ -655,18 +577,19 @@ class CollectionSkinNextButton(ui.Button['CollectionView']):
         disabled: bool = False,
         custom_id: str | None = None,
         url: str | None = None,
-        emoji: str | Emoji | PartialEmoji | None = None,
+        # emoji: str | Emoji | PartialEmoji | None = None,
         row: int | None = None,
     ):
-        super().__init__(style=style, label='>', disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        super().__init__(style=style, label='≫', disabled=disabled, custom_id=custom_id, url=url, row=row)
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
         assert self.view.message is not None
+        assert self.view.source.skin_source is not None
 
         await interaction.response.defer()
 
-        # page = self.view.get_skin_page(self.view.current_skin_page + 1)
+        await self.view.show_skin_page(interaction, self.view.source.skin_source.current_page + 1)
 
 
 class CollectionSkinPrevButton(ui.Button['CollectionView']):
@@ -677,18 +600,19 @@ class CollectionSkinPrevButton(ui.Button['CollectionView']):
         disabled: bool = False,
         custom_id: str | None = None,
         url: str | None = None,
-        emoji: str | Emoji | PartialEmoji | None = None,
+        # emoji: str | Emoji | PartialEmoji | None = None,
         row: int | None = None,
     ):
-        super().__init__(style=style, label='<', disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        super().__init__(style=style, label='≪', disabled=disabled, custom_id=custom_id, url=url, row=row)
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
         assert self.view.message is not None
+        assert self.view.source.skin_source is not None
 
         await interaction.response.defer()
 
-        # page = self.view.get_skin_page(self.view.current_skin_page - 1)
+        await self.view.show_skin_page(interaction, self.view.source.skin_source.current_page - 1)
 
 
 class CollectionSpraysButton(ui.Button['CollectionView']):
@@ -699,9 +623,9 @@ class CollectionSpraysButton(ui.Button['CollectionView']):
         label: str | None = None,
         disabled: bool = False,
         custom_id: str | None = None,
-        emoji: str | Emoji | PartialEmoji | None = None,
+        # emoji: str | Emoji | PartialEmoji | None = None,
     ):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, emoji=emoji)
+        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id)
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
@@ -737,12 +661,10 @@ class CollectionBackToFrontButton(ui.Button['CollectionView']):
         *,
         disabled: bool = False,
         custom_id: str | None = None,
-        emoji: str | Emoji | PartialEmoji | None = None,
+        # emoji: str | Emoji | PartialEmoji | None = None,
         row: int | None = None,
     ):
-        super().__init__(
-            label='<', style=ButtonStyle.secondary, disabled=disabled, custom_id=custom_id, emoji=emoji, row=row
-        )
+        super().__init__(label='<', style=ButtonStyle.secondary, disabled=disabled, custom_id=custom_id, row=row)
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
@@ -753,7 +675,6 @@ class CollectionBackToFrontButton(ui.Button['CollectionView']):
         self.view.clear_items()
         self.view._fill_components()
         self.view._fill_account_select()
-        self.view.current_skin_page = 0
 
         await self.view.message.edit(embed=self.view.source.embed, view=self.view)
 

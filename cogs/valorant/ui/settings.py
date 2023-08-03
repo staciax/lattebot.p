@@ -66,6 +66,7 @@ class LanguageSelect(ui.Select['SettingsView']):
         super().__init__(
             placeholder=_('select.language'), options=[discord.SelectOption(label='Automatic', value='auto')], **kwargs
         )
+        self.support_locales = support_locales
         self.build_options()
 
     def build_options(self) -> None:
@@ -78,5 +79,5 @@ class LanguageSelect(ui.Select['SettingsView']):
         self.view.locale = discord.Locale(value)
         user = interaction.user
         bot = self.view.bot
-        await bot.db.update_user(user.id, locale=value)
+        # await bot.db.update_user(user.id)
         await interaction.response.edit_message(view=self.view)

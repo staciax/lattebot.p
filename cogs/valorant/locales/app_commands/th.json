@@ -51,6 +51,10 @@
         "name": "collection",
         "description": "แสดงคอลเลคชันของคุณ"
     },
+    "esports": {
+        "name": "esports",
+        "description": "Esports Hub"
+    },
     "eventpass": {
         "name": "eventpass",
         "description": "ดูระดับปัจจุบันของ อีเว้นท์พาส ของคุณ",

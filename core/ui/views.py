@@ -188,8 +188,8 @@ class ViewAuthor(BaseView):
         self.bot: LatteMaid = interaction.client
         self._author: discord.Member | discord.User = interaction.user
         # self.is_command = interaction.command is not None
-        self.cooldown = commands.CooldownMapping.from_cooldown(3.0, 10.0, key)
-        self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
+        self.cooldown = commands.CooldownMapping.from_cooldown(4.0, 12.0, key)
+        # self.cooldown_user = commands.CooldownMapping.from_cooldown(1.0, 8.0, key)
 
     async def before_callback(self, interaction: Interaction[LatteMaid]) -> None:
         if self.locale == interaction.locale:
