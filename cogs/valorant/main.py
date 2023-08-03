@@ -16,91 +16,35 @@ from core.cog import Cog
 from core.database.models import User
 from core.errors import BadArgument, UserInputError
 from core.i18n import I18n, cog_i18n
-from core.ui.embed import MiadEmbed as Embed
 from valorantx2.client import Client as ValorantClient
-from valorantx2.utils import locale_converter, validate_riot_id
+from valorantx2.utils import validate_riot_id
 
 from .account_manager import AccountManager
 from .admin import Admin
 from .context_menu import ContextMenu
+from .core.settings import SettingsView
 from .error import ErrorHandler, RiotAuthNotLinked
 from .events import Events
+from .features.bundles import FeaturedBundleView
+from .features.gamepass import GamePassView
+from .features.loadout import CollectionView
+from .features.mission import MissionView
+from .features.storefront import NightMarketView, StoreFrontView
+from .features.wallet import WalletView
 from .notifications import Notifications
 from .schedule import Schedule
 from .ui import embeds as e
 from .ui.auth import ManageView as RiotAuthManageView
-from .ui.settings import SettingsView
 from .ui.views import CarrierView
-from .ui.views_test import BaseView, CollectionView, FeaturedBundleView, GamePassView, StoreFrontView, ValorantPageSource
+from .utils import locale_converter
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from valorantx2.auth import RiotAuth
     from valorantx2.client import Client as ValorantClient
 
 _ = I18n('valorant', __file__)
 
 _log = logging.getLogger(__name__)
-
-
-class StoreFrontPageSource(ValorantPageSource):
-    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
-        storefront = await view.valorant_client.fetch_storefront(riot_auth)
-        if page == 0:  # featured
-            embeds = e.store_featured_e(
-                storefront.skins_panel_layout,
-                riot_id=riot_auth.riot_id,
-                locale=view.locale,
-            )
-        elif page == 1:  # accessories
-            embeds = e.store_accessories_e(
-                storefront.accessory_store,
-                riot_id=riot_auth.riot_id,
-                locale=view.locale,
-            )
-        else:
-            embeds = [Embed(description=_('Page not found', view.locale))]
-        return embeds
-
-
-class AccessoriesStorePageSource(ValorantPageSource):
-    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
-        storefront = await view.valorant_client.fetch_storefront(riot_auth)
-        embeds = e.store_featured_e(
-            storefront.skins_panel_layout,
-            riot_id=riot_auth.riot_id,
-            locale=view.locale,
-        )
-        return embeds
-
-
-class NightMarketPageSource(ValorantPageSource):
-    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> list[Embed]:
-        storefront = await view.valorant_client.fetch_storefront(riot_auth)
-        if storefront.bonus_store is None:
-            return [Embed(description=_('Nightmarket is not available', view.locale))]
-        embeds = [e.nightmarket_front_e(storefront.bonus_store, riot_auth.riot_id, locale=view.locale)]
-        embeds += [e.skin_e(skin, locale=view.locale) for skin in storefront.bonus_store.skins]
-        return embeds
-
-
-class WalletPageSource(ValorantPageSource):
-    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> Embed:
-        wallet = await view.valorant_client.fetch_wallet(riot_auth)
-        embed = e.wallet_e(
-            wallet,
-            riot_id=riot_auth.riot_id,
-            locale=view.locale,
-        )
-        return embed
-
-
-class MissionPageSource(ValorantPageSource):
-    async def format_page_valorant(self, view: BaseView, page: int, riot_auth: RiotAuth) -> Embed:
-        contracts = await view.valorant_client.fetch_contracts(riot_auth)
-        daily_ticket = await view.valorant_client.fetch_daily_ticket(renew=True, riot_auth=riot_auth)
-        embed = e.mission_e(contracts, daily_ticket, riot_auth.riot_id, locale=view.locale)
-        return embed
 
 
 # thanks for redbot
@@ -259,7 +203,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def store(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        view = StoreFrontView(interaction, source=StoreFrontPageSource())
+        view = StoreFrontView(interaction)
         await view.start_valorant()
 
     @app_commands.command(name=_T('nightmarket'), description=_T('Show skin offers on the nightmarket'))
@@ -268,7 +212,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def nightmarket(self, interaction: discord.Interaction[LatteMaid], hide: bool = False) -> None:
-        view = BaseView(interaction, source=NightMarketPageSource())
+        view = NightMarketView(interaction)
         await view.start_valorant()
 
     # @app_commands.command(name=_T('agent_store'), description=_T('Show the current featured agents'))
@@ -282,7 +226,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @dynamic_cooldown(cooldown_short)
     async def bundles(self, interaction: discord.Interaction[LatteMaid]) -> None:
         await interaction.response.defer()
-        view = FeaturedBundleView(interaction, self.valorant_client)
+        view = FeaturedBundleView(interaction)
         await view.start()
 
     @app_commands.command(name=_T('point'), description=_T('View your remaining Valorant and Riot Points (VP/RP)'))
@@ -291,7 +235,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def point(self, interaction: discord.Interaction[LatteMaid], private: bool = True) -> None:
-        view = BaseView(interaction, source=WalletPageSource())
+        view = WalletView(interaction)
         await view.start_valorant()
 
     @app_commands.command(name=_T('battlepass'), description=_T('View your battlepass current tier'))
@@ -322,7 +266,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def mission(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        view = BaseView(interaction, source=MissionPageSource())
+        view = MissionView(interaction)
         await view.start_valorant()
 
     @app_commands.command(name=_T('collection'), description=_T('Shows your collection'))

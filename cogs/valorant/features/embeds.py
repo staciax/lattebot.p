@@ -14,27 +14,20 @@ import valorantx2 as valorantx
 from core.i18n import I18n
 from core.ui.embed import MiadEmbed as Embed
 from valorantx2.emojis import KINGDOM_CREDIT_EMOJI, VALORANT_POINT_EMOJI
-from valorantx2.enums import GameModeURL, MissionType, RelationType, RoundResultCode
+from valorantx2.enums import GameModeURL, RoundResultCode
 from valorantx2.models import (
-    AccessoryStore,
-    AccessoryStoreOffer,
     Buddy,
     BuddyLevel,
     BuddyLevelBundle,
-    Bundle,
     BundleItemOffer,
-    DailyTicket,
-    FeaturedBundle,
     PlayerCard,
     PlayerCardBundle,
     PlayerTitle,
     PlayerTitleBundle,
     Skin,
-    SkinChroma,
     SkinLevel,
     SkinLevelBonus,
     SkinLevelBundle,
-    SkinLevelOffer,
     Spray,
     SprayBundle,
     SprayLevel,
@@ -44,34 +37,18 @@ from ..utils import locale_converter
 from . import utils
 
 if TYPE_CHECKING:
-    from valorantx2.models import (  # AgentStore,
-        Agent,
-        BonusStore,
-        Contract,
-        Loadout,
-        MatchPlayer,
-        RecruitmentProgressUpdate,
-        RewardValorantAPI,
-        SkinsPanelLayout,
-        Wallet,
-    )
+    from valorantx2.models import Agent, BonusStore, MatchPlayer, RecruitmentProgressUpdate
     from valorantx2.models.custom.match import MatchDetails
 
 __all__ = (
-    'BundleEmbed',
-    'skin_e',
-    'store_featured_e',
     'select_featured_bundle_e',
     'select_featured_bundles_e',
     'bundle_item_e',
-    'wallet_e',
 )
 
 BundleItem = Skin | Buddy | Spray | PlayerCard | PlayerTitle
 FeaturedBundleItem = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
-SkinItem = Skin | SkinLevel | SkinChroma
-SprayItem = Spray | SprayLevel
-BuddyItem = Buddy | BuddyLevel
+
 
 _ = I18n('valorant.ui.embeds', Path(__file__).resolve().parent, read_only=True)
 _log = logging.getLogger(__name__)
@@ -81,96 +58,96 @@ RECRUITMENT_END_DATE_TICKS = 638259156000000000
 RECRUITMENT_MILESTONE_THRESHOLD = 200_000
 
 
-def skin_e(
-    skin: Skin | SkinLevel | SkinChroma | SkinLevelOffer | SkinLevelBonus,
-    *,
-    locale: DiscordLocale,
-) -> Embed:
-    valorant_locale = locale_converter.to_valorant(locale)
-    embed = Embed(
-        title=f"{skin.rarity.emoji} {chat.bold(skin.display_name_localized(valorant_locale))}",  # type: ignore
-    ).purple()
+# def skin_e(
+#     skin: Skin | SkinLevel | SkinChroma | SkinLevelOffer | SkinLevelBonus,
+#     *,
+#     locale: DiscordLocale,
+# ) -> Embed:
+#     valorant_locale = locale_converter.to_valorant(locale)
+#     embed = Embed(
+#         title=f"{skin.rarity.emoji} {chat.bold(skin.display_name_localized(valorant_locale))}",  # type: ignore
+#     ).purple()
 
-    if isinstance(skin, SkinLevelOffer):
-        embed.description = f'{VALORANT_POINT_EMOJI} {chat.bold(str(skin.cost))}'
-    elif isinstance(skin, SkinLevelBonus):
-        embed.description = (
-            f'{VALORANT_POINT_EMOJI} {chat.bold(str(skin.discount_costs))}\n'
-            f'{VALORANT_POINT_EMOJI} {chat.strikethrough(str(skin.price))} (-{skin.discount_percent}%)'
-        )
+#     if isinstance(skin, SkinLevelOffer):
+#         embed.description = f'{VALORANT_POINT_EMOJI} {chat.bold(str(skin.cost))}'
+#     elif isinstance(skin, SkinLevelBonus):
+#         embed.description = (
+#             f'{VALORANT_POINT_EMOJI} {chat.bold(str(skin.discount_costs))}\n'
+#             f'{VALORANT_POINT_EMOJI} {chat.strikethrough(str(skin.price))} (-{skin.discount_percent}%)'
+#         )
 
-    if skin.display_icon is not None:
-        embed.url = skin.display_icon.url
-        embed.set_thumbnail(url=skin.display_icon)
+#     if skin.display_icon is not None:
+#         embed.url = skin.display_icon.url
+#         embed.set_thumbnail(url=skin.display_icon)
 
-    if skin.rarity is not None:
-        embed.colour = int(skin.rarity.highlight_color[0:6], 16)
+#     if skin.rarity is not None:
+#         embed.colour = int(skin.rarity.highlight_color[0:6], 16)
 
-    return embed
-
-
-def store_featured_e(
-    panel: SkinsPanelLayout, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
-) -> list[Embed]:
-    embeds = [
-        Embed(
-            description='Daily store // {user}\n'.format(user=chat.bold(riot_id))
-            + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
-        ).purple(),
-    ]
-
-    for skin in panel.skins:
-        embeds.append(skin_e(skin, locale=locale))
-
-    return embeds
+#     return embed
 
 
-def accessory_e(store_offer: AccessoryStoreOffer, *, locale: DiscordLocale = DiscordLocale.american_english) -> Embed:
-    valorant_locale = locale_converter.to_valorant(locale)
+# def store_featured_e(
+#     panel: SkinsPanelLayout, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
+# ) -> list[Embed]:
+#     embeds = [
+#         Embed(
+#             description='Daily store // {user}\n'.format(user=chat.bold(riot_id))
+#             + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
+#         ).purple(),
+#     ]
 
-    accessory = store_offer.offer
+#     for skin in panel.skins:
+#         embeds.append(skin_e(skin, locale=locale))
 
-    embed = Embed()
-    embed.description = f'{KINGDOM_CREDIT_EMOJI} {chat.bold(str(accessory.cost))}'
-
-    for reward in accessory.rewards:
-        if reward.item is None:
-            _log.warning(f'No item for reward id: {reward.id} type: {reward.type}')
-            continue
-
-        embed.title = reward.item.display_name_localized(valorant_locale)
-
-        if isinstance(reward.item, (Spray, BuddyLevel)):
-            if reward.item.display_icon is not None:
-                embed.url = reward.item.display_icon.url
-                embed.set_thumbnail(url=reward.item.display_icon)
-        elif isinstance(reward.item, PlayerCard):
-            if reward.item.large_art is not None:
-                embed.url = reward.item.large_art.url
-                embed.set_thumbnail(url=reward.item.large_art)
-        elif isinstance(reward.item, PlayerTitle):
-            player_title_icon_url = 'https://cdn.discordapp.com/attachments/417245049315655690/1123541013072457728/valorant_player_title_icon.png'
-            embed.url = player_title_icon_url
-            embed.set_thumbnail(url=player_title_icon_url)
-
-    if store_offer.contract is not None:
-        embed.set_footer(text=store_offer.contract.display_name_localized(valorant_locale))
-    return embed
+#     return embeds
 
 
-def store_accessories_e(
-    store: AccessoryStore, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
-) -> list[Embed]:
-    embeds = [
-        Embed(
-            description='Weekly Accessories // {user}\n'.format(user=chat.bold(riot_id))
-            + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
-        ).purple(),
-    ]
-    for offer in store.offers:
-        embeds.append(accessory_e(offer, locale=locale))
+# def accessory_e(store_offer: AccessoryStoreOffer, *, locale: DiscordLocale = DiscordLocale.american_english) -> Embed:
+#     valorant_locale = locale_converter.to_valorant(locale)
 
-    return embeds
+#     accessory = store_offer.offer
+
+#     embed = Embed()
+#     embed.description = f'{KINGDOM_CREDIT_EMOJI} {chat.bold(str(accessory.cost))}'
+
+#     for reward in accessory.rewards:
+#         if reward.item is None:
+#             _log.warning(f'No item for reward id: {reward.id} type: {reward.type}')
+#             continue
+
+#         embed.title = reward.item.display_name_localized(valorant_locale)
+
+#         if isinstance(reward.item, (Spray, BuddyLevel)):
+#             if reward.item.display_icon is not None:
+#                 embed.url = reward.item.display_icon.url
+#                 embed.set_thumbnail(url=reward.item.display_icon)
+#         elif isinstance(reward.item, PlayerCard):
+#             if reward.item.large_art is not None:
+#                 embed.url = reward.item.large_art.url
+#                 embed.set_thumbnail(url=reward.item.large_art)
+#         elif isinstance(reward.item, PlayerTitle):
+#             player_title_icon_url = 'https://cdn.discordapp.com/attachments/417245049315655690/1123541013072457728/valorant_player_title_icon.png'
+#             embed.url = player_title_icon_url
+#             embed.set_thumbnail(url=player_title_icon_url)
+
+#     if store_offer.contract is not None:
+#         embed.set_footer(text=store_offer.contract.display_name_localized(valorant_locale))
+#     return embed
+
+
+# def store_accessories_e(
+#     store: AccessoryStore, riot_id: str, *, locale: DiscordLocale = DiscordLocale.american_english
+# ) -> list[Embed]:
+#     embeds = [
+#         Embed(
+#             description='Weekly Accessories // {user}\n'.format(user=chat.bold(riot_id))
+#             + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}',
+#         ).purple(),
+#     ]
+#     for offer in store.offers:
+#         embeds.append(accessory_e(offer, locale=locale))
+
+#     return embeds
 
 
 def store_agents_recruitment_e(
@@ -322,116 +299,116 @@ def bundle_item_e(
     return embed
 
 
-def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
-    valorant_locale = locale_converter.to_valorant(locale)
+# def wallet_e(wallet: Wallet, riot_id: str, *, locale: DiscordLocale) -> Embed:
+#     valorant_locale = locale_converter.to_valorant(locale)
 
-    embed = Embed(title=f'{riot_id} Point:').purple()
+#     embed = Embed(title=f'{riot_id} Point:').purple()
 
-    vp_display_name = 'Valorant'
-    if vp := wallet.get_valorant_currency():
-        vp_display_name = vp.display_name.from_locale(valorant_locale)
-        if vp_display_name.lower() == 'vp':
-            vp_display_name = 'Valorant'
-        vp_display_name = vp.emoji + ' ' + vp_display_name  # type: ignore
+#     vp_display_name = 'Valorant'
+#     if vp := wallet.get_valorant_currency():
+#         vp_display_name = vp.display_name.from_locale(valorant_locale)
+#         if vp_display_name.lower() == 'vp':
+#             vp_display_name = 'Valorant'
+#         vp_display_name = vp.emoji + ' ' + vp_display_name  # type: ignore
 
-    rad_display_name = 'Radiant'
-    if rad := wallet.get_radiant_currency():
-        rad_display_name = rad.display_name.from_locale(valorant_locale)
-        rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Points', '').replace('Point', '')  # type: ignore
+#     rad_display_name = 'Radiant'
+#     if rad := wallet.get_radiant_currency():
+#         rad_display_name = rad.display_name.from_locale(valorant_locale)
+#         rad_display_name = rad.emoji + ' ' + rad_display_name.replace('Points', '').replace('Point', '')  # type: ignore
 
-    knd_display_name = 'Kingdom'
-    if knd := wallet.get_kingdom_currency():
-        knd_display_name = knd.display_name.from_locale(valorant_locale)
+#     knd_display_name = 'Kingdom'
+#     if knd := wallet.get_kingdom_currency():
+#         knd_display_name = knd.display_name.from_locale(valorant_locale)
 
-    embed.add_field(
-        name=vp_display_name,
-        value=f'{wallet.valorant_points}',
-    )
-    embed.add_field(
-        name=rad_display_name,
-        value=f'{wallet.radiant_points}',
-    )
-    embed.add_field(
-        name=knd_display_name,
-        value=f'{wallet.kingdom_points}',
-    )
-    return embed
+#     embed.add_field(
+#         name=vp_display_name,
+#         value=f'{wallet.valorant_points}',
+#     )
+#     embed.add_field(
+#         name=rad_display_name,
+#         value=f'{wallet.radiant_points}',
+#     )
+#     embed.add_field(
+#         name=knd_display_name,
+#         value=f'{wallet.kingdom_points}',
+#     )
+#     return embed
 
 
-def mission_e(
-    contracts: valorantx.Contracts,
-    daily_ticket: DailyTicket,
-    riot_id: str,
-    *,
-    locale: DiscordLocale = DiscordLocale.american_english,
-) -> Embed:
-    valorant_locale = locale_converter.to_valorant(locale)
+# def mission_e(
+#     contracts: valorantx.Contracts,
+#     daily_ticket: DailyTicket,
+#     riot_id: str,
+#     *,
+#     locale: DiscordLocale = DiscordLocale.american_english,
+# ) -> Embed:
+#     valorant_locale = locale_converter.to_valorant(locale)
 
-    daily = []
-    weekly = []
-    tutorial = []
-    npe = []
-    all_completed = True
+#     daily = []
+#     weekly = []
+#     tutorial = []
+#     npe = []
+#     all_completed = True
 
-    # daily
-    for milestone in sorted(daily_ticket.daily_rewards.milestones, key=lambda x: x.bonus_applied):
-        daily.append('✅' if milestone.bonus_applied else '❌')
+#     # daily
+#     for milestone in sorted(daily_ticket.daily_rewards.milestones, key=lambda x: x.bonus_applied):
+#         daily.append('✅' if milestone.bonus_applied else '❌')
 
-    # weekly, tutorial, npe
-    mission_format = '{0} | **+ {1.xp_grant:,} XP**\n- **`{1.current_progress}/{1.total_progress}`**'
-    for mission in contracts.missions:
-        title = mission.title.from_locale(valorant_locale)
-        # if mission.type == MissionType.daily:
-        #     daily.append(daily_format.format(title, mission))
-        if mission.type == MissionType.weekly:
-            weekly.append(mission_format.format(title, mission))
-        elif mission.type == MissionType.tutorial:
-            tutorial.append(mission_format.format(title, mission))
-        elif mission.type == MissionType.npe:
-            npe.append(mission_format.format(title, mission))
+#     # weekly, tutorial, npe
+#     mission_format = '{0} | **+ {1.xp_grant:,} XP**\n- **`{1.current_progress}/{1.total_progress}`**'
+#     for mission in contracts.missions:
+#         title = mission.title.from_locale(valorant_locale)
+#         # if mission.type == MissionType.daily:
+#         #     daily.append(daily_format.format(title, mission))
+#         if mission.type == MissionType.weekly:
+#             weekly.append(mission_format.format(title, mission))
+#         elif mission.type == MissionType.tutorial:
+#             tutorial.append(mission_format.format(title, mission))
+#         elif mission.type == MissionType.npe:
+#             npe.append(mission_format.format(title, mission))
 
-        if not mission.is_completed():
-            all_completed = False
+#         if not mission.is_completed():
+#             all_completed = False
 
-    embed = Embed(title=f'{riot_id} Mission:')
-    if all_completed:
-        embed.colour = 0x77DD77
+#     embed = Embed(title=f'{riot_id} Mission:')
+#     if all_completed:
+#         embed.colour = 0x77DD77
 
-    if len(daily) > 0:
-        embed.add_field(
-            name="**Daily**",
-            value=' - '.join(daily),
-            inline=False,
-        )
+#     if len(daily) > 0:
+#         embed.add_field(
+#             name="**Daily**",
+#             value=' - '.join(daily),
+#             inline=False,
+#         )
 
-    if len(weekly) > 0:
-        embed.add_field(
-            name=f"**Weekly**",
-            value='\n'.join(weekly)
-            + '\n\n Refill Time: {refill_time}'.format(
-                refill_time=format_dt(
-                    contracts.mission_metadata.weekly_refill_time.replace(tzinfo=datetime.timezone.utc), style='R'
-                )
-                if contracts.mission_metadata is not None and contracts.mission_metadata.weekly_refill_time is not None
-                else '-'
-            ),
-        )
+#     if len(weekly) > 0:
+#         embed.add_field(
+#             name=f"**Weekly**",
+#             value='\n'.join(weekly)
+#             + '\n\n Refill Time: {refill_time}'.format(
+#                 refill_time=format_dt(
+#                     contracts.mission_metadata.weekly_refill_time.replace(tzinfo=datetime.timezone.utc), style='R'
+#                 )
+#                 if contracts.mission_metadata is not None and contracts.mission_metadata.weekly_refill_time is not None
+#                 else '-'
+#             ),
+#         )
 
-    if len(tutorial) > 0:
-        embed.add_field(
-            name=f"**Tutorial**",
-            value='\n'.join(tutorial),
-            inline=False,
-        )
+#     if len(tutorial) > 0:
+#         embed.add_field(
+#             name=f"**Tutorial**",
+#             value='\n'.join(tutorial),
+#             inline=False,
+#         )
 
-    if len(npe) > 0:
-        embed.add_field(
-            name="**NPE**",
-            value='\n'.join(npe),
-            inline=False,
-        )
+#     if len(npe) > 0:
+#         embed.add_field(
+#             name="**NPE**",
+#             value='\n'.join(npe),
+#             inline=False,
+#         )
 
-    return embed
+#     return embed
 
 
 def agent_e(agent: Agent, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
@@ -510,83 +487,6 @@ def player_card_e(player_card: PlayerCard, *, locale: valorantx.Locale = valoran
     return embed
 
 
-def collection_front_e(
-    loadout: Loadout,
-    # mmr: MatchmakingRating,
-    riot_id: str,
-    *,
-    locale: valorantx.Locale = valorantx.Locale.american_english,
-) -> Embed:
-    # latest_tier = mmr.get_latest_rank_tier() if mmr is not None else None
-
-    embed = Embed()
-    # e.description = '{vp_emoji} {wallet_vp} {rad_emoji} {wallet_rad}'.format(
-    #     vp_emoji=wallet.get_valorant().emoji,
-    #     wallet_vp=wallet.valorant_points,
-    #     rad_emoji=wallet.get_radiant().emoji,
-    #     wallet_rad=wallet.radiant_points,
-    # )
-
-    embed.set_author(
-        name=f'{riot_id} - Collection',
-        # icon_url=latest_tier.large_icon if latest_tier is not None else None,
-    )
-    embed.set_footer(text=f'Lv. {loadout.identity.account_level}')
-
-    if loadout.identity.player_title is not None:
-        embed.title = loadout.identity.player_title.text.from_locale(locale)
-
-    if loadout.identity.player_card is not None:
-        embed.set_image(url=loadout.identity.player_card.wide_art)
-        # card_color_thief = await self.bot.get_or_fetch_colors(
-        #     loadout.identity.player_card.uuid, loadout.identity.player_card.wide_art
-        # )
-        # embed.colour = random.choice(card_color_thief)
-
-    return embed
-
-
-def skin_loadout_e(gun: valorantx.Gun, *, locale: valorantx.Locale = valorantx.Locale.american_english) -> Embed:
-    assert gun.skin_loadout is not None
-    skin_name: str = gun.skin_loadout.display_name.from_locale(locale)
-    if isinstance(gun.skin_loadout, valorantx.SkinChroma) and gun.skin_loadout.parent is not None:
-        skin_name = gun.skin_loadout.parent.display_name.from_locale(locale)
-
-    rarity = gun.skin_loadout.rarity
-
-    embed = Embed(
-        description=(rarity.emoji if rarity is not None else '')  # type: ignore
-        + ' '
-        + chat.bold(skin_name)
-        + (' ★' if gun.skin_loadout.is_favorite() else ''),
-        colour=int(rarity.highlight_color[0:6], 16) if rarity is not None else 0x0F1923,
-    ).dark()
-
-    embed.set_thumbnail(url=gun.skin_loadout.display_icon_fix)
-
-    if gun.buddy_loadout is not None:
-        buddy_name = gun.buddy_loadout.display_name.from_locale(locale)
-        embed.set_footer(
-            text=f'{buddy_name}' + (' ★' if gun.buddy_loadout.is_favorite() else ''),
-            icon_url=gun.buddy_loadout.display_icon,
-        )
-    return embed
-
-
-def spray_loadout_e(
-    spray: Spray,
-    slot: int,
-    *,
-    locale: valorantx.Locale = valorantx.Locale.american_english,
-) -> Embed:
-    spray_name = spray.display_name.from_locale(locale)
-    embed = Embed(description=chat.bold(str(slot) + '. ' + spray_name.strip()) + (' ★' if spray.is_favorite() else ''))
-    spray_icon = spray.animation_gif or spray.full_transparent_icon or spray.display_icon
-    if spray_icon is not None:
-        embed.set_thumbnail(url=spray_icon)
-    return embed
-
-
 # patch note embed
 
 
@@ -599,123 +499,6 @@ def patch_note_e(pn: valorantx.PatchNote, banner_url: str | None = None) -> Embe
     )
     embed.set_image(url=(banner_url or pn.banner))
     return embed
-
-
-# bundle embed
-
-
-class BundleEmbed:
-    def __init__(
-        self,
-        bundle: Bundle | FeaturedBundle,
-        *,
-        locale: DiscordLocale = DiscordLocale.american_english,
-    ) -> None:
-        self.bundle: Bundle | FeaturedBundle = bundle
-        self.locale: DiscordLocale = locale
-        # self.banner_embed: Embed = self.build_banner_embed()
-        # self.item_embeds: List[Embed] = self._build_items_embeds()
-
-    def build_banner_embed(self) -> Embed:
-        valorant_locale = locale_converter.to_valorant(self.locale)
-
-        embed = Embed().purple()
-        if self.bundle.display_icon_2 is not None:
-            embed.set_image(url=self.bundle.display_icon_2.url)
-
-        # TODO: i think if better way to do this
-        if isinstance(self.bundle, valorantx.FeaturedBundle):
-            embed.description = 'Featured Bundle: {bundle}\n{emoji} {price} {strikethrough} {expires}'.format(
-                bundle=chat.bold(self.bundle.display_name_localized(valorant_locale) + ' Collection'),
-                emoji=VALORANT_POINT_EMOJI,
-                price=chat.bold(str(self.bundle.discounted_cost)),
-                strikethrough=chat.strikethrough(str(self.bundle.cost))
-                if self.bundle.discounted_cost != self.bundle.cost
-                else '',
-                expires=chat.italics(
-                    '(Expires {expires})'.format(
-                        expires=format_dt(
-                            self.bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc),
-                            style='R',
-                        )
-                    )
-                ),
-            )
-
-        else:
-            embed.description = 'Bundle: {bundle}\n{emoji} {price}'.format(
-                bundle=chat.bold(self.bundle.display_name_localized(valorant_locale) + ' Collection'),
-                emoji=VALORANT_POINT_EMOJI,
-                price=self.bundle.cost,
-            )
-
-        return embed
-
-    def build_items_embeds(self) -> list[Embed]:
-        embeds = []
-
-        def item_priorities(i: BundleItem | FeaturedBundleItem) -> int:
-            is_melee = i.is_melee() if hasattr(i, 'is_melee') and isinstance(i, SkinLevel) else False
-            if is_melee:
-                return 0
-            elif isinstance(i, SkinItem):
-                return 1
-            elif isinstance(i, BuddyItem):
-                return 2
-            elif isinstance(i, PlayerCard):
-                return 3
-            elif isinstance(i, SprayItem):
-                return 4
-            return 5
-
-        for item in sorted(self.bundle.items, key=item_priorities):
-            embeds.append(bundle_item_e(item, isinstance(self.bundle, FeaturedBundle), locale=self.locale))
-        return embeds
-
-    # def rebuild(self, locale: ValorantLocale) -> None:
-    #     self.locale = locale
-    #     self.banner_embed = self.build_banner_embed()
-    #     self.item_embeds = self.build_items_embeds()
-
-
-# gamepass embed
-
-
-class GamePassEmbed:
-    def __init__(self, contract: Contract, riot_id: str, *, locale: DiscordLocale) -> None:
-        self.contract: Contract = contract
-        self.riot_id: str = riot_id
-        self.locale: DiscordLocale = locale
-        self.title: str = ''  # TODO: localize
-        if self.contract.content.relation_type is RelationType.agent:
-            self.title = 'Agent'
-        elif self.contract.content.relation_type is RelationType.season:
-            self.title = 'Battlepass'
-        elif self.contract.content.relation_type is RelationType.event:
-            self.title = 'Eventpass'
-
-    # @cache ?
-    def build_page_embed(self, page: int, reward: RewardValorantAPI, locale: DiscordLocale | None = None) -> Embed:
-        locale = locale or self.locale
-
-        valorant_locale = locale_converter.to_valorant(locale)
-
-        embed = Embed(title=f'{self.title} // {self.riot_id}')
-        embed.set_footer(text=f'TIER {page + 1} | {self.contract.display_name_localized(valorant_locale)}')
-        item = reward.get_item()
-        if item is not None:
-            embed.description = item.display_name_localized(valorant_locale)
-            if not isinstance(item, PlayerTitle):
-                if item.display_icon is not None:
-                    if isinstance(item, SkinLevel):
-                        embed.set_image(url=item.display_icon)
-                    elif isinstance(item, PlayerCard):
-                        embed.set_image(url=item.wide_art)
-                    # elif isinstance(item, valorantx.Agent):
-                    #     embed.set_image(url=item.full_portrait_v2 or item.full_portrait)
-                    else:
-                        embed.set_thumbnail(url=item.display_icon)
-        return embed
 
 
 # match history

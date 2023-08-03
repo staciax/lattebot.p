@@ -17,9 +17,9 @@ from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
 from core.utils.pages import LattePages, ListPageSource
 from valorantx2.enums import Locale as ValorantLocale, RelationType
-from valorantx2.utils import locale_converter
 
 from ..account_manager import AccountManager
+from ..utils import locale_converter
 from . import embeds as e, utils
 
 if TYPE_CHECKING:

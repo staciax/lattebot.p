@@ -17,7 +17,7 @@ from valorantx2.errors import BadRequest, RateLimited
 
 from .abc import MixinMeta
 from .account_manager import AccountManager
-from .ui.notifications import NotifyView
+from .features.notifications import NotifyView
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

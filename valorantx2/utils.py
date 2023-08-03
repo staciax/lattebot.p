@@ -1,21 +1,6 @@
-from discord.enums import Locale as DiscordLocale
-from valorantx import Locale as ValorantLocale
 from valorantx.utils import MISSING as MISSING
 
-__all__ = (
-    'locale_converter',
-    'MISSING',
-)
-
-
-class locale_converter:
-    @staticmethod
-    def to_valorant(locale: DiscordLocale) -> ValorantLocale:
-        return getattr(ValorantLocale, locale.name, ValorantLocale.american_english)
-
-    @staticmethod
-    def to_discord(locale: ValorantLocale) -> DiscordLocale:
-        return getattr(DiscordLocale, locale.name, DiscordLocale.american_english)
+__all__ = ('MISSING',)
 
 
 def validate_riot_id(riot_id: str) -> tuple[str, str]:
