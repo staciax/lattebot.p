@@ -490,12 +490,6 @@ class CollectionView(BaseView):
         self.skin_prev_button = CollectionSkinPrevButton()
         self.skin_next_button = CollectionSkinNextButton()
 
-    async def switch_account_to(self, puuid: str) -> None:
-        await super().switch_account_to(puuid)
-        self.source.loadout = None
-        self.source.skin_source = None
-        self.source.embed = None
-
     def _fill_components(self) -> None:
         self.add_items(
             CollectionSkinsButton(label=_('button.collection.skins', self.locale)),
@@ -547,7 +541,9 @@ class CollectionSkinsButton(ui.Button['CollectionView']):
         custom_id: str | None = None,
         # emoji: str | Emoji | PartialEmoji | None = None,
     ):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id)
+        super().__init__(
+            style=style, label=label, disabled=disabled, custom_id=custom_id, emoji='<:discordsagegun:1104332724631765043>'
+        )
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
@@ -625,7 +621,13 @@ class CollectionSpraysButton(ui.Button['CollectionView']):
         custom_id: str | None = None,
         # emoji: str | Emoji | PartialEmoji | None = None,
     ):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id)
+        super().__init__(
+            style=style,
+            label=label,
+            disabled=disabled,
+            custom_id=custom_id,
+            emoji='<:spray:971941939190595667>',
+        )
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:
         assert self.view is not None
