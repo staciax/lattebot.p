@@ -45,7 +45,7 @@ class ContextMenu(MixinMeta):
 
         await interaction.response.defer(ephemeral=True)
 
-        user = await self.get_user(interaction.user.id)  # type: ignore
+        user = await self.fetch_user(interaction.user.id)  # type: ignore
         account_manager = AccountManager(user, self.bot)
         await account_manager.wait_until_ready()
 
@@ -72,7 +72,7 @@ class ContextMenu(MixinMeta):
         self, interaction: discord.Interaction[LatteMaid], user: discord.User | discord.Member
     ) -> None:
         # author
-        author = await self.get_user(interaction.user.id)  # type: ignore
+        author = await self.fetch_user(interaction.user.id)  # type: ignore
         author_account_manager = AccountManager(author, self.bot)
         await author_account_manager.wait_until_ready()
 
@@ -84,7 +84,7 @@ class ContextMenu(MixinMeta):
             raise RuntimeError('game_name or tag_line is None')
 
         # target
-        target = await self.get_user(user.id)  # type: ignore
+        target = await self.fetch_user(user.id)  # type: ignore
         target_account_manager = AccountManager(target, self.bot)
         await target_account_manager.wait_until_ready()
 

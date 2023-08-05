@@ -1,5 +1,3 @@
-import logging
-
 import yarl
 from valorantx import RiotAuth as RiotAuth_
 
@@ -8,8 +6,6 @@ __all__ = (
     'RiotAuth',
 )
 # fmt: on
-
-_log = logging.getLogger(__name__)
 
 
 # https://github.com/floxay/python-riot-auth

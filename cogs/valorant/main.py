@@ -85,10 +85,10 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     # check
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
-        if await interaction.client.is_owner(interaction.user):
-            return True
         if not self.valorant_client.is_ready():
             raise UserInputError(_('Valorant client is not ready. Please try again later.', interaction.locale))
+        if await interaction.client.is_owner(interaction.user):
+            return True
         return super().interaction_check(interaction)
 
     # user
@@ -244,10 +244,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def battlepass(self, interaction: discord.Interaction[LatteMaid], season: str | None = None) -> None:
-        view = GamePassView(
-            interaction,
-            valorantx.RelationType.season,
-        )
+        view = GamePassView(interaction, valorantx.RelationType.season)
         await view.start_valorant()
 
     @app_commands.command(name=_T('eventpass'), description=_T('View your Eventpass current tier'))
@@ -256,10 +253,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def eventpass(self, interaction: discord.Interaction[LatteMaid], event: str | None = None) -> None:
-        view = GamePassView(
-            interaction,
-            valorantx.RelationType.event,
-        )
+        view = GamePassView(interaction, valorantx.RelationType.event)
         await view.start_valorant()
 
     @app_commands.command(name=_T('mission'), description=_T('View your daily/weekly mission progress'))
@@ -280,10 +274,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def agents(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        view = GamePassView(
-            interaction,
-            valorantx.RelationType.agent,
-        )
+        view = GamePassView(interaction, valorantx.RelationType.agent)
         await view.start_valorant()
 
     @app_commands.command(name=_T('carrier'), description=_T('Shows your carrier'))

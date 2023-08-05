@@ -1,6 +1,9 @@
 from valorantx.utils import MISSING as MISSING
 
-__all__ = ('MISSING',)
+__all__ = (
+    'MISSING',
+    'validate_riot_id',
+)
 
 
 def validate_riot_id(riot_id: str) -> tuple[str, str]:

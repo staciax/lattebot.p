@@ -77,10 +77,11 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_load(self, interaction: Interaction[LatteMaid], extension: Literal[EXTENSIONS]) -> None:
+        await interaction.response.defer(ephemeral=True)
         await self.bot.load_extension(f'{extension}')
 
         embed = Embed(description=f"**Loaded**: `{extension}`").success()
-        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+        await interaction.followup.send(embed=embed, silent=True)
 
     @extension.command(name=_T('unload'), description=_T('Unload an extension'))
     @app_commands.describe(extension=_T('extension name'))
@@ -88,10 +89,11 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_unload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
+        await interaction.response.defer(ephemeral=True)
         await self.bot.unload_extension(f'{extension}')
 
         embed = Embed(description=f'**Unloaded**: `{extension}`').success()
-        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+        await interaction.followup.send(embed=embed, silent=True)
 
     @extension.command(name=_T('reload'))
     @app_commands.describe(extension=_T('extension name'))
@@ -99,12 +101,12 @@ class Developer(commands.Cog, name='developer'):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @owner_only()
     async def extension_reload(self, interaction: Interaction[LatteMaid], extension: EXTENSIONS) -> None:
-        """Reloads an extension."""
+        await interaction.response.defer(ephemeral=True)
 
         await self.bot.reload_extension(f'{extension}')
 
         embed = Embed(description=f"**Reloaded**: `{extension}`").success()
-        await interaction.response.send_message(embed=embed, ephemeral=True, silent=True)
+        await interaction.followup.send(embed=embed, silent=True)
 
     @app_commands.command(name='sync', description='Syncs the application commands to Discord.')
     @app_commands.rename(guild_id=_T('guild_id'))
