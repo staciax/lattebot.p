@@ -56,7 +56,7 @@ def context_menu(
     return inner
 
 
-class Cog(commands.Cog):
+class MaidCog(commands.Cog):
     __cog_context_menus__: list[app_commands.ContextMenu]
 
     def _get_file_path(self) -> str | None:

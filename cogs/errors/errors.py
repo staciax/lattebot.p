@@ -11,7 +11,7 @@ from discord import app_commands, ui
 from jishaku.paginators import PaginatorInterface, WrappedPaginator
 
 from core import database, errors
-from core.cog import Cog
+from core.cog import MaidCog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
 from core.ui.views import BaseView
@@ -164,7 +164,7 @@ def _log_error(interaction: discord.Interaction[LatteMaid], error: Exception) ->
 
 
 @cog_i18n(_)
-class Errors(Cog, name='errors'):
+class Errors(MaidCog, name='errors'):
     """Developer commands"""
 
     def __init__(self, bot: LatteMaid) -> None:
@@ -192,7 +192,7 @@ class Errors(Cog, name='errors'):
         if self.bot.traceback_log is not None:
             await self.bot.traceback_log.send(embed=embed, file=traceback_fp)
 
-    @Cog.listener('on_app_command_error')
+    @MaidCog.listener('on_app_command_error')
     async def on_app_command_error(
         self, interaction: discord.Interaction[LatteMaid], error: Exception | app_commands.errors.AppCommandError
     ) -> None:
@@ -200,13 +200,13 @@ class Errors(Cog, name='errors'):
         await application_error_handler(interaction, error)
         # self.bot.loop.create_task(self.send_traceback(interaction))
 
-    @Cog.listener('on_view_error')
+    @MaidCog.listener('on_view_error')
     async def on_view_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, item: Item) -> None:
         _log_error(interaction, error)
         interaction.extras['item'] = item
         await application_error_handler(interaction, error)
 
-    @Cog.listener('on_modal_error')
+    @MaidCog.listener('on_modal_error')
     async def on_modal_error(self, interaction: discord.Interaction[LatteMaid], error: Exception, modal: Modal) -> None:
         _log_error(interaction, error)
         interaction.extras['modal'] = modal

@@ -10,7 +10,7 @@ from discord.app_commands.models import AppCommand
 from discord.ext import commands
 
 from core.checks import bot_has_permissions, cooldown_short, dynamic_cooldown, user as user_check
-from core.cog import Cog
+from core.cog import MaidCog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed as Embed
 from core.ui.views import ViewAuthor
@@ -33,7 +33,7 @@ def help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
     return embed
 
 
-def cog_embed(cog: commands.Cog | Cog, locale: discord.Locale) -> Embed:
+def cog_embed(cog: commands.Cog | MaidCog, locale: discord.Locale) -> Embed:
     emoji = getattr(cog, 'display_emoji', '')
 
     description = cog.description
@@ -48,7 +48,7 @@ def cog_embed(cog: commands.Cog | Cog, locale: discord.Locale) -> Embed:
 
 
 class HelpPageSource(ListPageSource):
-    def __init__(self, cog: commands.Cog | Cog, source: list[Command[Any, ..., Any] | Group]) -> None:
+    def __init__(self, cog: commands.Cog | MaidCog, source: list[Command[Any, ..., Any] | Group]) -> None:
         super().__init__(sorted(source, key=lambda c: c.qualified_name), per_page=6)
         self.cog = cog
 
@@ -75,7 +75,7 @@ class HelpPageSource(ListPageSource):
 
 
 class CogButton(ui.Button['HelpCommandView']):
-    def __init__(self, cog: commands.Cog | Cog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs) -> None:
+    def __init__(self, cog: commands.Cog | MaidCog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs) -> None:
         super().__init__(emoji=getattr(cog, 'display_emoji'), style=discord.ButtonStyle.primary, *args, **kwargs)
         self.cog = cog
         self.entries = entries
@@ -225,7 +225,7 @@ class HelpCommandView(ViewAuthor, LattePages):
 
 
 @cog_i18n(_)
-class Help(Cog, name='help'):
+class Help(MaidCog, name='help'):
     """Help command"""
 
     def __init__(self, bot: LatteMaid):

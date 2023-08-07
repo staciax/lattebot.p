@@ -11,7 +11,7 @@ from discord.app_commands import Choice, locale_str as _T
 
 import valorantx2 as valorantx
 from core.checks import cooldown_long, cooldown_medium, cooldown_short, dynamic_cooldown
-from core.cog import Cog
+from core.cog import MaidCog
 from core.database.models import User
 from core.errors import BadArgument, UserInputError
 from core.i18n import I18n, cog_i18n
@@ -46,7 +46,7 @@ _log = logging.getLogger(__name__)
 
 
 # thanks for redbot
-class CompositeMetaClass(type(Cog), type(ABC)):
+class CompositeMetaClass(type(MaidCog), type(ABC)):
     """
     This allows the metaclass used for proper type detection to
     coexist with discord.py's metaclass
@@ -56,7 +56,7 @@ class CompositeMetaClass(type(Cog), type(ABC)):
 
 
 @cog_i18n(_)
-class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, Cog, metaclass=CompositeMetaClass):
+class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, MaidCog, metaclass=CompositeMetaClass):
     def __init__(self, bot: LatteMaid, *_args) -> None:
         super().__init__(*_args)
         self.bot: LatteMaid = bot

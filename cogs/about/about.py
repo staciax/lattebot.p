@@ -14,7 +14,7 @@ from discord.app_commands import locale_str as _T
 from discord.app_commands.checks import bot_has_permissions
 from discord.utils import format_dt
 
-from core.cog import Cog
+from core.cog import MaidCog
 from core.i18n import I18n, cog_i18n
 from core.ui.embed import MiadEmbed
 from core.ui.views import BaseView
@@ -52,7 +52,7 @@ def get_latest_commits(limit: int = 3) -> str:
 
 
 @cog_i18n(_)
-class About(Cog, name='about'):
+class About(MaidCog, name='about'):
 
     """Latte's About command"""
 
