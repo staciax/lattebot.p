@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import random
 from datetime import timezone
 from typing import TYPE_CHECKING
 
@@ -47,7 +48,8 @@ class PatchNoteView(BaseView):
 
         if embed.image.url is not None:
             with contextlib.suppress(Exception):
-                embed.colour = await self.bot.get_or_fetch_color(latest.uid, embed.image.url, 5)
+                palettes = await self.bot.fetch_palettes(latest.uid, embed.image.url, 5)
+                embed.colour = random.choice(palettes)
 
         self.url_button(label=patch_notes.see_article_title, url=latest.url, emoji=str(self.bot.emoji.link_standard))
         return embed

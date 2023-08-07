@@ -149,8 +149,7 @@ def store_featured_e(
 
 #     embed.colour = int(skin.rarity.highlight_color[0:6], 16)
 #     if skin.rarity.display_icon is not None:
-#         embed.title = skin.rarity.emoji  # type: ignore
-
+#         embed.title = skin.rarity.emoji
 #     return embed
 
 
