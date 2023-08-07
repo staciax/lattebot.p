@@ -192,14 +192,11 @@ class LatteMaid(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         # asyncio.get_running_loop().set_debug(self.is_debug_mode())
 
-        # session
         self.session = aiohttp.ClientSession()
 
-        # i18n
         self.translator = Translator(self)
         await self.tree.set_translator(self.translator)
 
-        # bot info
         self.bot_app_info = await self.application_info()
         self.owner_ids = [self.bot_app_info.owner.id, 385049730222129152]
 
