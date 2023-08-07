@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # import traceback
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import discord
 from discord.utils import MISSING
@@ -17,7 +17,7 @@ T = TypeVar('T')
 class NumberedPageModal(discord.ui.Modal, title='Go to page'):
     page = discord.ui.TextInput(label='Page', placeholder='Enter a number', min_length=1)
 
-    def __init__(self, max_pages: Optional[int]) -> None:
+    def __init__(self, max_pages: int | None) -> None:
         super().__init__()
         if max_pages is not None:
             as_string = str(max_pages)
@@ -71,7 +71,7 @@ class PageSource:
         """
         raise NotImplementedError
 
-    def get_max_pages(self) -> Optional[int]:
+    def get_max_pages(self) -> int | None:
         """An optional abstract method that retrieves the maximum number of pages
         this page source has. Useful for UX purposes.
         The default implementation returns ``None``.
@@ -102,7 +102,7 @@ class PageSource:
         """
         raise NotImplementedError
 
-    async def format_page(self, menu: Any, page: Any) -> Union[discord.Embed, str, Dict[Any, Any]]:
+    async def format_page(self, menu: Any, page: Any) -> discord.Embed | str | dict[Any, Any]:
         """|maybecoro|
         An abstract method to format the page.
         This method must return one of the following types.
@@ -142,7 +142,7 @@ class ListPageSource(PageSource, Generic[T]):
         How many elements are in a page.
     """
 
-    def __init__(self, entries: List[T], per_page: int = 12):
+    def __init__(self, entries: list[T], per_page: int = 12):
         self.entries = entries
         self.per_page = per_page
 
@@ -160,7 +160,7 @@ class ListPageSource(PageSource, Generic[T]):
         """:class:`int`: The maximum number of pages required to paginate this sequence."""
         return self._max_pages
 
-    async def get_page(self, page_number: int) -> Union[Any, List[Any]]:
+    async def get_page(self, page_number: int) -> Any | list[Any]:
         """Returns either a single element of the sequence or
         a slice of the sequence.
         If :attr:`per_page` is set to ``1`` then this returns a single
@@ -195,7 +195,7 @@ class LattePages(discord.ui.View):
         else:
             self.interaction = MISSING
         self.interaction: discord.Interaction[LatteMaid] = interaction
-        self.message: Optional[discord.Message] = None
+        self.message: discord.Message | None = None
         self.current_page: int = 0
         self.compact: bool = compact
         self.clear_items()
@@ -223,7 +223,7 @@ class LattePages(discord.ui.View):
                 self.add_item(self.numbered_page)
             self.add_item(self.stop_pages)
 
-    async def _get_kwargs_from_page(self, page: int) -> Dict[str, Any]:
+    async def _get_kwargs_from_page(self, page: int) -> dict[str, Any]:
         value = await discord.utils.maybe_coroutine(self.source.format_page, self, page)
         if isinstance(value, dict):
             return value
@@ -317,7 +317,7 @@ class LattePages(discord.ui.View):
         # except discord.HTTPException:
         #     pass
 
-    async def start(self, page_number: int = 0, *, content: Optional[str] = None, ephemeral: bool = False) -> None:
+    async def start(self, page_number: int = 0, *, content: str | None = None, ephemeral: bool = False) -> None:
         if self.check_embeds and not self.interaction.channel.permissions_for(self.interaction.guild.me).embed_links:  # type: ignore
             # TODO: handle this case better send or followup
             await self.interaction.response.send_message(
