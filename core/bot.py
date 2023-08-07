@@ -6,7 +6,7 @@ import logging
 import os
 import random
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import aiohttp
 import discord
@@ -108,8 +108,8 @@ class LatteMaid(commands.AutoShardedBot):
         # http session
         self.session: aiohttp.ClientSession = MISSING
 
-        # colour
-        self.colors: dict[str, list[discord.Colour]] = {}
+        # palette
+        self.palettes: dict[str, list[discord.Colour]] = {}
 
         # database
         self.db: DatabaseConnection = DatabaseConnection(
@@ -161,7 +161,7 @@ class LatteMaid(commands.AutoShardedBot):
 
     def is_blocked(self, obj: discord.abc.User | discord.Guild | int, /) -> bool:
         obj_id = obj if isinstance(obj, int) else obj.id
-        return obj_id in self.db._blacklist
+        return self.db.get_blacklist(obj_id) is not None
 
     # bot extension setup
 
@@ -231,6 +231,9 @@ class LatteMaid(commands.AutoShardedBot):
         self.bot_app_info = await self.application_info()
         self.owner_ids = [self.bot_app_info.owner.id, 385049730222129152]
 
+        # database
+        await self.db.initialize()
+
         # load cogs
         await self.cogs_load()
 
@@ -295,56 +298,51 @@ class LatteMaid(commands.AutoShardedBot):
 
     # app commands
 
-    # colors # TODO: overload
+    # palettes
 
-    def get_colors(self, id: str, /) -> list[discord.Colour] | None:
-        """Returns the colors of the image."""
-        if id in self.colors:
-            return self.colors[id]
-        return None
+    @overload
+    def get_palettes(self, id: str, /, *, onlyone: Literal[True] = True) -> discord.Colour | None:
+        ...
 
-    def get_color(self, id: str, /) -> discord.Colour | None:
-        """Returns the color of the image."""
-        colors = self.get_colors(id)
-        if colors is not None:
-            return random.choice(colors)
-        return None
+    @overload
+    def get_palettes(self, id: str, /, *, onlyone: Literal[False] = False) -> list[discord.Colour] | None:
+        ...
 
-    def store_colors(self, id: str, color: list[discord.Colour]) -> list[discord.Colour]:
-        """Sets the colors of the image."""
-        self.colors[id] = color
+    def get_palettes(self, id: str, /, *, onlyone: bool = False) -> list[discord.Color] | discord.Colour | None:
+        if id not in self.palettes:
+            return None
+        palettes = self.palettes[id]
+        if onlyone:
+            return random.choice(palettes)
+        return palettes
+
+    def store_palettes(self, id: str, color: list[discord.Colour]) -> list[discord.Colour]:
+        self.palettes[id] = color
         return color
 
-    async def get_or_fetch_colors(
+    async def fetch_palettes(
         self,
         id: str,
         image: discord.Asset | str,
-        palette: int = 0,
+        palette: int = 5,
+        *,
+        store: bool = True,
     ) -> list[discord.Colour]:
-        """Returns the colors of the image."""
-        colors = self.get_colors(id)
-        if colors is not None:
-            return colors
+        palettes = self.get_palettes(id, onlyone=False)
+        if palettes is not None:
+            return palettes
         if not isinstance(image, discord.Asset):
             state = self._get_state()
             image = discord.Asset(state, url=str(image), key=id)
         file = await image.to_file(filename=id)
         to_bytes = file.fp
         if palette > 0:
-            colors = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
+            palettes = [discord.Colour.from_rgb(*c) for c in ColorThief(to_bytes).get_palette(color_count=palette)]
         else:
-            colors = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
-        return self.store_colors(id, colors)
-
-    async def get_or_fetch_color(
-        self,
-        id: str,
-        image: discord.Asset | str,
-        palette: int = 0,
-    ) -> discord.Colour:
-        """Returns a random color of the image."""
-        colors = await self.get_or_fetch_colors(id, image, palette)
-        return random.choice(colors)
+            palettes = [discord.Colour.from_rgb(*ColorThief(to_bytes).get_color())]
+        if store:
+            self.store_palettes(id, palettes)
+        return palettes
 
     # bot methods
 

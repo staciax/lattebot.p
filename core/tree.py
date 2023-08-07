@@ -104,7 +104,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         await super().on_error(interaction, error)
 
     async def insert_model_to_commands(self) -> None:
-        server_app_commands = await self.fetch_commands()
+        server_app_commands = await self.fetch_commands(with_localizations=True)
         for server in server_app_commands:
             command = self.get_command(server.name, type=server.type)
             if command is None:
@@ -121,8 +121,11 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
 
     # wait for discord adding this feature
     # fetch_commands with localizations
+    # https://github.com/Rapptz/discord.py/pull/9452
 
-    async def fetch_commands(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
+    async def fetch_commands(
+        self, *, guild: discord.abc.Snowflake | None = None, with_localizations: bool = False
+    ) -> list[app_commands.AppCommand]:
         if self.client.application_id is None:
             raise app_commands.errors.MissingApplicationID
 
@@ -133,7 +136,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         if guild is None:
             commands = await self._http.request(
                 Route('GET', '/applications/{application_id}/commands', application_id=application_id),
-                params={'with_localizations': 1},
+                params={'with_localizations': int(with_localizations)},
             )
         else:
             commands = await self._http.request(
@@ -143,7 +146,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
                     application_id=application_id,
                     guild_id=guild.id,
                 ),
-                params={'with_localizations': 1},
+                params={'with_localizations': int(with_localizations)},
             )
 
         return [app_commands.AppCommand(data=data, state=self._state) for data in commands]

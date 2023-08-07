@@ -19,8 +19,6 @@ class DatabaseConnection(_DatabaseConnection):
         self._log = logging.getLogger(__name__)
         self._blacklist: dict[int, BlackList] = {}
         self.lock = asyncio.Lock()
-        self.loop = asyncio.get_running_loop()
-        self.loop.create_task(self.initialize())
 
     async def initialize(self, drop_table: bool = False) -> None:
         await super().initialize(drop_table)
