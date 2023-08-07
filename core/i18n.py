@@ -28,6 +28,10 @@ def get_path(
     return cog_folder / 'locales' / 'strings' / '{locale}.{fmt}'.format(locale=locale, fmt=fmt)
 
 
+# i18ns: dict[str, I18n] = {}
+# TODO: add i18n to bot
+
+
 class I18n:
     def __init__(
         self,
@@ -52,6 +56,7 @@ class I18n:
             self.loop.create_task(self.load())
         else:
             self._load()
+        # i18ns[self.cog_name] = self
 
     async def load(self) -> None:
         async with self.lock:

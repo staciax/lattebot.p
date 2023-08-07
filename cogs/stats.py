@@ -36,7 +36,7 @@ class Stats(commands.Cog, name='stats'):
         if self.bot.is_blocked(interaction.user):
             return
 
-        app_command_type = app_command.type.value if isinstance(app_command, ContextMenu) else 1  # 1 is slash command
+        command_type = app_command.type.value if isinstance(app_command, ContextMenu) else 1  # 1 is slash command
         channel = interaction.channel
 
         destination = None
@@ -50,7 +50,7 @@ class Stats(commands.Cog, name='stats'):
         _log.info(f'{interaction.created_at}: {interaction.user} in {destination}: /{app_command.qualified_name}')
 
         await self.bot.db.add_app_command(
-            type=app_command_type,
+            type=command_type,
             command=app_command.qualified_name,
             guild=guild_id,
             channel=interaction.channel_id,

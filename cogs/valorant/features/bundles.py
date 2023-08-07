@@ -27,7 +27,6 @@ from valorantx2.models import (
 )
 
 from ..utils import locale_converter
-from . import embeds as e
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -50,6 +49,35 @@ SprayItem = Spray | SprayLevel
 BuddyItem = Buddy | BuddyLevel
 
 _log = logging.getLogger(__name__)
+
+
+def select_featured_bundle_e(bundle: FeaturedBundle, *, locale: discord.Locale) -> Embed:
+    valorant_locale = locale_converter.to_valorant(locale)
+    embed = Embed(
+        title=bundle.display_name_localized(valorant_locale),
+        description=(
+            f'{VALORANT_POINT_EMOJI} {chat.bold(str(bundle.discounted_cost))} - '
+            f'expires {format_dt(bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}'
+        ),
+        custom_id=bundle.uuid,
+    )
+    if bundle.extra_description is not None:
+        embed.description = f'{chat.italics(bundle.extra_description.from_locale(valorant_locale))}\n' + (
+            embed.description or ''
+        )
+    if bundle.display_icon_2 is not None:
+        embed.set_thumbnail(url=bundle.display_icon_2.url)
+
+    return embed
+
+
+def select_featured_bundles_e(bundles: list[FeaturedBundle], *, locale: discord.Locale) -> list[Embed]:
+    embeds = []
+    for bundle in bundles:
+        if bundle is None:
+            continue
+        embeds.append(select_featured_bundle_e(bundle, locale=locale))
+    return embeds
 
 
 def bundle_item_e(
@@ -248,7 +276,7 @@ class FeaturedBundleView(ViewAuthor):
 
         if len(self.bundles) > 1:
             self.build_buttons(list(self.bundles.values()))
-            embeds = e.select_featured_bundles_e(
+            embeds = select_featured_bundles_e(
                 list(self.bundles.values()),
                 locale=self.locale,
             )

@@ -42,6 +42,61 @@ _log = logging.getLogger(__name__)
 _ = I18n('valorant.features.storefront', Path(__file__).resolve().parent, read_only=True)
 
 
+# ShooterGame/Content/RecruitmentData/Cable_RecruitmentData.uasset
+# RECRUITMENT_END_DATE_TICKS = 638259156000000000
+# RECRUITMENT_MILESTONE_THRESHOLD = 200_000
+# def store_agents_recruitment_e(
+#     agent: Agent,
+#     recruitment_progress: RecruitmentProgressUpdate | None,
+#     riot_id: str,
+#     *,
+#     locale: discord.Locale = discord.american_english,
+# ) -> Embed:
+#     valorant_locale = locale_converter.to_valorant(locale)
+#     embed = Embed(
+#         colour=int(random.choice(agent.background_gradient_colors)[:-2], 16),
+#         # description=chat.bold(f'{agent.display_name_localized(valorant_locale)}\n'),
+#     ).purple()
+#     embed.set_author(name=f'Agent Recruiment Event')
+#     embed.set_thumbnail(url=agent.display_icon)
+#     embed.set_image(url=agent.full_portrait_v2)
+#     embed.set_footer(text=riot_id)
+
+#     # unlock
+
+#     if recruitment_progress is None:
+#         unlock_value = '0 / {0:,} XP'.format(RECRUITMENT_MILESTONE_THRESHOLD)
+#     else:
+#         unlock_value = '{0.progress_after:,} / {0.milestone_threshold:,} XP'.format(recruitment_progress)
+
+#     end_date = datetime.datetime(1, 1, 1) + datetime.timedelta(microseconds=RECRUITMENT_END_DATE_TICKS / 10)
+#     if datetime.datetime.now() < end_date:
+#         unlock_value += f'\nEnds {format_dt(end_date.replace(tzinfo=datetime.timezone.utc), style="R")}\n'
+
+#     embed.add_field(
+#         name='UNLOCK: ' + chat.bold(f'{agent.display_name_localized(valorant_locale)}\n'),
+#         value=unlock_value,
+#     )
+
+#     # recruit
+
+#     new_agent_note = (
+#         chat.bold('NOTE: ')
+#         + ' '
+#         + chat.italics(
+#             'For the first 28 days, new Agents can only be unlocked using VP or you can unlock them by earning XP during the Agent Recruitment Event.'
+#         )
+#     )
+
+#     embed.add_field(
+#         name='RECRUIT',
+#         value=f'{VALORANT_POINT_EMOJI} 1,000\n{KINGDOM_CREDIT_EMOJI} 8,000\n{new_agent_note}',
+#         inline=False,
+#     )
+
+#     return embed
+
+
 def skin_e(
     skin: Skin | SkinLevel | SkinChroma | SkinLevelOffer | SkinLevelBonus,
     *,
@@ -84,6 +139,19 @@ def store_featured_e(
         embeds.append(skin_e(skin, locale=locale))
 
     return embeds
+
+
+# def skin_e_hide(skin: SkinLevelBonus) -> Embed:
+#     embed = Embed().empty_title().dark()
+
+#     if skin.rarity is None:
+#         return embed
+
+#     embed.colour = int(skin.rarity.highlight_color[0:6], 16)
+#     if skin.rarity.display_icon is not None:
+#         embed.title = skin.rarity.emoji  # type: ignore
+
+#     return embed
 
 
 def nightmarket_front_e(bonus: BonusStore, riot_id: str, *, locale: discord.Locale) -> Embed:

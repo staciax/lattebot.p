@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
 import discord
-from discord import app_commands, ui
+from discord import app_commands
 from discord.app_commands import Choice, locale_str as _T
 
 import valorantx2 as valorantx
@@ -29,14 +28,13 @@ from .features.bundles import FeaturedBundleView
 from .features.gamepass import GamePassView
 from .features.loadout import CollectionView
 from .features.mission import MissionView
+from .features.patchnote import PatchNoteView
 from .features.storefront import NightMarketView, StoreFrontView
 from .features.wallet import WalletView
 from .notifications import Notifications
 from .schedule import Schedule
-from .ui import embeds as e
 from .ui.auth import ManageView as RiotAuthManageView
 from .ui.views import CarrierView
-from .utils import locale_converter
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -85,10 +83,10 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     # check
 
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid]) -> bool:
-        if not self.valorant_client.is_ready():
-            raise UserInputError(_('Valorant client is not ready. Please try again later.', interaction.locale))
         if await interaction.client.is_owner(interaction.user):
             return True
+        if not self.valorant_client.is_ready():
+            raise UserInputError(_('Valorant client is not ready. Please try again later.', interaction.locale))
         return super().interaction_check(interaction)
 
     # user
@@ -366,31 +364,8 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
     @app_commands.guild_only()
     @dynamic_cooldown(cooldown_short)
     async def patchnote(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        await interaction.response.defer()
-
-        patch_notes = await self.valorant_client.fetch_patch_notes(locale_converter.to_valorant(interaction.locale))
-        latest = patch_notes.get_latest_patch_note()
-        if latest is not None:
-            pns = await self.valorant_client.fetch_patch_note_from_site(latest.url)
-
-            embed = e.patch_note_e(latest, pns.banner.url if pns.banner is not None else None)
-
-            if embed.image.url is not None:
-                with contextlib.suppress(Exception):
-                    embed.colour = await self.bot.get_or_fetch_color(latest.uid, embed.image.url, 5)
-
-            view = ui.View().add_item(
-                ui.Button(
-                    label=patch_notes.see_article_title,
-                    url=latest.url,
-                    emoji=str(self.bot.emoji.link_standard),
-                )
-            )
-
-            await interaction.followup.send(embed=embed, view=view)
-
-        else:
-            raise UserInputError('Patch note not found')
+        view = PatchNoteView(interaction)
+        await view.start()
 
     # esports
 

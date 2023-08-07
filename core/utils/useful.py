@@ -12,6 +12,8 @@ __all__ = (
 
 
 def reading_recursive(root: str, /) -> Iterable[int]:
+    if root.startswith('./venv'):
+        return
     for x in os.listdir(root):
         if os.path.isdir(x):
             yield from reading_recursive(root + "/" + x)

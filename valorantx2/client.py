@@ -5,9 +5,8 @@ import logging
 from typing import TYPE_CHECKING, Iterator
 
 from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
-from valorantx.client import Client as _Client, _loop
+from valorantx.client import Client as _Client
 from valorantx.enums import Locale, QueueType, Region
-from valorantx.models.config import Config
 from valorantx.models.contracts import Contracts
 from valorantx.models.daily_ticket import DailyTicket
 from valorantx.models.favorites import Favorites
@@ -15,7 +14,6 @@ from valorantx.models.loadout import Loadout
 from valorantx.models.mmr import MatchmakingRating
 from valorantx.models.party import Party, PartyPlayer
 from valorantx.models.store import StoreFront, Wallet
-from valorantx.models.user import ClientUser
 from valorantx.utils import MISSING
 
 from .http import HTTPClient
@@ -44,26 +42,17 @@ __all__ = (
 
 _log = logging.getLogger(__name__)
 
-# https://valorant.dyn.riotcdn.net/x/content-catalog/PublicContentCatalog-{branch}.zip
-
 
 # valorantx Client customized for lattemaid
 class Client(_Client):
     def __init__(self, bot: LatteMaid = MISSING) -> None:
+        super().__init__(
+            region=Region.AsiaPacific,  # default region
+            locale=Locale.american_english,  # default locale
+        )  # default region
         self.bot: LatteMaid = bot
-        self.locale: Locale = Locale.english
-        self.loop: asyncio.AbstractEventLoop = _loop
         self.http: HTTPClient = HTTPClient(self.loop)
         self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
-        self._closed: bool = False
-        self._version: Version = MISSING
-        self._ready: asyncio.Event = MISSING
-        self._authorized: asyncio.Event = MISSING
-        self._season: Season = MISSING
-        self._act: Season = MISSING
-        self._configs: dict[Region, Config] = {}
-        self.me: ClientUser = MISSING
-        self._tasks: dict[str, asyncio.Task[None]] = {}
         self.lock: asyncio.Lock = asyncio.Lock()
 
     @property
