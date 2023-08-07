@@ -25,9 +25,7 @@ from .valorant_api_client import ValorantAPIClient
 if TYPE_CHECKING:
     from valorantx.models.match import MatchHistory
     from valorantx.models.patchnotes import PatchNotes
-    from valorantx.models.seasons import Season
     from valorantx.models.store import FeaturedBundle
-    from valorantx.models.version import Version
 
     from core.bot import LatteMaid
 
@@ -49,35 +47,11 @@ class Client(_Client):
         super().__init__(
             region=Region.AsiaPacific,  # default region
             locale=Locale.american_english,  # default locale
-        )  # default region
+        )
         self.bot: LatteMaid = bot
         self.http: HTTPClient = HTTPClient(self.loop)
         self.valorant_api: ValorantAPIClient = ValorantAPIClient(self.http._session, self.locale)
         self.lock: asyncio.Lock = asyncio.Lock()
-
-    @property
-    def version(self) -> Version:
-        return self._version
-
-    @version.setter
-    def version(self, value: Version) -> None:
-        self._version = value
-
-    @property
-    def season(self) -> Season:
-        return self._season
-
-    @season.setter
-    def season(self, value: Season) -> None:
-        self._season = value
-
-    @property
-    def act(self) -> Season:
-        return self._act
-
-    @act.setter
-    def act(self, value: Season) -> None:
-        self._act = value
 
     async def clear(self) -> None:
         super().clear()
