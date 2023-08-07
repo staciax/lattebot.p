@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import valorantx2 as valorantx
 from core.enums import Emoji
 
+from . import __version__
 from .db import DatabaseConnection
 from .translator import Translator
 from .tree import LatteMaidTree
@@ -35,7 +36,6 @@ os.environ['JISHAKU_NO_UNDERSCORE'] = 'True'
 os.environ['JISHAKU_HIDE'] = 'True'
 
 description = 'Hello, I\'m latte maid, a bot made by discord: stacia.(240059262297047041)'
-
 
 INITIAL_EXTENSIONS = (
     'cogs.about',
@@ -63,10 +63,10 @@ class LatteMaid(commands.AutoShardedBot):
         tree_sync_at_startup: bool = False,
     ) -> None:
         # intents
-        intents = discord.Intents.none()  # set all intents to False
+        intents = discord.Intents.none()
         intents.guilds = True
         intents.emojis_and_stickers = True
-        # intents.dm_messages = True # wait for implementation modmail?
+        # intents.dm_messages = True # TODO: implementation modmail?
 
         # allowed_mentions
         allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, replied_user=False, users=True)
@@ -82,32 +82,21 @@ class LatteMaid(commands.AutoShardedBot):
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='luna ♡ ₊˚'),
         )
-
         # config
         self._debug_mode: bool = debug_mode
         self._tree_sync_at_startup: bool = tree_sync_at_startup
-        self._version: str = '1.0.0a'
-
-        # assets
+        self._version: str = __version__
         self.emoji: type[Emoji] = Emoji
-
-        # support guild
         self.support_guild_id: int = 1097859504906965042
         self.support_invite_url: str = 'https://discord.gg/mKysT7tr2v'
-
         # maintenance
         self._is_maintenance: bool = False
         self.maintenance_message: str = 'Bot is in maintenance mode.'
         self.maintenance_time: datetime.datetime | None = None
-
         # palette
         self.palettes: dict[str, list[discord.Colour]] = {}
-
         # database
-        self.db: DatabaseConnection = DatabaseConnection(
-            os.environ['DATABASE_URL' + ('_TEST' if debug_mode else '')],
-        )
-
+        self.db: DatabaseConnection = DatabaseConnection(os.environ['DATABASE_URL' + ('_TEST' if debug_mode else '')])
         # valorant
         self.valorant_client: valorantx.Client = valorantx.Client(self)
 
