@@ -5,13 +5,11 @@ import datetime
 import logging
 import os
 import random
-import traceback
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 import aiohttp
 import discord
 from discord.ext import commands
-from discord.utils import MISSING
 from dotenv import load_dotenv
 
 import valorantx2 as valorantx
@@ -39,7 +37,7 @@ os.environ['JISHAKU_HIDE'] = 'True'
 description = 'Hello, I\'m latte maid, a bot made by discord: stacia.(240059262297047041)'
 
 
-initial_extensions = (
+INITIAL_EXTENSIONS = (
     'cogs.about',
     'cogs.admin',
     'cogs.errors',
@@ -101,12 +99,6 @@ class LatteMaid(commands.AutoShardedBot):
         self._is_maintenance: bool = False
         self.maintenance_message: str = 'Bot is in maintenance mode.'
         self.maintenance_time: datetime.datetime | None = None
-
-        # i18n
-        self.translator: Translator = MISSING
-
-        # http session
-        self.session: aiohttp.ClientSession = MISSING
 
         # palette
         self.palettes: dict[str, list[discord.Colour]] = {}
@@ -185,17 +177,11 @@ class LatteMaid(commands.AutoShardedBot):
 
     async def cogs_load(self) -> None:
         """Load cogs."""
-        cogs = await asyncio.gather(
-            *[self.load_extension(extension) for extension in initial_extensions], return_exceptions=True
-        )
-        [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
+        await asyncio.gather(*[self.load_extension(extension) for extension in INITIAL_EXTENSIONS])
 
     async def cogs_unload(self) -> None:
         """Unload cogs."""
-        cogs = await asyncio.gather(
-            *[self.unload_extension(extension) for extension in initial_extensions], return_exceptions=True
-        )
-        [traceback.print_exception(c) for c in cogs if isinstance(c, commands.errors.ExtensionError)]
+        await asyncio.gather(*[self.unload_extension(extension) for extension in INITIAL_EXTENSIONS])
 
     async def run_valorant_client(self) -> None:
         username = os.getenv('RIOT_USERNAME')
@@ -219,13 +205,11 @@ class LatteMaid(commands.AutoShardedBot):
         # asyncio.get_running_loop().set_debug(self.is_debug_mode())
 
         # session
-        if self.session is MISSING:
-            self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession()
 
         # i18n
-        if self.translator is MISSING:
-            self.translator = Translator(self)
-            await self.tree.set_translator(self.translator)
+        self.translator = Translator(self)
+        await self.tree.set_translator(self.translator)
 
         # bot info
         self.bot_app_info = await self.application_info()

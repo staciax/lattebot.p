@@ -194,7 +194,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        subs = []
+        subs: list[str] = []
 
         for command in self.walk_commands():
             if command == self.jsk:

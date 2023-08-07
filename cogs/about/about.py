@@ -70,11 +70,11 @@ class About(MaidCog, name='about'):
         locale = interaction.locale
         embed = MiadEmbed().secondary()
         embed.set_author(
-            name=f'{self.bot.user.name} ' + _('invite.bot', locale),  # type: ignore
+            name=f'{self.bot.user.name} ' + _('invite.bot', locale),
             url=self.bot.get_invite_url(),
-            icon_url=self.bot.user.avatar,  # type: ignore
+            icon_url=self.bot.user.avatar,
         )
-        embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')  # type: ignore
+        embed.set_footer(text=f'{self.bot.user.name} | v{self.bot.version}')
         embed.set_image(
             url='https://cdn.discordapp.com/attachments/1001848697316987009/1001858419990478909/invite_banner.png'
         )
@@ -156,8 +156,8 @@ class About(MaidCog, name='about'):
     async def support(self, interaction: discord.Interaction[LatteMaid]) -> None:
         locale = interaction.locale
         embed = MiadEmbed()
-        embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)  # type: ignore
-        embed.set_thumbnail(url=self.bot.user.avatar)  # type: ignore
+        embed.set_author(name='ꜱᴜᴘᴘᴏʀᴛ:', icon_url=self.bot.user.avatar, url=self.bot.support_invite_url)
+        embed.set_thumbnail(url=self.bot.user.avatar)
 
         view = BaseView()
         view.url_button(_('support.server', locale), self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))

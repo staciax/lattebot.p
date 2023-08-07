@@ -26,8 +26,8 @@ def help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
     bot = interaction.client
     embed = Embed(timestamp=interaction.created_at).white()
     embed.set_author(
-        name=f'{bot.user.display_name} - ' + _('help.command', interaction.locale),  # type: ignore
-        icon_url=bot.user.display_avatar,  # type: ignore
+        name=f'{bot.user.display_name} - ' + _('help.command', interaction.locale),
+        icon_url=bot.user.display_avatar,
     )
     embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
     return embed
