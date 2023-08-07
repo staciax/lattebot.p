@@ -55,7 +55,6 @@ class LatteMaid(commands.AutoShardedBot):
     user: discord.ClientUser
     bot_app_info: discord.AppInfo
     tree: LatteMaidTree
-    db: DatabaseConnection
 
     def __init__(
         self,
