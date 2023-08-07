@@ -82,7 +82,6 @@ class LatteMaid(commands.AutoShardedBot):
             tree_cls=LatteMaidTree,
             activity=discord.Activity(type=discord.ActivityType.listening, name='luna ♡ ₊˚'),
         )
-        # config
         self._debug_mode: bool = debug_mode
         self._tree_sync_at_startup: bool = tree_sync_at_startup
         self._version: str = __version__
