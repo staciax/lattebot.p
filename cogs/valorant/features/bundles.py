@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import discord
 from discord import ui
@@ -16,13 +16,19 @@ from valorantx2.emojis import VALORANT_POINT_EMOJI
 from valorantx2.models import (
     Buddy,
     BuddyLevel,
+    BuddyLevelBundle,
     BundleItemOffer,
     FeaturedBundle,
     PlayerCard,
+    PlayerCardBundle,
+    PlayerTitle,
+    PlayerTitleBundle,
     Skin,
     SkinChroma,
     SkinLevel,
+    SkinLevelBundle,
     Spray,
+    SprayBundle,
     SprayLevel,
 )
 
@@ -30,23 +36,15 @@ from ..utils import locale_converter
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
-    from valorantx2.models import (
-        BuddyLevelBundle,
-        Bundle,
-        PlayerCardBundle,
-        PlayerTitle,
-        PlayerTitleBundle,
-        SkinLevelBundle,
-        SprayBundle,
-    )
+    from valorantx2.models import Bundle
 
     BundleItem = Skin | Buddy | Spray | PlayerCard | PlayerTitle
-    FeaturedBundleItem = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
 
+FeaturedBundleItem: TypeAlias = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
+SkinItem: TypeAlias = Skin | SkinLevel | SkinChroma
+SprayItem: TypeAlias = Spray | SprayLevel
+BuddyItem: TypeAlias = Buddy | BuddyLevel
 
-SkinItem = Skin | SkinLevel | SkinChroma
-SprayItem = Spray | SprayLevel
-BuddyItem = Buddy | BuddyLevel
 
 _log = logging.getLogger(__name__)
 
