@@ -139,6 +139,10 @@ class LatteMaid(commands.AutoShardedBot):
     #     hook = discord.Webhook.partial(id=wh_id, token=wh_token, session=self.session)
     #     return hook
 
+    # @discord.utils.cached_property
+    # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
+    #     return self.get_channel(config.traceback_channel_id)
+
     def is_blocked(self, obj: discord.abc.User | discord.Guild | int, /) -> bool:
         obj_id = obj if isinstance(obj, int) else obj.id
         return self.db.get_blacklist(obj_id) is not None
@@ -260,12 +264,6 @@ class LatteMaid(commands.AutoShardedBot):
 
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         _log.exception('Ignoring exception in %s', event_method)
-
-    # @discord.utils.cached_property
-    # def traceback_log(self) -> Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]]:
-    #     return self.get_channel(config.traceback_channel_id)
-
-    # app commands
 
     # palettes
 
