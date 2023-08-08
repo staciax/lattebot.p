@@ -10,15 +10,14 @@ from .models.custom.content_tiers import ContentTier
 from .models.custom.currencies import Currency
 from .models.custom.gamemodes import GameMode
 
+if TYPE_CHECKING:
+    from valorantx.valorant_api.types import agents, competitive_tiers, content_tiers, currencies, gamemodes
+
 # fmt: off
 __all__ = (
     'ValorantAPICache',
 )
 # fmt: on
-
-
-if TYPE_CHECKING:
-    from valorantx.valorant_api.types import agents, competitive_tiers, content_tiers, currencies, gamemodes
 
 
 class ValorantAPICache(CacheState):

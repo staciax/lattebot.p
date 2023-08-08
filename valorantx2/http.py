@@ -8,12 +8,6 @@ from valorantx.http import EndpointType, HTTPClient as _HTTPClient, Route
 
 from .errors import BadRequest
 
-# fmt: off
-__all__ = (
-    'HTTPClient',
-)
-# fmt: on
-
 if TYPE_CHECKING:
     from asyncio import AbstractEventLoop
 
@@ -23,6 +17,11 @@ if TYPE_CHECKING:
     from .auth import RiotAuth
     from .types import account_henrikdev
 
+# fmt: off
+__all__ = (
+    'HTTPClient',
+)
+# fmt: on
 
 _log = logging.getLogger(__name__)
 

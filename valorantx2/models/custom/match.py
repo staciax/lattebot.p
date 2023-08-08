@@ -7,14 +7,14 @@ from valorantx.models.match import MatchDetails as ValorantXMatchDetails, RoundR
 
 from ...emojis import get_round_result_emoji
 
+if TYPE_CHECKING:
+    from valorantx.models.match import MatchPlayer as ValorantXMatchPlayer
+    from valorantx.types.match import MatchDetails as MatchDetailsPayload
+
 __all__ = (
     'RoundResult',
     'MatchDetails',
 )
-
-if TYPE_CHECKING:
-    from valorantx.models.match import MatchPlayer as ValorantXMatchPlayer
-    from valorantx.types.match import MatchDetails as MatchDetailsPayload
 
 
 class RoundResult(ValorantXRoundResult):

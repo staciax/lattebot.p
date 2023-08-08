@@ -22,12 +22,6 @@ from .models.custom.match import MatchDetails
 from .models.custom.store import AgentStore
 from .valorant_api_client import ValorantAPIClient
 
-# fmt: off
-__all__ = (
-    'Client',
-)
-# fmt: on
-
 if TYPE_CHECKING:
     from valorantx.models.match import MatchHistory
     from valorantx.models.patchnotes import PatchNotes
@@ -36,6 +30,12 @@ if TYPE_CHECKING:
     from core.bot import LatteMaid
 
     from .auth import RiotAuth
+
+# fmt: off
+__all__ = (
+    'Client',
+)
+# fmt: on
 
 
 _log = logging.getLogger(__name__)
