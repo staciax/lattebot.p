@@ -53,21 +53,6 @@ class Events(MixinMeta):
     #     """Called when a user's riot account fails to update"""
     #     _log.info(f'User agent {user_agent} is forbidden')
 
-    @commands.Cog.listener()
-    async def on_valorant_version_update(self) -> None:
-        ...
-
-    async def do_checker_version(self) -> None:
-        _log.info(f'checking valorant version')
-        version = await self.valorant_client.valorant_api.fetch_version()
-
-        if version is None:
-            _log.warning(f'failed to fetch valorant version')
-            return
-
-        if version != self.valorant_client.version:
-            self.valorant_client.version = version
-            # TODO: make method to update version
-            await self.valorant_client.valorant_api.cache.init()
-            RiotAuth.RIOT_CLIENT_USER_AGENT = f'RiotClient/{version.riot_client_build} %s (Windows;10;;Professional, x64)'
-            _log.info(f'valorant client version updated to {version}')
+    # @commands.Cog.listener()
+    # async def on_valorant_version_update(self) -> None:
+    #     ...
