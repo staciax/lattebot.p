@@ -63,8 +63,8 @@ def select_featured_bundle_e(bundle: FeaturedBundle, *, locale: discord.Locale) 
         embed.description = f'{chat.italics(bundle.extra_description.from_locale(valorant_locale))}\n' + (
             embed.description or ''
         )
-    if bundle.display_icon_2 is not None:
-        embed.set_thumbnail(url=bundle.display_icon_2.url)
+    if bundle.display_icon is not None:
+        embed.set_thumbnail(url=bundle.display_icon.url)
 
     return embed
 
