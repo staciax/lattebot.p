@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from valorantx.valorant_api import Asset
-
-if TYPE_CHECKING:
-    from ..client import Client
-    from typing_extensions import Self
-
 from bs4 import BeautifulSoup, FeatureNotFound
+from valorantx.valorant_api import Asset
 
 # fmt: off
 __all__ = (
     'PatchNoteScraper',
 )
 # fmt: on
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+    from ..client import Client
 
 
 class PatchNoteScraper:

@@ -6,15 +6,15 @@ from valorantx.valorant_api.models import Ability as ValorantAPIAbility, Agent a
 
 from ...emojis import get_ability_emoji, get_agent_emoji
 
-if TYPE_CHECKING:
-    from valorantx.valorant_api.types.agents import Agent as AgentPayload
-
-    from ...valorant_api_cache import ValorantAPICache
-
 __all__ = (
     'Ability',
     'Agent',
 )
+
+if TYPE_CHECKING:
+    from valorantx.valorant_api.types.agents import Agent as AgentPayload
+
+    from ...valorant_api_cache import ValorantAPICache
 
 
 class Ability(ValorantAPIAbility):

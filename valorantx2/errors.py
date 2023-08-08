@@ -35,6 +35,8 @@ __all__ = (
     'RiotMultifactorError',
     'RiotUnknownResponseTypeError',
     'RiotUnknownErrorTypeError',
+    'RiotAuthRateLimitedError',
+    'RiotAuthMultiFactorInvalidCode',
 )
 
 

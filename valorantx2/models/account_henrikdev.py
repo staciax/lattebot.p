@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING
 
 from valorantx import ClientUser
 
-if TYPE_CHECKING:
-    from valorantx.valorant_api.models import PlayerCard
-
-    from ..types.account_henrikdev import Account as AccountPayload
-    from ..valorant_api_cache import ValorantAPICache
-
 # fmt: off
 __all__ = (
     'PartialUser',
 )
 # fmt: on
+
+
+if TYPE_CHECKING:
+    from valorantx.valorant_api.models import PlayerCard
+
+    from ..types.account_henrikdev import Account as AccountPayload
+    from ..valorant_api_cache import ValorantAPICache
 
 
 class PartialUser(ClientUser):

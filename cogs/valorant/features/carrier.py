@@ -608,7 +608,7 @@ class MatchDetailsEmbed:
 #                 continue
 
 #             # find match score
-#             left_team_score, right_team_score = find_match_score_by_player(match, me)  # type: ignore
+#             left_team_score, right_team_score = find_match_score_by_player(match, me)
 
 #             # build option
 #             option = discord.SelectOption(
@@ -691,7 +691,7 @@ class MatchDetailsEmbed:
 #         self.add_item(
 #             SelectMatchHistory.from_match_history(match_history=match_history, locale=self.locale),
 #         )
-#         self.source = CarrierPageSource(puuid=riot_auth.puuid, data=match_history.match_details)  # type: ignore
+#         self.source = CarrierPageSource(puuid=riot_auth.puuid, data=match_history.match_details)
 
 #     async def start_valorant(self) -> None:
 #         await self.interaction.response.defer()
@@ -704,7 +704,7 @@ class MatchDetailsEmbed:
 #     def __init__(self, match_details: MatchDetails, puuid: str, locale: discord.Locale) -> None:
 #         self.puuid = puuid
 #         self.locale = locale
-#         self.match_embed = e.MatchDetailsEmbed(match_details)  # type: ignore
+#         self.match_embed = e.MatchDetailsEmbed(match_details)
 #         super().__init__(self.build_entries(locale), per_page=1)
 
 #     def build_entries(self, locale: discord.Locale) -> list[tuple[Embed, Embed]]:

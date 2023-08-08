@@ -12,6 +12,12 @@ from valorantx2.models import PlayerCard, PlayerTitle, SkinLevel
 from ..utils import locale_converter
 from .base import BaseView
 
+# fmt: off
+__all__ = (
+    'GamePassView',
+)
+# fmt: on
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2.models import Contract, RewardValorantAPI  # MatchDetails,; MatchHistory,

@@ -18,9 +18,9 @@ from core.i18n import I18n, cog_i18n
 from valorantx2.client import Client as ValorantClient
 from valorantx2.utils import validate_riot_id
 
-from .account_manager import AccountManager
 from .admin import Admin
 from .context_menu import ContextMenu
+from .core.auth import ManageView as RiotAuthManageView
 from .core.settings import SettingsView
 from .error import ErrorHandler, RiotAuthNotLinked
 from .events import Events
@@ -33,8 +33,6 @@ from .features.storefront import NightMarketView, StoreFrontView
 from .features.wallet import WalletView
 from .notifications import Notifications
 from .schedule import Schedule
-from .ui.auth import ManageView as RiotAuthManageView
-from .ui.views import CarrierView
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid
@@ -300,16 +298,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
-
-        await interaction.response.defer()
-        queue = mode.value if mode is not None else None
-        view = CarrierView(
-            interaction,
-            AccountManager(user, self.bot),
-            queue,
-        )
-        await view.callback(interaction)
+        ...
 
     @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
     @app_commands.choices(

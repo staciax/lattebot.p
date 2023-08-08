@@ -13,6 +13,12 @@ from core.utils import chat_formatting as chat
 
 from ..utils import locale_converter
 
+# fmt: off
+__all__ = (
+    'PatchNoteView',
+)
+# fmt: on
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2 import PatchNote

@@ -10,6 +10,11 @@ from discord.app_commands import ContextMenu, Group, locale_str
 from discord.ext import commands
 from discord.utils import MISSING
 
+__all__ = (
+    'MaidCog',
+    'context_menu',
+)
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 

@@ -14,9 +14,6 @@ from discord.app_commands.checks import (
     has_role as has_role,
 )
 
-if TYPE_CHECKING:
-    from .bot import LatteMaid
-
 __all__ = (
     'owner_only',
     'Cooldown',
@@ -31,6 +28,11 @@ __all__ = (
     'cooldown_long',
     'custom_cooldown',
 )
+
+
+if TYPE_CHECKING:
+    from .bot import LatteMaid
+
 
 T = TypeVar('T')
 

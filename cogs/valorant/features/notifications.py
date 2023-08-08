@@ -10,6 +10,13 @@ from discord import ui
 from core.i18n import I18n
 from core.ui.views import ViewAuthor
 
+# fmt: off
+__all__ = (
+    'NotifyView',
+)
+# fmt: on
+
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from core.database.models import User
@@ -26,7 +33,7 @@ class NotifyView(ViewAuthor):
         super().__init__(interaction)
 
     async def _init(self) -> None:
-        user = await self.bot.db.get_user(self.author.id)
+        user = await self.bot.db.fetch_user(self.author.id)
         if user is None:
             # await self.bot.db.create_user(self.author.id, locale=self.locale)
             raise RuntimeError('User not found')

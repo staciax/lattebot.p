@@ -11,6 +11,12 @@ from core.ui.embed import MiadEmbed as Embed
 from ..utils import locale_converter
 from .base import BaseView, ValorantPageSource
 
+# fmt: off
+__all__ = (
+    'WalletView',
+)
+# fmt: on
+
 if TYPE_CHECKING:
     from core.bot import LatteMaid
     from valorantx2.models import Wallet

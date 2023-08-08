@@ -7,14 +7,14 @@ from valorantx.valorant_api_client import Client
 
 from .valorant_api_cache import ValorantAPICache
 
-if TYPE_CHECKING:
-    from aiohttp import ClientSession
-
 # fmt: off
 __all__ = (
     'ValorantAPIClient',
 )
 # fmt: on
+
+if TYPE_CHECKING:
+    from aiohttp import ClientSession
 
 
 class ValorantAPIClient(Client):

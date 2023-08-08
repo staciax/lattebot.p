@@ -3,6 +3,16 @@ from typing import Any
 import discord
 from discord.app_commands.commands import Command, ContextMenu
 
+__all__ = (
+    'LatteMaidError',
+    'AppCommandError',
+    'UserInputError',
+    'MissingRequiredArgument',
+    'BadArgument',
+    'ComponentOnCooldown',
+    'CheckFailure',
+)
+
 # TODO: improve this
 
 

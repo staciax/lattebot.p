@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from discord import Locale
 
+__all__ = (
+    'I18n',
+    'cog_i18n',
+)
+
 if TYPE_CHECKING:
     from discord.ext import commands
 

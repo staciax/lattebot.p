@@ -6,17 +6,15 @@ from valorantx.valorant_api.models import CompetitiveTier as ValorantAPICompetit
 
 from ...emojis import get_tier_emoji
 
-if TYPE_CHECKING:
-    from valorantx.valorant_api.types.competitive_tiers import CompetitiveTier as CompetitiveTierPayload
-
-    from ...valorant_api_cache import ValorantAPICache
-
-# fmt: off
 __all__ = (
     'Tier',
     'CompetitiveTier',
 )
-# fmt: on
+
+if TYPE_CHECKING:
+    from valorantx.valorant_api.types.competitive_tiers import CompetitiveTier as CompetitiveTierPayload
+
+    from ...valorant_api_cache import ValorantAPICache
 
 
 class Tier(ValorantAPITier):
