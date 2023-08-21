@@ -268,7 +268,7 @@ class Translator(_Translator):
     ) -> AppCommandLocalization | None:
         if locale not in self._app_command_localizations:
             return None
-        if command.name not in self._app_command_localizations[locale]:
+        if command.qualified_name not in self._app_command_localizations[locale]:
             return None
         return self._app_command_localizations[locale][command.qualified_name]
 
