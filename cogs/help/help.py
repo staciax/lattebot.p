@@ -238,7 +238,3 @@ class Help(MaidCog, name='help'):
         cogs = ('about', 'valorant')
         help_command = HelpCommandView(interaction, cogs)
         await help_command.start()
-
-
-async def setup(bot: LatteMaid) -> None:
-    await bot.add_cog(Help(bot))
