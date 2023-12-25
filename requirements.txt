@@ -30,4 +30,4 @@ pygit2
 uvloop; sys_platform != 'win32'
 
 # valorantx
-valorantx[speed] @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x # may be public soon?
+valorantx[speed] @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x-legacy # may be public soon?
