@@ -39,6 +39,6 @@ async def main():
     # assert not user.is_blacklisted()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

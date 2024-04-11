@@ -110,7 +110,7 @@ def match_history_select_e(
 
     embed = Embed(
         # title=match.game_mode.emoji + ' ' + match.game_mode.display_name,
-        description="{kda} {kills}/{deaths}/{assists}".format(
+        description='{kda} {kills}/{deaths}/{assists}'.format(
             # tier=((tier.emoji + ' ') if match.match_info.queue_id == 'competitive' else ''),
             kda=chat.bold('KDA'),
             kills=me.stats.kills,
@@ -191,7 +191,9 @@ class MatchDetailsEmbed:
             name='{author} // {page}'.format(
                 author=player.display_name,
                 page=(
-                    gamemode.display_name.from_locale(vlocale) if gamemode is not None and not performance else 'Performance'
+                    gamemode.display_name.from_locale(vlocale)
+                    if gamemode is not None and not performance
+                    else 'Performance'
                 ),
             ),
             icon_url=player.agent.display_icon_small if player.agent is not None else None,
@@ -232,9 +234,9 @@ class MatchDetailsEmbed:
             )
             embed.add_field(
                 name='ACS',
-                value="\n".join([self.__display_acs(p) for p in members]),
+                value='\n'.join([self.__display_acs(p) for p in members]),
             )
-            embed.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in members]))
+            embed.add_field(name='KDA', value='\n'.join([str(p.stats.kda) for p in members]))
 
             # ENEMY TEAM
             enemyteam = '\n'.join([self.__display_player(player, p, bold=False) for p in opponents])
@@ -246,9 +248,9 @@ class MatchDetailsEmbed:
             )
             embed.add_field(
                 name='ACS',
-                value="\n".join([self.__display_acs(p) for p in opponents]),
+                value='\n'.join([self.__display_acs(p) for p in opponents]),
             )
-            embed.add_field(name='KDA', value="\n".join([str(p.stats.kda) for p in opponents]))
+            embed.add_field(name='KDA', value='\n'.join([str(p.stats.kda) for p in opponents]))
 
             # page 2
 
@@ -297,7 +299,7 @@ class MatchDetailsEmbed:
             name='MY TEAM',
             value='\n'.join([self.__display_player(player, p) for p in members]),
         )
-        embed.add_field(name='FK', value="\n".join([str(p.stats.first_kills) for p in members]))
+        embed.add_field(name='FK', value='\n'.join([str(p.stats.first_kills) for p in members]))
         embed.add_field(
             name='HS%',
             value='\n'.join([(str(round(p.stats.head_shot_percent, 1)) + '%') for p in members]),

@@ -80,7 +80,7 @@ class Developer(commands.Cog, name='developer'):
         await interaction.response.defer(ephemeral=True)
         await self.bot.load_extension(f'{extension}')
 
-        embed = Embed(description=f"**Loaded**: `{extension}`").success()
+        embed = Embed(description=f'**Loaded**: `{extension}`').success()
         await interaction.followup.send(embed=embed, silent=True)
 
     @extension.command(name=_T('unload'), description=_T('Unload an extension'))
@@ -105,7 +105,7 @@ class Developer(commands.Cog, name='developer'):
 
         await self.bot.reload_extension(f'{extension}')
 
-        embed = Embed(description=f"**Reloaded**: `{extension}`").success()
+        embed = Embed(description=f'**Reloaded**: `{extension}`').success()
         await interaction.followup.send(embed=embed, silent=True)
 
     @app_commands.command(name='sync', description='Syncs the application commands to Discord.')

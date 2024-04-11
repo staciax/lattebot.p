@@ -54,7 +54,9 @@ class CompositeMetaClass(type(MaidCog), type(ABC)):
 
 
 @cog_i18n(_)
-class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, MaidCog, metaclass=CompositeMetaClass):
+class Valorant(
+    Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule, MaidCog, metaclass=CompositeMetaClass
+):
     def __init__(self, bot: LatteMaid, *_args) -> None:
         super().__init__(*_args)
         self.bot: LatteMaid = bot
@@ -297,8 +299,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
         interaction: discord.Interaction[LatteMaid],
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @app_commands.command(name=_T('match'), description=_T('Shows latest match details'))
     @app_commands.choices(
@@ -360,8 +361,7 @@ class Valorant(Admin, ContextMenu, ErrorHandler, Events, Notifications, Schedule
 
     @app_commands.command(name=_T('esports'), description=_T('Esports Hub'))
     @dynamic_cooldown(cooldown_short)
-    async def esports(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+    async def esports(self, interaction: discord.Interaction[LatteMaid]) -> None: ...
 
     # settings
 

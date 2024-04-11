@@ -58,7 +58,7 @@ def underline_bold_italics(text: str) -> str:
 
 def inline(text: str) -> str:
     """Returns an inline string"""
-    if "`" in text:
+    if '`' in text:
         return f'``{text}``'
     else:
         return f'`{text}`'

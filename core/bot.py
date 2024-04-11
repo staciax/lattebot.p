@@ -35,7 +35,7 @@ _log = logging.getLogger(__name__)
 os.environ['JISHAKU_NO_UNDERSCORE'] = 'True'
 os.environ['JISHAKU_HIDE'] = 'True'
 
-description = 'Hello, I\'m latte maid, a bot made by discord: stacia.(240059262297047041)'
+description = "Hello, I'm latte maid, a bot made by discord: stacia.(240059262297047041)"
 
 INITIAL_EXTENSIONS = (
     'cogs.about',
@@ -267,12 +267,10 @@ class LatteMaid(commands.AutoShardedBot):
     # palettes
 
     @overload
-    def get_palettes(self, id: str, /, *, onlyone: Literal[True] = True) -> discord.Colour | None:
-        ...
+    def get_palettes(self, id: str, /, *, onlyone: Literal[True] = True) -> discord.Colour | None: ...
 
     @overload
-    def get_palettes(self, id: str, /, *, onlyone: Literal[False] = False) -> list[discord.Colour] | None:
-        ...
+    def get_palettes(self, id: str, /, *, onlyone: Literal[False] = False) -> list[discord.Colour] | None: ...
 
     def get_palettes(self, id: str, /, *, onlyone: bool = False) -> list[discord.Color] | discord.Colour | None:
         if id not in self.palettes:

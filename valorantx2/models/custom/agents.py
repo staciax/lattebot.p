@@ -35,7 +35,8 @@ class Agent(ValorantAPIAgent):
     def __init__(self, *, state: ValorantAPICache, data: AgentPayload) -> None:
         super().__init__(state=state, data=data)
         self._abilities: dict[str, Ability] = {
-            ability['slot'].lower(): Ability(state=self._state, data=ability, agent=self) for ability in data['abilities']
+            ability['slot'].lower(): Ability(state=self._state, data=ability, agent=self)
+            for ability in data['abilities']
         }
 
     @property

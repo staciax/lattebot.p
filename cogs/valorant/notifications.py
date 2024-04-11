@@ -28,8 +28,7 @@ _ = I18n('valorant.events', __file__, read_only=True)
 
 
 class Notifications(MixinMeta):
-    async def send_notify(self) -> None:
-        ...
+    async def send_notify(self) -> None: ...
 
     async def do_notify_handle(self):
         async for user in self.bot.db.fetch_users():

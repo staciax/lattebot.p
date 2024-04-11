@@ -30,6 +30,6 @@ async def db():
 
 
 class DatabaseSetup:
-    @pytest_asyncio.fixture(scope="class", autouse=True)
+    @pytest_asyncio.fixture(scope='class', autouse=True)
     async def setup(self, db: DatabaseConnection) -> None:
         await db.initialize(drop_table=True)

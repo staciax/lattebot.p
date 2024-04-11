@@ -68,17 +68,19 @@ def mission_e(
 
     if len(daily) > 0:
         embed.add_field(
-            name="**Daily**",
+            name='**Daily**',
             value=' - '.join(daily),
             inline=False,
         )
 
     if len(weekly) > 0:
         embed.add_field(
-            name=f"**Weekly**",
+            name=f'**Weekly**',
             value='\n'.join(weekly)
             + '\n\n Refill Time: {refill_time}'.format(
-                refill_time=format_dt(contracts.mission_metadata.weekly_refill_time.replace(tzinfo=timezone.utc), style='R')
+                refill_time=format_dt(
+                    contracts.mission_metadata.weekly_refill_time.replace(tzinfo=timezone.utc), style='R'
+                )
                 if contracts.mission_metadata is not None and contracts.mission_metadata.weekly_refill_time is not None
                 else '-'
             ),
@@ -86,14 +88,14 @@ def mission_e(
 
     if len(tutorial) > 0:
         embed.add_field(
-            name=f"**Tutorial**",
+            name=f'**Tutorial**',
             value='\n'.join(tutorial),
             inline=False,
         )
 
     if len(npe) > 0:
         embed.add_field(
-            name="**NPE**",
+            name='**NPE**',
             value='\n'.join(npe),
             inline=False,
         )

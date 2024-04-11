@@ -110,7 +110,7 @@ def skin_e(
 ) -> Embed:
     valorant_locale = locale_converter.to_valorant(locale)
     embed = Embed(
-        title=f"{skin.rarity.emoji} {chat.bold(skin.display_name_localized(valorant_locale))}",  # type: ignore
+        title=f'{skin.rarity.emoji} {chat.bold(skin.display_name_localized(valorant_locale))}',  # type: ignore
     ).purple()
 
     if isinstance(skin, SkinLevelOffer):

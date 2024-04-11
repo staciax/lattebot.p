@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator
+from typing import TYPE_CHECKING, AsyncIterator, Self  # noqa: UP035
 
 from sqlalchemy import ForeignKey, String, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,8 +10,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from .user import User
 
 # fmt: off
@@ -29,7 +27,9 @@ class Notification(Base):
     owner_id: Mapped[int] = mapped_column('owner_id', ForeignKey('users.id'), nullable=False)
     owner: Mapped[User] = relationship('User', lazy='joined')
     type: Mapped[str] = mapped_column('type', String(36), nullable=False)
-    registered_at: Mapped[datetime.datetime] = mapped_column('created_at', nullable=False, default=datetime.datetime.utcnow)
+    registered_at: Mapped[datetime.datetime] = mapped_column(
+        'created_at', nullable=False, default=datetime.datetime.utcnow
+    )
 
     @classmethod
     async def find_all(cls, session: AsyncSession) -> AsyncIterator[Self]:
@@ -56,7 +56,9 @@ class Notification(Base):
         return await session.scalar(stmt.order_by(cls.id))
 
     @classmethod
-    async def find_all_by_owner_id_and_type(cls, session: AsyncSession, owner_id: int, type: str) -> AsyncIterator[Self]:
+    async def find_all_by_owner_id_and_type(
+        cls, session: AsyncSession, owner_id: int, type: str
+    ) -> AsyncIterator[Self]:
         stmt = select(cls).where(cls.owner_id == owner_id).where(cls.type == type)
         stream = await session.stream_scalars(stmt.order_by(cls.id))
         async for row in stream:

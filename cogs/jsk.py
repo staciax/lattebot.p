@@ -97,7 +97,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
 
         command = self.bot.get_command(command_name) or self.bot.tree.get_command(command_name)
         if not command:
-            await ctx.send(f'Couldn\'t find command `{command_name}`.')
+            await ctx.send(f"Couldn't find command `{command_name}`.")
             return
 
         try:
@@ -121,7 +121,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         else:
             paginator = WrappedPaginator(prefix='```py', suffix='```', max_size=1900)
 
-            paginator.add_line(source_text.replace('```', '``\N{zero width space}`'))
+            paginator.add_line(source_text.replace('```', '``\N{ZERO WIDTH SPACE}`'))
 
             interface = PaginatorInterface(ctx.bot, paginator, owner=ctx.author)
             await interface.send_to(ctx)
@@ -179,7 +179,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
         jsk = self.bot.get_command('jishaku' if sub is None else f'jishaku {sub}')
 
         if jsk is None:
-            raise UserInputError(f'Couldn\'t find command `jishaku {sub}`.')
+            raise UserInputError(f"Couldn't find command `jishaku {sub}`.")
 
         ctx = await self.bot.get_context(interaction)
         ctx.invoked_with = jsk.qualified_name

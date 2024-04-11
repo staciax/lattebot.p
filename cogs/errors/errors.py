@@ -186,7 +186,9 @@ class Errors(MaidCog, name='errors'):
                 if result.strip() == '':
                     result = '\u200b'
             paginator.add_line(result)
-            interface = PaginatorInterface(self.bot, paginator, owner=self.bot.owner, emoji='<:ThinkO_O:744344862521950268>')
+            interface = PaginatorInterface(
+                self.bot, paginator, owner=self.bot.owner, emoji='<:ThinkO_O:744344862521950268>'
+            )
             await interface.send_to(self.bot.owner)
 
         if self.bot.traceback_log is not None:

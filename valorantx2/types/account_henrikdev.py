@@ -32,4 +32,4 @@ class Error(TypedDict):
 class Response(TypedDict):
     status: int
     data: Account
-    errors: NotRequired[List[Error]]
+    errors: NotRequired[list[Error]]

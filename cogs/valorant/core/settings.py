@@ -49,16 +49,14 @@ class NotificationButton(ui.Button['SettingsView']):
         super().__init__(label=_('button.notification', locale=locale), emoji='🔔', **kwargs)
         self.locale = locale
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None: ...
 
 
 class PreviousButton(ui.Button['SettingsView']):
     def __init__(self, row: int = 0, **kwargs: Any) -> None:
         super().__init__(label='<', row=row, **kwargs)
 
-    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None:
-        ...
+    async def callback(self, interaction: discord.Interaction[LatteMaid]) -> None: ...
 
 
 class LanguageSelect(ui.Select['SettingsView']):

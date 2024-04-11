@@ -1,33 +1,36 @@
 # discord
-discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
-jishaku @ git+https://github.com/Gorialis/jishaku.git
+discord.py[speed]>=2.3.2
+
+# discord.py[speed] @ git+https://github.com/Rapptz/discord.py.git # >= 2.4.0
+# jishaku @ git+https://github.com/Gorialis/jishaku.git
 
 # database
-SQLAlchemy>=2.0.19,<3
-asyncpg>=0.28.0 # production
-aiosqlite>=0.19.0 # development (faster)
-cryptography>=41.0.1 # encryption
-alembic>=1.11,<2.0 # migrations
+alembic>=1.13.1
+# SQLAlchemy>=2.0.19,<3
+asyncpg>=0.29.0
+# aiosqlite>=0.19.0 # development (faster)
+# cryptography>=41.0.1 # encryption
+# alembic>=1.11,<2.0 # migrations
 
 # caching
-async_lru>=2.0.3
+# async_lru>=2.0.3
 
 # environment
-python-dotenv
+# python-dotenv
 
 # web scraping
-beautifulsoup4
-lxml
+# beautifulsoup4
+# lxml
 
 # image manipulation
-Pillow>=10.0,<11
+pillow>=10.3.0,<11
 
 # utils
-psutil
-pygit2
+psutil>=5.9.8,<6
+pygit2>=1.14.1,<2
 
 # speedups
-uvloop; sys_platform != 'win32'
+# uvloop; sys_platform != 'win32'
 
 # valorantx
-valorantx[speed] @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x-legacy # may be public soon?
+# valorantx[speed] @ git+https://${GITHUB_TOKEN}@github.com/staciax/valorantx.git@patch-7.x-legacy # may be public soon?

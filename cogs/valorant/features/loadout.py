@@ -255,7 +255,11 @@ class CollectionSkinsButton(ui.Button['CollectionView']):
         # emoji: str | Emoji | PartialEmoji | None = None,
     ):
         super().__init__(
-            style=style, label=label, disabled=disabled, custom_id=custom_id, emoji='<:discordsagegun:1104332724631765043>'
+            style=style,
+            label=label,
+            disabled=disabled,
+            custom_id=custom_id,
+            emoji='<:discordsagegun:1104332724631765043>',
         )
 
     async def callback(self, interaction: discord.Interaction[LatteMaid]) -> Any:

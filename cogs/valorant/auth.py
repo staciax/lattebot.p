@@ -65,28 +65,28 @@ class RiotAuth(RiotAuth_):
         conn = aiohttp.TCPConnector(ssl=self._auth_ssl_ctx)
         async with aiohttp.ClientSession(connector=conn, raise_for_status=True, cookie_jar=self._cookie_jar) as session:
             headers = {
-                "Accept-Encoding": "deflate, gzip, zstd",
-                "user-agent": RiotAuth.RIOT_CLIENT_USER_AGENT % "rso-auth",
-                "Cache-Control": "no-cache",
-                "Accept": "application/json",
+                'Accept-Encoding': 'deflate, gzip, zstd',
+                'user-agent': RiotAuth.RIOT_CLIENT_USER_AGENT % 'rso-auth',
+                'Cache-Control': 'no-cache',
+                'Accept': 'application/json',
             }
 
             # region Begin auth/Reauth
             body = {
-                "acr_values": "",
-                "claims": "",
-                "client_id": "riot-client",
-                "code_challenge": "",
-                "code_challenge_method": "",
-                "nonce": token_urlsafe(16),
-                "redirect_uri": "http://localhost/redirect",
-                "response_type": "token id_token",
-                "scope": "openid link ban lol_region account",
+                'acr_values': '',
+                'claims': '',
+                'client_id': 'riot-client',
+                'code_challenge': '',
+                'code_challenge_method': '',
+                'nonce': token_urlsafe(16),
+                'redirect_uri': 'http://localhost/redirect',
+                'response_type': 'token id_token',
+                'scope': 'openid link ban lol_region account',
             }
             if use_query_response_mode:
-                body["response_mode"] = "query"
+                body['response_mode'] = 'query'
             async with session.post(
-                "https://auth.riotgames.com/api/v1/authorization",
+                'https://auth.riotgames.com/api/v1/authorization',
                 json=body,
                 headers=headers,
             ) as r:
@@ -94,12 +94,12 @@ class RiotAuth(RiotAuth_):
             # endregion
 
             body = {
-                "language": "en_US",
-                "password": password,
-                "region": None,
-                "remember": remember,
-                "type": "auth",
-                "username": username,
+                'language': 'en_US',
+                'password': password,
+                'region': None,
+                'remember': remember,
+                'type': 'auth',
+                'username': username,
             }
             return await self.__fetch_access_token(session, body, headers, data)
 

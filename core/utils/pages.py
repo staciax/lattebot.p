@@ -30,7 +30,6 @@ class NumberedPageModal(discord.ui.Modal, title='Go to page'):
 
 
 class PageSource:
-
     """An interface representing a menu page's data source for the actual menu page.
     Subclasses must implement the backing resource along with the following methods:
     - :meth:`get_page`
@@ -289,7 +288,9 @@ class LattePages(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user and interaction.user.id in (self.interaction.client.owner_id, self.interaction.user.id):
             return True
-        await interaction.response.send_message('This pagination menu cannot be controlled by you, sorry!', ephemeral=True)
+        await interaction.response.send_message(
+            'This pagination menu cannot be controlled by you, sorry!', ephemeral=True
+        )
         return False
 
     async def on_timeout(self) -> None:

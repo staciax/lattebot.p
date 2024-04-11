@@ -29,7 +29,9 @@ def help_command_embed(interaction: discord.Interaction[LatteMaid]) -> Embed:
         name=f'{bot.user.display_name} - ' + _('help.command', interaction.locale),
         icon_url=bot.user.display_avatar,
     )
-    embed.set_image(url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png')
+    embed.set_image(
+        url='https://cdn.discordapp.com/attachments/1001848697316987009/1001848873385472070/help_banner.png'
+    )
     return embed
 
 
@@ -75,7 +77,9 @@ class HelpPageSource(ListPageSource):
 
 
 class CogButton(ui.Button['HelpCommandView']):
-    def __init__(self, cog: commands.Cog | MaidCog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs) -> None:
+    def __init__(
+        self, cog: commands.Cog | MaidCog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs
+    ) -> None:
         super().__init__(emoji=getattr(cog, 'display_emoji'), style=discord.ButtonStyle.primary, *args, **kwargs)
         self.cog = cog
         self.entries = entries
@@ -107,7 +111,9 @@ class HelpCommandView(ViewAuthor, LattePages):
         self.allowed_cogs = allowed_cogs
         self.embed: Embed = help_command_embed(interaction)
         self.cooldown = commands.CooldownMapping.from_cooldown(8.0, 15.0, user_check)  # overide default cooldown
-        self.go_to_last_page.row = self.go_to_first_page.row = self.go_to_previous_page.row = self.go_to_next_page.row = 1
+        self.go_to_last_page.row = self.go_to_first_page.row = self.go_to_previous_page.row = (
+            self.go_to_next_page.row
+        ) = 1
         self.clear_items()
         self.add_item(self.home_button)
 

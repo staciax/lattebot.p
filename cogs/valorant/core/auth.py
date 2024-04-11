@@ -75,7 +75,7 @@ class ManageView(ViewAuthor):
         )
 
     def front_embed(self) -> Embed:
-        embed = Embed(description=_('- You don\'t have any accounts yet', self.locale)).white()
+        embed = Embed(description=_("- You don't have any accounts yet", self.locale)).white()
         embed.set_author(name=_('account.manager', self.locale), icon_url=self.author.display_avatar)
 
         if len(self.account_manager.accounts) > 0:
@@ -194,7 +194,9 @@ class RitoAuthUsernamePasswordButton(ui.Button['ManageView']):
         riot_auth = RiotAuth()
 
         try:
-            await riot_auth.authorize(login_modal.username.value.strip(), login_modal.password.value.strip(), remember=True)
+            await riot_auth.authorize(
+                login_modal.username.value.strip(), login_modal.password.value.strip(), remember=True
+            )
         except RiotMultifactorError:
             embed = Embed(title=_('Two-factor authentication'), description=_('You have 2FA enabled!')).blurple()
             multi_view = MultiFactorView(interaction, riot_auth)

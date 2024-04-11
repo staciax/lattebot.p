@@ -287,7 +287,9 @@ class FeaturedBundleView(ViewAuthor):
             )
             self.message = await self.interaction.followup.send(embeds=embeds, view=self)
         elif len(self.bundles) == 1:
-            source = FeaturedBundlePageSource(self.bundles[list(self.bundles.keys())[0]], locale=self.interaction.locale)
+            source = FeaturedBundlePageSource(
+                self.bundles[list(self.bundles.keys())[0]], locale=self.interaction.locale
+            )
             view = FeaturedBundlePageView(source, interaction=self.interaction)
             await view.start()
         else:

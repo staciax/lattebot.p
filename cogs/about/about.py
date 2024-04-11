@@ -53,7 +53,6 @@ def get_latest_commits(limit: int = 3) -> str:
 
 @cog_i18n(_)
 class About(MaidCog, name='about'):
-
     """Latte's About command"""
 
     def __init__(self, bot: LatteMaid) -> None:
@@ -136,7 +135,8 @@ class About(MaidCog, name='about'):
         )
         embed.add_field(
             name=_('uptime', locale) + ':',
-            value=f'ʙᴏᴛ: <t:{round(self.bot.launch_time.timestamp())}:R>\n' + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
+            value=f'ʙᴏᴛ: <t:{round(self.bot.launch_time.timestamp())}:R>\n'
+            + f'ꜱʏꜱᴛᴇᴍ: <t:{round(psutil.boot_time())}:R>',
             inline=True,
         )
         embed.add_empty_field(inline=True)
@@ -162,7 +162,9 @@ class About(MaidCog, name='about'):
         view = BaseView()
         view.url_button(_('support.server', locale), self.bot.support_invite_url, emoji=str(self.bot.emoji.latte_icon))
         view.url_button(
-            _('developer', locale), f'https://discord.com/users/{self.bot.owner_id}', emoji=str(self.bot.emoji.stacia_dev)
+            _('developer', locale),
+            f'https://discord.com/users/{self.bot.owner_id}',
+            emoji=str(self.bot.emoji.stacia_dev),
         )
 
         await interaction.response.send_message(embed=embed, view=view)

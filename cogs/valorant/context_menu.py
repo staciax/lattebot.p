@@ -103,7 +103,9 @@ class ContextMenu(MixinMeta):
 
     @context_menu(name=_T('match history'))
     @dynamic_cooldown(cooldown_medium)
-    async def message_match_history(self, interaction: discord.Interaction[LatteMaid], message: discord.Message) -> None:
+    async def message_match_history(
+        self, interaction: discord.Interaction[LatteMaid], message: discord.Message
+    ) -> None:
         try:
             game_name, tag_line = validate_riot_id(message.content)
         except ValueError:

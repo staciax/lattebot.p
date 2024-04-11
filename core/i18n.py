@@ -122,12 +122,10 @@ class I18n:
         await self.save()
 
     @overload
-    def get_text(self, key: str, locale: Locale | str) -> str | None:
-        ...
+    def get_text(self, key: str, locale: Locale | str) -> str | None: ...
 
     @overload
-    def get_text(self, key: str, locale: Locale | str, default: T) -> str | T | None:
-        ...
+    def get_text(self, key: str, locale: Locale | str, default: T) -> str | T | None: ...
 
     def get_text(self, key: str, locale: Locale | str, default: T | None = None) -> str | T | None:
         if isinstance(locale, Locale):

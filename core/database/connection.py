@@ -326,7 +326,9 @@ class DatabaseConnection:
             try:
                 await RiotAccount.delete(session, riot_account)
             except SQLAlchemyError as e:
-                self._log.error(f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}')
+                self._log.error(
+                    f'failed to delete riot account with puuid {puuid!r} for user with id {owner_id!r}: {e!r}'
+                )
                 await session.rollback()
                 return None
             else:
@@ -375,12 +377,16 @@ class DatabaseConnection:
             async for notification in Notification.find_all_by_owner_id(session, owner_id):
                 yield notification
 
-    async def fetch_notification_by_owner_id_and_item_id(self, owner_id: int, /, *, item_id: str) -> Notification | None:
+    async def fetch_notification_by_owner_id_and_item_id(
+        self, owner_id: int, /, *, item_id: str
+    ) -> Notification | None:
         async with self._async_session() as session:
             notification = await Notification.find_by_owner_id_and_item_id(session, owner_id, item_id)
             return notification
 
-    async def fetch_notifications_by_owner_id_and_type(self, owner_id: int, /, *, type: str) -> AsyncIterator[Notification]:
+    async def fetch_notifications_by_owner_id_and_type(
+        self, owner_id: int, /, *, type: str
+    ) -> AsyncIterator[Notification]:
         async with self._async_session() as session:
             async for notification in Notification.find_all_by_owner_id_and_type(session, owner_id, type):
                 yield notification

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-    colorthief
-    ~~~~~~~~~~
+colorthief
+~~~~~~~~~~
 
-    Grabbing the color palette from an image.
+Grabbing the color palette from an image.
 
-    :copyright: (c) 2015 by Shipeng Feng.
-    :license: BSD, see LICENSE for more details.
+:copyright: (c) 2015 by Shipeng Feng.
+:license: BSD, see LICENSE for more details.
 """
 
 # color-thief-py: https://github.com/fengsp/color-thief-py

@@ -16,8 +16,7 @@ class MixinMeta(ABC):
     if TYPE_CHECKING:
 
         @property
-        def valorant_client(self) -> valorantx.Client:
-            ...
+        def valorant_client(self) -> valorantx.Client: ...
 
     def __init__(self, *_args):
         pass
