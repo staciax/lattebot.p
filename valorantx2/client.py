@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator  # noqa: UP035
 
 from async_lru import _LRUCacheWrapperInstanceMethod, alru_cache
 from valorantx.client import Client as _Client

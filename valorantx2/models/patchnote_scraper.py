@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from bs4 import BeautifulSoup, FeatureNotFound
 from valorantx.valorant_api import Asset
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
 
     from ..client import Client
 

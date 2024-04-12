@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncIterator
+from typing import TYPE_CHECKING, AsyncIterator, Self  # noqa: UP035
 
 from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship  # foreign
 from .base import Base
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
 
     from .user import User
 

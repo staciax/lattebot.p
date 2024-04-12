@@ -197,7 +197,7 @@ class RitoAuthUsernamePasswordButton(ui.Button['ManageView']):
             await riot_auth.authorize(
                 login_modal.username.value.strip(), login_modal.password.value.strip(), remember=True
             )
-        except RiotMultifactorError:
+        except RiotMultifactorError as e:
             embed = Embed(title=_('Two-factor authentication'), description=_('You have 2FA enabled!')).blurple()
             multi_view = MultiFactorView(interaction, riot_auth)
             message_2fa = await login_modal.interaction.followup.send(
@@ -209,7 +209,7 @@ class RitoAuthUsernamePasswordButton(ui.Button['ManageView']):
             await multi_view.wait()
             await message_2fa.delete()
             if multi_view.code is None:
-                raise RiotAuthMultiFactorTimeout('You did not enter the code in time.')
+                raise RiotAuthMultiFactorTimeout('You did not enter the code in time.') from e
 
             await riot_auth.authorize_mfa(multi_view.code)
 

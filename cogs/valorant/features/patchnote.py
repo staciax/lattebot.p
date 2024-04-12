@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import random
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 def patch_note_e(pn: PatchNote, banner_url: str | None = None) -> Embed:
     embed = Embed(
         title=pn.title,
-        timestamp=pn.timestamp.replace(tzinfo=timezone.utc),
+        timestamp=pn.timestamp.replace(tzinfo=UTC),
         url=pn.url,
         description=chat.italics(pn.description),
     )

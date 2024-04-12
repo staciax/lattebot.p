@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
@@ -75,11 +75,11 @@ def mission_e(
 
     if len(weekly) > 0:
         embed.add_field(
-            name=f'**Weekly**',
+            name='**Weekly**',
             value='\n'.join(weekly)
             + '\n\n Refill Time: {refill_time}'.format(
                 refill_time=format_dt(
-                    contracts.mission_metadata.weekly_refill_time.replace(tzinfo=timezone.utc), style='R'
+                    contracts.mission_metadata.weekly_refill_time.replace(tzinfo=UTC), style='R'
                 )
                 if contracts.mission_metadata is not None and contracts.mission_metadata.weekly_refill_time is not None
                 else '-'
@@ -88,7 +88,7 @@ def mission_e(
 
     if len(tutorial) > 0:
         embed.add_field(
-            name=f'**Tutorial**',
+            name='**Tutorial**',
             value='\n'.join(tutorial),
             inline=False,
         )

@@ -11,7 +11,7 @@ load_dotenv()
 
 DATABASE_URL_TEST = os.getenv('DATABASE_URL_TEST')
 if DATABASE_URL_TEST is None:
-    raise EnvironmentError('DATABASE_URL_TEST is not set')
+    raise OSError('DATABASE_URL_TEST is not set')
 
 
 @pytest.fixture(scope='session')

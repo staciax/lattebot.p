@@ -75,7 +75,7 @@ class LanguageSelect(ui.Select['SettingsView']):
         assert self.view is not None
         value = self.values[0]
         self.view.locale = discord.Locale(value)
-        user = interaction.user
-        bot = self.view.bot
+        # user = interaction.user
+        # bot = self.view.bot
         # await bot.db.update_user(user.id)
         await interaction.response.edit_message(view=self.view)

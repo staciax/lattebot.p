@@ -185,7 +185,7 @@ class SkinCollectionSource(ListPageSource):
             else:
                 return 18
 
-        super().__init__(sorted(list(gun_loadout.to_list()), key=gun_priority), per_page=4)
+        super().__init__(sorted(gun_loadout.to_list(), key=gun_priority), per_page=4)
         self.current_page: int = 0
 
     async def format_page(

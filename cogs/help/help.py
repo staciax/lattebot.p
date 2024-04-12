@@ -78,9 +78,12 @@ class HelpPageSource(ListPageSource):
 
 class CogButton(ui.Button['HelpCommandView']):
     def __init__(
-        self, cog: commands.Cog | MaidCog, entries: list[Command[Any, ..., Any] | Group], *args, **kwargs
+        self,
+        cog: commands.Cog | MaidCog,
+        entries: list[Command[Any, ..., Any] | Group],
+        **kwargs: Any,
     ) -> None:
-        super().__init__(emoji=getattr(cog, 'display_emoji'), style=discord.ButtonStyle.primary, *args, **kwargs)
+        super().__init__(emoji=getattr(cog, 'display_emoji'), style=discord.ButtonStyle.primary, **kwargs)  # noqa: B009
         self.cog = cog
         self.entries = entries
         if self.emoji is None:

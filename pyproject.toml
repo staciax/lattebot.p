@@ -22,9 +22,6 @@ select = [
     "UP",  # pyupgrade,
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
-    "TCH", # flake8-type-checking-hints
-    "FA",  # flake8-future-annotations
-    "ASYNC",  #  flake8-async
 ]
 
 [tool.ruff.format]

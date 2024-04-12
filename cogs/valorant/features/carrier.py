@@ -219,7 +219,7 @@ class MatchDetailsEmbed:
         *,
         locale: discord.Locale,
     ) -> Embed:
-        vlocale = locale_converter.to_valorant(locale)
+        # vlocale = locale_converter.to_valorant(locale)
         embed = self.__template_e(player, locale=locale)
         members = sorted(match.get_members(player), key=lambda p: p.stats.acs, reverse=True)
         opponents = sorted(match.get_opponents(player), key=lambda p: p.stats.acs, reverse=True)

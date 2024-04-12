@@ -2,7 +2,7 @@
 import asyncio
 import datetime
 import logging
-from typing import AsyncIterator
+from typing import AsyncIterator  # noqa: UP035
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -26,9 +26,10 @@ from .models.blacklist import BlackList
 from .models.notification import Notification
 from .models.notification_settings import NotificationSettings
 from .models.riot_account import RiotAccount
-from .models.riot_account_settings import RiotAccountSettings
 from .models.user import User
-from .models.user_settings import UserSettings
+
+# from .models.riot_account_settings import RiotAccountSettings
+# from .models.user_settings import UserSettings
 
 # fmt: off
 __all__ = (

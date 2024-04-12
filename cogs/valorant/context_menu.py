@@ -4,8 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 import discord
-
-# i18n
 from discord.app_commands import locale_str as _T
 
 import valorantx2 as valorantx
@@ -40,8 +38,8 @@ class ContextMenu(MixinMeta):
 
         try:
             game_name, tag_line = validate_riot_id(message.content)
-        except ValueError:
-            raise BadArgument(_('invalid.riot_id', interaction.locale))
+        except ValueError as e:
+            raise BadArgument(_('invalid.riot_id', interaction.locale)) from e
 
         await interaction.response.defer(ephemeral=True)
 
@@ -51,8 +49,8 @@ class ContextMenu(MixinMeta):
 
         try:
             party_player = await self.valorant_client.fetch_party_player(riot_auth=account_manager.main_account)
-        except valorantx.errors.NotFound:
-            raise BadArgument(_('not_in_party', interaction.locale))
+        except valorantx.errors.NotFound as e:
+            raise BadArgument(_('not_in_party', interaction.locale)) from e
         else:
             if account_manager.main_account is None:
                 raise BadArgument(_('not_logged_in', interaction.locale))
@@ -69,7 +67,9 @@ class ContextMenu(MixinMeta):
     @context_menu(name=_T('party request'), guilds=[discord.Object(id=SUPPORT_GUILD_ID)])
     @dynamic_cooldown(cooldown_medium)
     async def user_request_to_party(
-        self, interaction: discord.Interaction[LatteMaid], user: discord.User | discord.Member
+        self,
+        interaction: discord.Interaction[LatteMaid],
+        user: discord.User | discord.Member,
     ) -> None:
         # author
         author = await self.fetch_user(interaction.user.id)  # type: ignore
@@ -108,13 +108,13 @@ class ContextMenu(MixinMeta):
     ) -> None:
         try:
             game_name, tag_line = validate_riot_id(message.content)
-        except ValueError:
-            raise BadArgument(_('invalid.riot_id', interaction.locale))
+        except ValueError as e:
+            raise BadArgument(_('invalid.riot_id', interaction.locale)) from e
 
         await interaction.response.defer(ephemeral=True)
 
         # riot user
-        riot_user = await self.valorant_client.fetch_partial_user(game_name, tag_line)
+        # riot_user = await self.valorant_client.fetch_partial_user(game_name, tag_line)
 
         # match history
-        match_history = await self.valorant_client.fetch_match_history(puuid=riot_user.puuid, end=6)
+        # match_history = await self.valorant_client.fetch_match_history(puuid=riot_user.puuid, end=6)

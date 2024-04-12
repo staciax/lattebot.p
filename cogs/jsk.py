@@ -4,7 +4,7 @@ import inspect
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable  # noqa: UP035
 
 import discord
 from discord import app_commands
@@ -49,7 +49,7 @@ class Jishaku(*OPTIONAL_FEATURES, *STANDARD_FEATURES, name='jishaku'):
             ],
         )
         self.ctx_msg_jsk_py.on_error = self.cog_app_command_error
-        setattr(self.ctx_msg_jsk_py, '__binding__', self)
+        setattr(self.ctx_msg_jsk_py, '__binding__', self)  # noqa: B010
 
     async def cog_load(self) -> None:
         self.bot.tree.add_command(self.ctx_msg_jsk_py)

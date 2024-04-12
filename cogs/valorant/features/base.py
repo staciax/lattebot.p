@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
 import discord
 from discord import Locale, SelectOption, ui
@@ -22,7 +22,6 @@ __all__ = (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
 
     from core.bot import LatteMaid
     from valorantx2.auth import RiotAuth

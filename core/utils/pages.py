@@ -44,7 +44,7 @@ class PageSource:
             # read this as follows:
             # if hasattr(self, '__prepare')
             # except that it works as you expect
-            self.__prepare
+            self.__prepare  # noqa: B018
         except AttributeError:
             await self.prepare()
             self.__prepare = True
@@ -328,7 +328,7 @@ class LattePages(discord.ui.View):
         self.current_page = page_number
 
         try:
-            self.__prepare
+            self.__prepare  # noqa: B018
         except AttributeError:
             self.fill_items()
             self.__prepare = True

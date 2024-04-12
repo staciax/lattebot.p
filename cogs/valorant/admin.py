@@ -60,7 +60,7 @@ class Admin(MixinMeta):
         try:
             await self.valorant_client.authorize(username, password)
         except valorantx.RiotAuthenticationError as e:
-            _log.error(f'valorant client failed to authorized', exc_info=e)
+            _log.error('valorant client failed to authorized', exc_info=e)
             raise e
         else:
             _log.info('valorant client is initialized.')

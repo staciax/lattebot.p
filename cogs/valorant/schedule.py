@@ -21,7 +21,7 @@ times = [
 
 class Schedule(MixinMeta):
     async def do_checker_version(self) -> None:
-        _log.info(f'checking valorant version')
+        _log.info('checking valorant version')
         version = await self.valorant_client.valorant_api.fetch_version()
 
         if version != self.valorant_client.version:
@@ -41,14 +41,14 @@ class Schedule(MixinMeta):
         await self.bot.wait_until_ready()
         if not self.valorant_client.is_ready():
             return
-        _log.info(f'valorant version checker loop has been started')
+        _log.info('valorant version checker loop has been started')
 
     @version_checker.after_loop
     async def after_version_checker(self) -> None:
         if self.version_checker.is_being_cancelled():
-            _log.info(f'valorant version checker loop has been cancelled')
+            _log.info('valorant version checker loop has been cancelled')
         else:
-            _log.info(f'valorant version checker loop has been stopped')
+            _log.info('valorant version checker loop has been stopped')
 
     # cache control
     # every 6:30 AM UTC+7
@@ -57,7 +57,7 @@ class Schedule(MixinMeta):
         for method in self.valorant_client.__dict__.values():
             if hasattr(method, 'cache_clear'):
                 method.cache_clear()
-        _log.info(f'valorant client cache cleared')
+        _log.info('valorant client cache cleared')
 
     @tasks.loop(time=dt.time(hour=6, minute=30, tzinfo=utc7))
     async def cache_control(self) -> None:
@@ -68,7 +68,7 @@ class Schedule(MixinMeta):
         await self.bot.wait_until_ready()
         if not self.valorant_client.is_ready():
             return
-        _log.info(f'valorant cache control loop has been started')
+        _log.info('valorant cache control loop has been started')
 
     @cache_control.after_loop
     async def after_cache_control(self) -> None:

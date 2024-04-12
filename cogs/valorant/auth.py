@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import aiohttp
 import yarl
@@ -14,8 +14,6 @@ from valorantx2.auth import RiotAuth as RiotAuth_
 from valorantx2.errors import RiotAuthRateLimitedError
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from core.bot import LatteMaid
     from core.database.models import RiotAccount
 
@@ -118,7 +116,7 @@ class RiotAuth(RiotAuth_):
             if e.status == 429:
                 retry_after = e.headers.get('Retry-After')
                 if retry_after and int(retry_after) >= 0:
-                    raise RiotAuthRateLimitedError(int(retry_after))
+                    raise RiotAuthRateLimitedError(int(retry_after)) from e
 
     async def reauthorize(self) -> None:
         _log.info(f're authorizing {self.game_name}#{self.tag_line}({self.puuid})')

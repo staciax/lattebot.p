@@ -1,9 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, List, TypedDict
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+from typing import NotRequired, TypedDict
 
 
 class AccountPlayerCard(TypedDict):

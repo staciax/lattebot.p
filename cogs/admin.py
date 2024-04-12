@@ -180,7 +180,7 @@ class Developer(commands.Cog, name='developer'):
             or await self.bot.fetch_guild(int(object_id))
             or object_id
         )
-        if isinstance(blacklist, (discord.User, discord.Guild)):
+        if isinstance(blacklist, discord.User | discord.Guild):
             blacklist = f"{blacklist} {inline(f'({blacklist.id})')}"
 
         embed = Embed(
@@ -212,7 +212,7 @@ class Developer(commands.Cog, name='developer'):
             or object_id
         )
 
-        if isinstance(blacklist, (discord.User, discord.Guild)):
+        if isinstance(blacklist, discord.User | discord.Guild):
             blacklist = f'{blacklist} {inline(f"({blacklist.id})")}'
 
         embed = Embed(description=f'{blacklist} are now unblacklisted.').success()

@@ -17,7 +17,7 @@ class Events(MixinMeta):
     @commands.Cog.listener()
     async def on_re_authorized_successfully(self, riot_auth: RiotAuth) -> None:
         if riot_auth.owner_id is None:
-            _log.debug(f'riot_auth owner_id is None, not updating database')
+            _log.debug('riot_auth owner_id is None, not updating database')
             return
 
         assert riot_auth.user_id is not None

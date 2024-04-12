@@ -1,13 +1,8 @@
-from __future__ import annotations
-
 import datetime
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import Any, Iterable, Self  # noqa: UP035
 
 from discord import Colour, Embed as DiscordEmbed
 from discord.types.embed import EmbedType
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
 
 # fmt: off
 __all__ = (

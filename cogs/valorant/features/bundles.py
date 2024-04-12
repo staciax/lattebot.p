@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import ui
@@ -47,10 +47,10 @@ if TYPE_CHECKING:
 
     BundleItem = Skin | Buddy | Spray | PlayerCard | PlayerTitle
 
-FeaturedBundleItem: TypeAlias = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
-SkinItem: TypeAlias = Skin | SkinLevel | SkinChroma
-SprayItem: TypeAlias = Spray | SprayLevel
-BuddyItem: TypeAlias = Buddy | BuddyLevel
+type FeaturedBundleItem = SkinLevelBundle | BuddyLevelBundle | SprayBundle | PlayerCardBundle | PlayerTitleBundle
+type SkinItem = Skin | SkinLevel | SkinChroma
+type SprayItem = Spray | SprayLevel
+type BuddyItem = Buddy | BuddyLevel
 
 
 _log = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def select_featured_bundle_e(bundle: FeaturedBundle, *, locale: discord.Locale) 
         title=bundle.display_name_localized(valorant_locale),
         description=(
             f'{VALORANT_POINT_EMOJI} {chat.bold(str(bundle.discounted_cost))} - '
-            f'expires {format_dt(bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc), style="R")}'
+            f'expires {format_dt(bundle.remaining_time_utc.replace(tzinfo=datetime.UTC), style="R")}'
         ),
         custom_id=bundle.uuid,
     )
@@ -95,7 +95,7 @@ def bundle_item_e(
 
     emoji = item.rarity.emoji if isinstance(item, Skin) else ''  # type: ignore
     embed = Embed(
-        title='{rarity} {name}'.format(rarity=emoji, name=chat.bold(item.display_name_localized(valorant_locale))),
+        title=f'{emoji} {chat.bold(item.display_name_localized(valorant_locale))}',
         description=f'{VALORANT_POINT_EMOJI} ',
     ).dark()
 
@@ -162,7 +162,7 @@ class BundleEmbed:
                 expires=chat.italics(
                     '(Expires {expires})'.format(
                         expires=format_dt(
-                            self.bundle.remaining_time_utc.replace(tzinfo=datetime.timezone.utc),
+                            self.bundle.remaining_time_utc.replace(tzinfo=datetime.UTC),
                             style='R',
                         )
                     )

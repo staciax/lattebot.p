@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timezone
+from datetime import UTC
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -136,8 +136,8 @@ def store_featured_e(
 ) -> list[Embed]:
     embeds = [
         Embed(
-            description='Daily store // {user}\n'.format(user=chat.bold(riot_id))
-            + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=timezone.utc), style="R")}',
+            description=f'Daily store // {chat.bold(riot_id)}\n'
+            + f'Resets {format_dt(panel.remaining_time_utc.replace(tzinfo=UTC), style="R")}',
         ).purple(),
     ]
 
@@ -162,7 +162,7 @@ def store_featured_e(
 def nightmarket_front_e(bonus: BonusStore, riot_id: str, *, locale: discord.Locale) -> Embed:
     embed = Embed(
         description=f'NightMarket // {chat.bold(riot_id)}\n'
-        f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=timezone.utc), style="R")}',
+        f'Expires {format_dt(bonus.remaining_time_utc.replace(tzinfo=UTC), style="R")}',
     ).purple()
 
     return embed
@@ -183,7 +183,7 @@ def accessory_e(store_offer: AccessoryStoreOffer, *, locale: discord.Locale = di
 
         embed.title = reward.item.display_name_localized(valorant_locale)
 
-        if isinstance(reward.item, (Spray, BuddyLevel)):
+        if isinstance(reward.item, Spray | BuddyLevel):
             if reward.item.display_icon is not None:
                 embed.url = reward.item.display_icon.url
                 embed.set_thumbnail(url=reward.item.display_icon)
@@ -206,8 +206,8 @@ def store_accessories_e(
 ) -> list[Embed]:
     embeds = [
         Embed(
-            description='Weekly Accessories // {user}\n'.format(user=chat.bold(riot_id))
-            + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=timezone.utc), style="R")}',
+            description=f'Weekly Accessories // {chat.bold(riot_id)}\n'
+            + f'Resets {format_dt(store.remaining_time_utc.replace(tzinfo=UTC), style="R")}',
         ).purple(),
     ]
     for offer in store.offers:

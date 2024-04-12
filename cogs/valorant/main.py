@@ -326,7 +326,7 @@ class Valorant(
         mode: Choice[str] | None = None,
         riot_id: str | None = None,
     ) -> None:
-        user = await self.fetch_or_create_user(interaction.user.id)
+        # user = await self.fetch_or_create_user(interaction.user.id)
         await interaction.response.defer()
 
         queue_id = mode.value if mode is not None else None
@@ -334,8 +334,8 @@ class Valorant(
         if riot_id is not None:
             try:
                 game_name, tag_line = validate_riot_id(riot_id)
-            except ValueError:
-                raise BadArgument(_('invalid.riot_id', interaction.locale))
+            except ValueError as e:
+                raise BadArgument(_('invalid.riot_id', interaction.locale)) from e
 
             puuid = (await self.valorant_client.fetch_partial_user(game_name, tag_line)).puuid
 
@@ -344,7 +344,7 @@ class Valorant(
             if not len(match_history.match_details):
                 raise BadArgument(_('match.no_match', interaction.locale))
 
-            match_details = match_history.match_details[0]
+            # match_details = match_history.match_details[0]
 
             return
 

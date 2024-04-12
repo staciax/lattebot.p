@@ -71,7 +71,7 @@ class ErrorHandler(MixinMeta):
             error = error.original
 
         if not isinstance(
-            error, (valorant_api.errors.ValorantAPIError, valorantx.errors.ValorantXError, ValorantError)
+            error, valorant_api.errors.ValorantAPIError | valorantx.errors.ValorantXError | ValorantError
         ):
             _log.exception('Unhandled exception in command %s:', interaction.command, exc_info=error)
             self.bot.dispatch('app_command_error', interaction, error)
@@ -93,11 +93,11 @@ class ErrorHandler(MixinMeta):
             if isinstance(error, valorantx.errors.RiotAuthenticationError):
                 message = _('Invalid username or password.', locale)
             elif isinstance(error, valorantx.errors.RiotAuthMultiFactorInvalidCode):
-                message = _('Invalid multi factor code: ||{code}||'.format(code=error.mfa_code), locale)
-            elif isinstance(error, (valorantx.errors.RiotRatelimitError, valorantx.errors.RiotAuthRateLimitedError)):
+                message = _(f'Invalid multi factor code: ||{error.mfa_code}||', locale)
+            elif isinstance(error, valorantx.errors.RiotRatelimitError | valorantx.errors.RiotAuthRateLimitedError):
                 message = _('Riot Rate Limit Error', locale)
             elif isinstance(
-                error, (valorantx.errors.RiotUnknownResponseTypeError, valorantx.errors.RiotUnknownErrorTypeError)
+                error, valorantx.errors.RiotUnknownResponseTypeError | valorantx.errors.RiotUnknownErrorTypeError
             ):
                 message = _('Riot Unknown Error', locale)
 

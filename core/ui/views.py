@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import discord
 from discord import Interaction, ui
@@ -15,7 +15,6 @@ from ..errors import CheckFailure, ComponentOnCooldown
 if TYPE_CHECKING:
     from bot import LatteMaid
     from discord import InteractionMessage, Message
-    from typing_extensions import Self
 
 
 _log = logging.getLogger(__name__)
@@ -94,7 +93,7 @@ class BaseView(ui.View):
         """
         pass
 
-    def disable_all_items(self, *, exclusions: list[ui.Button | ui.Select] = []) -> Self:
+    def disable_all_items(self, *, exclusions: list[ui.Button[Self] | ui.Select[Self]] | None = None) -> Self:
         """
         Disables all items in the view.
 
@@ -104,11 +103,11 @@ class BaseView(ui.View):
             A list of items in `self.children` to not disable from the view.
         """
         for child in self.children:
-            if isinstance(child, (ui.Button, ui.Select)) and child in exclusions:
+            if isinstance(child, ui.Button | ui.Select) and child in exclusions:
                 child.disabled = True
         return self
 
-    def enable_all_items(self, *, exclusions: list[ui.Button | ui.Select] = []) -> Self:
+    def enable_all_items(self, *, exclusions: list[ui.Button | ui.Select]  | None = None) -> Self:
         """
         Enables all items in the view.
 
@@ -118,7 +117,7 @@ class BaseView(ui.View):
             A list of items in `self.children` to not enable from the view.
         """
         for child in self.children:
-            if isinstance(child, (ui.Button, ui.Select)) and child in exclusions:
+            if isinstance(child, ui.Button | ui.Select) and child in exclusions:
                 child.disabled = False
         return self
 
@@ -143,7 +142,7 @@ class BaseView(ui.View):
 
     def disable_items(self) -> Self:
         for child in self.children:
-            if isinstance(child, (ui.Button, ui.Select)):
+            if isinstance(child, ui.Button | ui.Select):
                 child.disabled = True
         return self
 

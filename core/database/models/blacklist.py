@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, AsyncIterator, Self
+from typing import TYPE_CHECKING, AsyncIterator, Self  # noqa: UP035
 
 from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import asyncio
+# import asyncio
 import logging
 from datetime import time
 from typing import TYPE_CHECKING
@@ -13,11 +13,12 @@ from discord.ext import tasks
 
 from core.checks import cooldown_short
 from core.i18n import I18n
-from valorantx2.errors import BadRequest, RateLimited
 
 from .abc import MixinMeta
 from .account_manager import AccountManager
 from .features.notifications import NotifyView
+
+# from valorantx2.errors import BadRequest, RateLimited
 
 if TYPE_CHECKING:
     from core.bot import LatteMaid

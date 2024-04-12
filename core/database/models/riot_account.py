@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import TYPE_CHECKING, AsyncIterator
+from typing import TYPE_CHECKING, AsyncIterator, Self  # noqa: UP035
 
 from dotenv import load_dotenv
 from sqlalchemy import ForeignKey, String, delete, select
@@ -14,7 +14,6 @@ from ..encryption import FernetEngine
 from .base import Base
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
 
     from .user import User
 

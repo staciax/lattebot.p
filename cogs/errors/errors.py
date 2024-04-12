@@ -96,7 +96,7 @@ def get_error_handle_message(error: Exception, locale: discord.Locale) -> tuple[
         command = error.command
         author = error.author
         fmt = 'Only {author} can use this command. If you want to use it, use {command}'
-        if isinstance(command, (app_commands.Command, app_commands.ContextMenu)) and author is not None:
+        if isinstance(command, app_commands.Command | app_commands.ContextMenu) and author is not None:
             command_name = command.qualified_name
             model: discord.app_commands.AppCommand | None = command.extras.get('model', None)
             if model is not None:
