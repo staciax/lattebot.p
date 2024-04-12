@@ -3,7 +3,6 @@ include = ["core", "cogs"]
 exclude = ["**/__pycache__", ".git", ".ruff_cache", ".venv"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
-reportUnusedImport = "error"
 reportUnnecessaryTypeIgnoreComment = "warning"
 reportMissingParameterType = "error"
 reportMissingTypeArgument = "error"
@@ -23,10 +22,9 @@ select = [
     "UP",  # pyupgrade,
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
     "TCH", # flake8-type-checking-hints
     "FA",  # flake8-future-annotations
-    "DJ",  # flake8-django
+    "ASYNC",  #  flake8-async
 ]
 
 [tool.ruff.format]

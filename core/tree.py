@@ -16,8 +16,8 @@ _log = logging.getLogger(__name__)
 class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     async def interaction_check(self, interaction: discord.Interaction[LatteMaid], /) -> bool:
         user = interaction.user
-        guild = interaction.guild
-        locale = interaction.locale
+        # guild = interaction.guild
+        # locale = interaction.locale
         command = interaction.command
 
         if await self.client.is_owner(user):
@@ -25,37 +25,37 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
 
         # TODO: spam check
 
-        if guild and self.client.is_blocked(guild):
-            _log.info('guild %s is blacklisted', guild.id)
+        # if guild and self.client.is_blocked(guild):
+        #     _log.info('guild %s is blacklisted', guild.id)
 
-            await interaction.response.send_message(
-                # _('This guild is blacklisted from using this bot.'),
-                'This guild is blacklisted from using this bot.',
-                ephemeral=True,
-            )
+        #     await interaction.response.send_message(
+        #         # _('This guild is blacklisted from using this bot.'),
+        #         'This guild is blacklisted from using this bot.',
+        #         ephemeral=True,
+        #     )
 
-            try:
-                await guild.leave()
-            except discord.HTTPException:
-                _log.exception('failed to leave guild %s', guild.id)
-            else:
-                _log.info('left guild %s', guild.id)
+        #     try:
+        #         await guild.leave()
+        #     except discord.HTTPException:
+        #         _log.exception('failed to leave guild %s', guild.id)
+        #     else:
+        #         _log.info('left guild %s', guild.id)
 
-            return False
+        #     return False
 
-        if user and self.client.is_blocked(user):
-            _log.info('blacklisted user tried to use bot %s', user)
+        # if user and self.client.is_blocked(user):
+        #     _log.info('blacklisted user tried to use bot %s', user)
 
-            await interaction.response.send_message(
-                'You are blacklisted from using this bot.',
-                ephemeral=True,
-            )
+        #     await interaction.response.send_message(
+        #         'You are blacklisted from using this bot.',
+        #         ephemeral=True,
+        #     )
 
-            # remove user from database
-            if _ := await self.client.db.fetch_user(user.id):
-                self.client.loop.create_task(self.client.db.remove_user(user.id))
+        #     # remove user from database
+        #     if _ := await self.client.db.fetch_user(user.id):
+        #         self.client.loop.create_task(self.client.db.remove_user(user.id))
 
-            return False
+        #     return False
 
         # if interaction.client.is_maintenance():
         #     if interaction.type is discord.InteractionType.application_command:
@@ -76,28 +76,29 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         #     return False
 
         # if interaction.type is discord.InteractionType.application_command:
-        if interaction.user and isinstance(command, (app_commands.ContextMenu, app_commands.Command)):
-            user_db = await self.client.db.fetch_user(interaction.user.id)
-            if user_db is None:
-                await self.client.db.add_user(interaction.user.id)
-                # settings = await self.client.db.add_user_settings(interaction.user.id)
-                # self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
-            elif user_db.locale is None:
-                ...
-                # await database.update_user_settings(interaction.user.id, locale=locale)
-                # self.client.loop.create_task(self.client.db.update_user(interaction.user.id))
+        if interaction.user and isinstance(command, app_commands.ContextMenu | app_commands.Command):
+            ...
+            # user_db = await self.client.db.fetch_user(interaction.user.id)
+            # if user_db is None:
+            #     await self.client.db.add_user(interaction.user.id)
+            #     # settings = await self.client.db.add_user_settings(interaction.user.id)
+            #     # self.client.loop.create_task(self.client.db.create_user(user_id, locale=interaction.locale.value))
+            # elif user_db.locale is None:
+            #     ...
+            #     # await database.update_user_settings(interaction.user.id, locale=locale)
+            #     # self.client.loop.create_task(self.client.db.update_user(interaction.user.id))
 
         return True
 
     async def sync(self, *, guild: discord.abc.Snowflake | None = None) -> list[app_commands.AppCommand]:
         synced = await super().sync(guild=guild)
         if synced:
-            _log.info('synced %s application commands %s' % (len(synced), f'for guild {guild.id}' if guild else ''))
+            _log.info('synced {} application commands {}'.format(len(synced), f'for guild {guild.id}' if guild else ''))
         return synced
 
     async def on_error(
         self,
-        interaction: discord.Interaction['LatteMaid'],
+        interaction: discord.Interaction[LatteMaid],
         error: app_commands.AppCommandError,
         /,
     ) -> None:
@@ -108,7 +109,7 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
         for server in server_app_commands:
             command = self.get_command(server.name, type=server.type)
             if command is None:
-                _log.warning('not found command %s (type: %s)', server.name, server.type)
+                _log.warning('not found command: %s (type: %s)', server.name, server.type.name)
                 continue
             command.extras['model'] = server
 
@@ -124,7 +125,10 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
     # https://github.com/Rapptz/discord.py/pull/9452
 
     async def fetch_commands(
-        self, *, guild: discord.abc.Snowflake | None = None, with_localizations: bool = False
+        self,
+        *,
+        guild: discord.abc.Snowflake | None = None,
+        with_localizations: bool = False,
     ) -> list[app_commands.AppCommand]:
         if self.client.application_id is None:
             raise app_commands.errors.MissingApplicationID
@@ -135,7 +139,11 @@ class LatteMaidTree(app_commands.CommandTree['LatteMaid']):
 
         if guild is None:
             commands = await self._http.request(
-                Route('GET', '/applications/{application_id}/commands', application_id=application_id),
+                Route(
+                    'GET',
+                    '/applications/{application_id}/commands',
+                    application_id=application_id,
+                ),
                 params={'with_localizations': int(with_localizations)},
             )
         else:

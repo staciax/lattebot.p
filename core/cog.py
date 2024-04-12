@@ -2,54 +2,56 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Iterable, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Iterable, Self  # noqa: UP035
 
 import discord
-from discord import Interaction, app_commands
-from discord.app_commands import ContextMenu, Group, locale_str
+from discord import Interaction, Member, Message, User, app_commands
 from discord.ext import commands
 from discord.utils import MISSING
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
-
-    from .bot import LatteMaid
 
 __all__ = (
     'MaidCog',
     'context_menu',
 )
 
-T = TypeVar('T')
-Coro = Coroutine[Any, Any, T]
-Binding = Union['Group', 'commands.Cog']
-GroupT = TypeVar('GroupT', bound='Binding')
+if TYPE_CHECKING:
+    from discord.app_commands import ContextMenu, Group, locale_str
 
-ContextMenuCallback = Union[
-    Callable[[GroupT, 'Interaction[Any]', discord.Member], Coro[Any]],
-    Callable[[GroupT, 'Interaction[Any]', discord.User], Coro[Any]],
-    Callable[[GroupT, 'Interaction[Any]', discord.Message], Coro[Any]],
-    Callable[[GroupT, 'Interaction[Any]', Union[discord.Member, discord.User]], Coro[Any]],
-]
+    from .bot import LatteMaid
+
+
+type Coro[T] = Coroutine[Any, Any, T]
+
+if TYPE_CHECKING:
+    type Binding = Group | commands.Cog
+    type ContextMenuCallback[GroupT: Binding] = (
+        Callable[[GroupT, 'Interaction[LatteMaid]', Member], Coro[Any]]
+        | Callable[[GroupT, 'Interaction[LatteMaid]', User], Coro[Any]]
+        | Callable[[GroupT, 'Interaction[LatteMaid]', Message], Coro[Any]]
+        | Callable[[GroupT, 'Interaction[LatteMaid]', Member | User], Coro[Any]]
+    )
+else:
+    type ContextMenuCallback[T] = Callable[..., Coro[T]]
+
 
 _log = logging.getLogger(__name__)
 
 
 # https://github.com/InterStella0/stella_bot/blob/bf5f5632bcd88670df90be67b888c282c6e83d99/utils/cog.py#L28
-def context_menu(
+def context_menu[T: Binding](
     *,
     name: str | locale_str = MISSING,
     nsfw: bool = False,
     guilds: list[discord.abc.Snowflake] = MISSING,
     auto_locale_strings: bool = True,
     extras: dict[Any, Any] = MISSING,
-) -> Callable[[ContextMenuCallback], ContextMenu]:
+) -> Callable[[ContextMenuCallback[T]], ContextMenu]:
     def inner(func: Any) -> Any:
         nonlocal name
         func.__context_menu_guilds__ = guilds
         if name is MISSING:
             name = func.__name__
-        func.__context_menu__ = dict(
+        func.__context_menu__ = dict(  # noqa: C408
             name=name,
             nsfw=nsfw,
             auto_locale_strings=auto_locale_strings,
@@ -79,7 +81,12 @@ class MaidCog(commands.Cog):
         if interaction.client.is_debug_mode():
             command = interaction.command
             if command is not None:
-                _log.error('exception in %s command on %s cog', command.name, self.qualified_name, exc_info=error)
+                _log.error(
+                    'exception in %s command on %s cog',
+                    command.name,
+                    self.qualified_name,
+                    exc_info=error,
+                )
             else:
                 _log.error('exception on %s cog', self.qualified_name, exc_info=error)
         interaction.client.dispatch('app_command_error', interaction, error)
@@ -99,7 +106,7 @@ class MaidCog(commands.Cog):
             if context_values := getattr(method, '__context_menu__', None):
                 menu = app_commands.ContextMenu(callback=method, **context_values)
                 menu.on_error = self.cog_app_command_error
-                setattr(menu, '__binding__', self)
+                setattr(menu, '__binding__', self)  # noqa: B010
                 context_values['context_menu_class'] = menu
                 bot.tree.add_command(menu, guilds=method.__context_menu_guilds__)
                 try:

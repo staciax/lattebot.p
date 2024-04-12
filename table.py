@@ -10,7 +10,7 @@ load_dotenv()
 
 DATABASE_URL_TEST = os.getenv('DATABASE_URL_TEST')
 if DATABASE_URL_TEST is None:
-    raise EnvironmentError('DATABASE_URL_TEST is not set')
+    raise OSError('DATABASE_URL_TEST is not set')
 
 # PASSWORD_REGEX = re.compile(r'^(?=.*[a-zA-Z\d])(?=.*[a-zA-Z\d\s:]).{8,128}$')
 # PASSWORD_REGEX = re.compile(r'^(?=.*[a-zA-Z\d])(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,128}$')

@@ -16,7 +16,7 @@ asyncpg>=0.29.0
 # async_lru>=2.0.3
 
 # environment
-# python-dotenv
+python-dotenv
 
 # web scraping
 # beautifulsoup4
@@ -24,6 +24,7 @@ asyncpg>=0.29.0
 
 # image manipulation
 pillow>=10.3.0,<11
+# fast_colorthief==0.0.5
 
 # utils
 psutil>=5.9.8,<6

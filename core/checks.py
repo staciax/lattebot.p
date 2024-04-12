@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, Callable  # noqa: UP035
 
 import discord
 from discord import Interaction, app_commands
@@ -34,14 +34,11 @@ if TYPE_CHECKING:
     from .bot import LatteMaid
 
 
-T = TypeVar('T')
-
-
 def user(interaction: discord.Interaction) -> discord.User | discord.Member:
     return interaction.user
 
 
-def owner_only() -> Callable[[T], T]:
+def owner_only[T]() -> Callable[[T], T]:
     async def actual_check(interaction: Interaction[LatteMaid]):
         return await interaction.client.is_owner(interaction.user)
 

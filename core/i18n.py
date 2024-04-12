@@ -4,9 +4,8 @@ import asyncio
 import contextlib
 import json
 import logging
-import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from discord import Locale
 
@@ -18,10 +17,6 @@ __all__ = (
 if TYPE_CHECKING:
     from discord.ext import commands
 
-    CogT = TypeVar('CogT', bound=commands.Cog)
-
-T = TypeVar('T')
-
 _log = logging.getLogger(__name__)
 
 
@@ -30,7 +25,7 @@ def get_path(
     locale: str,
     fmt: str = 'json',
 ) -> Path:
-    return cog_folder / 'locales' / 'strings' / '{locale}.{fmt}'.format(locale=locale, fmt=fmt)
+    return cog_folder / 'locales' / 'strings' / f'{locale}.{fmt}'
 
 
 # i18ns: dict[str, I18n] = {}
@@ -41,18 +36,15 @@ class I18n:
     def __init__(
         self,
         name: str,
-        file_location: str | Path | os.PathLike,
-        supported_locales: list[Locale] = [
-            Locale.american_english,
-            Locale.thai,
-        ],
+        file_location: str | Path,
+        supported_locales: list[Locale] | None,
         *,
         read_only: bool = False,
         load_later: bool = False,
     ) -> None:
         self.cog_folder: Path = Path(file_location).resolve().parent
         self.cog_name: str = name
-        self.supported_locales: list[Locale] = supported_locales
+        self.supported_locales: list[Locale] = supported_locales or [Locale.american_english]
         self.read_only: bool = read_only
         self.loop = asyncio.get_event_loop()
         self.lock = asyncio.Lock()
@@ -125,9 +117,9 @@ class I18n:
     def get_text(self, key: str, locale: Locale | str) -> str | None: ...
 
     @overload
-    def get_text(self, key: str, locale: Locale | str, default: T) -> str | T | None: ...
+    def get_text[T](self, key: str, locale: Locale | str, default: T) -> str | T | None: ...
 
-    def get_text(self, key: str, locale: Locale | str, default: T | None = None) -> str | T | None:
+    def get_text[T](self, key: str, locale: Locale | str, default: T | None = None) -> str | T | None:
         if isinstance(locale, Locale):
             locale = locale.value
 
@@ -163,8 +155,8 @@ class I18n:
 
 
 def cog_i18n(i18n: I18n):
-    def decorator(cog_class: type[CogT]) -> type[CogT]:
-        setattr(cog_class, '__i18n__', i18n)
+    def decorator[CogT: commands.Cog](cog_class: type[CogT]) -> type[CogT]:
+        setattr(cog_class, '__i18n__', i18n)  # noqa: B010
         return cog_class
 
     return decorator

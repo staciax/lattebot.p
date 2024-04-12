@@ -39,10 +39,10 @@ args = parser.parse_args()
 
 
 class RemoveNoise(logging.Filter):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(name='discord.state')
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         if record.levelname == 'WARNING' and 'referencing an unknown' in record.msg:
             return False
         return True
@@ -67,12 +67,13 @@ def setup_logging():
         logging.getLogger('valorantx.valorant_api').setLevel(logging.INFO)
         logging.getLogger('valorantx.valorant_api.http').setLevel(logging.WARNING)
 
-        # sqlalchemy
-        logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
-
         log.setLevel(logging.INFO if args.prod else logging.DEBUG)
         handler = RotatingFileHandler(
-            filename='lattemaid.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=5
+            filename='lattemaid.log',
+            encoding='utf-8',
+            mode='w',
+            maxBytes=max_bytes,
+            backupCount=5,
         )
         dt_fmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
@@ -99,29 +100,26 @@ async def setup_webhook():
     if args.prod:
         yield
 
-    wh_id = os.getenv('WEBHOOK_STATUS_ID')
-    assert wh_id is not None, 'Webhook ID is not set.'
+    # wh_id = os.getenv('WEBHOOK_STATUS_ID')
+    # assert wh_id is not None, 'Webhook ID is not set.'
 
-    wh_token = os.getenv('WEBHOOK_STATUS_TOKEN')
-    assert wh_token is not None, 'Webhook token is not set.'
+    # wh_token = os.getenv('WEBHOOK_STATUS_TOKEN')
+    # assert wh_token is not None, 'Webhook token is not set.'
 
-    session = aiohttp.ClientSession()
-    webhook = Webhook.partial(int(wh_id), wh_token, session=session)
-    try:
-        await webhook.send('☕ LatteMaid is drinking coffee!')
-        yield
-    finally:
-        await webhook.send('💤 LatteMaid is going to sleep!')
-        await session.close()
+    # session = aiohttp.ClientSession()
+    # webhook = Webhook.partial(int(wh_id), wh_token, session=session)
+    # try:
+    #     await webhook.send('☕ LatteMaid is drinking coffee!')
+    #     yield
+    # finally:
+    #     await webhook.send('💤 LatteMaid is going to sleep!')
+    #     await session.close()
 
 
 async def run_bot():
     async with (
-        LatteMaid(
-            debug_mode=not args.prod,
-            tree_sync_at_startup=args.sync,
-        ) as bot,
-        setup_webhook(),
+        LatteMaid(debug_mode=not args.prod) as bot
+        # ,setup_webhook(),
     ):
         await bot.start()
 

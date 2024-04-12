@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 from discord import Locale
 from discord.app_commands.commands import Command, ContextMenu, Group, Parameter
 from discord.app_commands.models import Choice
-from discord.app_commands.translator import TranslationContextLocation as TCL, Translator as _Translator, locale_str
+from discord.app_commands.translator import (
+    TranslationContextLocation as TCL,
+    Translator as _Translator,
+    locale_str,
+)
 from discord.ext import commands
 
 if TYPE_CHECKING:
@@ -18,7 +22,7 @@ if TYPE_CHECKING:
 
     from .bot import LatteMaid
 
-    Localizable = Command | Group | ContextMenu | Parameter | Choice
+    Localizable = Command | Group | ContextMenu | Parameter | Choice  # type: ignore[reportMissingTypeArgument]
 
 T = TypeVar('T')
 CogT = TypeVar('CogT', bound=commands.Cog)
@@ -85,7 +89,7 @@ def get_parameter_payload(
 
 
 def get_app_command_payload(
-    command: Command | Group,
+    command: Command | Group,  # type: ignore[reportMissingTypeArgument]
     data: AppCommandLocalization | None = None,
     *,
     merge: bool = True,
@@ -120,14 +124,14 @@ class Translator(_Translator):
     def __init__(
         self,
         bot: LatteMaid,
-        supported_locales: list[Locale] = [
-            Locale.american_english,  # default
-            Locale.thai,
-        ],
+        supported_locales: list[Locale] | None = None,
     ) -> None:
         super().__init__()
         self.bot: LatteMaid = bot
-        self.supported_locales: list[Locale] = supported_locales
+        self.supported_locales: list[Locale] = supported_locales or [
+            Locale.american_english,  # default
+            Locale.thai,
+        ]
         self._app_command_localizations: dict[str, dict[str, AppCommandLocalization]] = {}
         self._context_menu_localizations: dict[str, dict[str, ContextMenuLocalization]] = {}
         self._other_localizations: dict[str, dict[str, Any]] = {}
@@ -139,7 +143,7 @@ class Translator(_Translator):
     async def unload(self) -> None:
         _log.info('unloaded')
 
-    async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> str | None:
+    async def translate(self, string: locale_str, locale: Locale, context: TranslationContext) -> str | None:  # type: ignore[reportMissingTypeArgument]
         localizable: Localizable = context.data
         tcl: TCL = context.location
 
@@ -192,19 +196,33 @@ class Translator(_Translator):
     ) -> list[str]:
         keys = []
 
-        if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, (Command, Group, ContextMenu)):
+        if tcl in [TCL.command_name, TCL.group_name] and isinstance(localizable, Command | Group | ContextMenu):
             keys.extend([localizable.qualified_name, 'name'])
             self.__latest_command = localizable
 
-        elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, (Command, Group)):
+        elif tcl in [TCL.command_description, TCL.group_description] and isinstance(localizable, Command | Group):
             keys.extend([localizable.qualified_name, 'description'])
 
         elif tcl == TCL.parameter_name and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'display_name'])
+            keys.extend(
+                [
+                    localizable.command.qualified_name,
+                    'options',
+                    localizable.name,
+                    'display_name',
+                ]
+            )
             self.__latest_parameter = localizable
 
         elif tcl == TCL.parameter_description and isinstance(localizable, Parameter):
-            keys.extend([localizable.command.qualified_name, 'options', localizable.name, 'description'])
+            keys.extend(
+                [
+                    localizable.command.qualified_name,
+                    'options',
+                    localizable.name,
+                    'description',
+                ]
+            )
 
         elif tcl == TCL.choice_name:
             if (
@@ -226,7 +244,7 @@ class Translator(_Translator):
 
     # app commands
 
-    async def load_from_files(self, cog_name: str, cog_folder: str | Path | os.PathLike) -> None:
+    async def load_from_files(self, cog_name: str, cog_folder: str | Path) -> None:
         for locale in self.supported_locales:
             locale_path = get_path(Path(cog_folder).resolve().parent, locale.value)
 
@@ -246,7 +264,7 @@ class Translator(_Translator):
         self,
         app_commands: list[str],
         cog_name: str,
-        cog_folder: str | Path | os.PathLike,
+        cog_folder: str | Path,
     ) -> None:
         # for locale, localization in self._app_command_localizations.items():
 
@@ -270,7 +288,7 @@ class Translator(_Translator):
     def get_app_command_localization(
         self,
         locale: str,
-        command: Command | Group,
+        command: Command | Group,  # type: ignore[reportMissingTypeArgument]
     ) -> AppCommandLocalization | None:
         if locale not in self._app_command_localizations:
             return None
@@ -278,7 +296,7 @@ class Translator(_Translator):
             return None
         return self._app_command_localizations[locale][command.qualified_name]
 
-    def add_app_command_localization(self, command: Command | Group) -> None:
+    def add_app_command_localization(self, command: Command | Group) -> None:  # type: ignore[reportMissingTypeArgument]
         for locale in self.supported_locales:
             if locale.value not in self._app_command_localizations:
                 self._app_command_localizations[locale.value] = {}
@@ -289,7 +307,7 @@ class Translator(_Translator):
                 merge=True,
             )
 
-    def remove_app_command_localization(self, command: Command | Group) -> None:
+    def remove_app_command_localization(self, command: Command | Group) -> None:  # type: ignore[reportMissingTypeArgument]
         for locale in self.supported_locales:
             self._app_command_localizations.setdefault(locale.value, {}).pop(command.qualified_name, None)
 
